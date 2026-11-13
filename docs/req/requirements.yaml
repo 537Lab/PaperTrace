@@ -302,7 +302,7 @@ requirements:
 - id: COST-01
   type: cost
   owner: all
-  statement: 初始化和默认离线测试不进行模型调用；真实评估必须另批provider/model、数据和金额/次数上限。
+  statement: PaperTrace产品的初始化验证和默认离线测试不调用产品LLM；编码/审查助手推理另计入AI-use log，不宣称零额度；真实产品评估必须另批provider/model、数据和金额/次数上限。
   fit_criterion:
     metric: initialization_model_requests
     operator: ==

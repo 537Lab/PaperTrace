@@ -36,3 +36,4 @@ entries:
   limitations:
   - AI文档审查不是学生事前测试批准、PR人工APPROVE或D5会话
   - 仅指定文档范围；未进行PaperQA2真实模型评估、GitHub写入或完整上游回归
+  - 编码/审查助手推理消耗其渠道额度；COST-01零调用仅指产品初始化验证和离线测试

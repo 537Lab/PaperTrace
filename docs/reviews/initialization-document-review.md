@@ -1,6 +1,6 @@
 # 初始化文档一致性审查（不是PR人工批准）
 
-日期2026-11-13；审查工具Hermes委派的gpt-6-luna，运行任务元数据显示该模型，子任务已完成。仅只读TEAM_START_HERE、module-D、integration-contract、contracts/schema四份文档；未运行测试、未更改文件、未访问模型/凭据或网络。这里的模型是审查助手，不是PaperQA2产品评估。
+日期2026-11-13；审查工具Hermes委派的gpt-6-luna，运行任务元数据显示该模型，子任务已完成。仅只读TEAM_START_HERE、module-D、integration-contract、contracts/schema四份文档；未运行测试、未更改文件、未额外调用PaperQA2模型、未读取凭据或使用联网工具。审查本身使用gpt-6-luna并会消耗相应助手渠道额度，不是零额度操作，也不是PaperQA2产品评估。
 
 发现：module-D仍称review_revision必须正整数、空账本映射待定，已落后于共享契约对revision=0拒答/阻断的修正。主控读回核实后，仅修正对应段落。主控定向搜索另发现module-C同类陈旧表述，并同步修正；没有把这项扩展搜索归功于子任务。
 

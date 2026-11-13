@@ -19,7 +19,7 @@
   "source_test_configuration_sha256": {
     "docs/req/prd.yaml": "ce5eeb17e0c79c9f91576e55bf888bb570a4d5a754a4bf45fbc7342fe1dd749d",
     "docs/req/req-schema.json": "a8b25959429363c03ba14790845e73adb1ed7db167188d5c671e204af85b344a",
-    "docs/req/requirements.yaml": "e05f97eb15859f7c4d9ec2b52cf8994635dbb1310d235b0ce2c46a924e85e749",
+    "docs/req/requirements.yaml": "463991013a5fab153c25c707e57f136e4d4c247bc5e875ac11d0e1bf58f9170c",
     "mypy.ini": "76a2a4229717cde1c9ee28710534b27865e192d74358b0279be44270bde9c902",
     "opencode.jsonc": "5bcd9881af0804a012629c1fd8b29de481672db534c5861925da10c9f7f33d99",
     "papertrace.pytest.ini": "7099dad0678708feb393c0c90355a9d096a0ce09a9e5c94b7a0a179bbc3aeb13",
