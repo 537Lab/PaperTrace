@@ -1,0 +1,105 @@
+{
+  "version": "2.0.12",
+  "configuration_readback": "PASS",
+  "native_system_rules_mirror": "PASS",
+  "permission_engine_tests": [
+    {
+      "role": "papertrace-plan",
+      "action": "read",
+      "resource": "docs/req/requirements.yaml",
+      "expected": "allow",
+      "actual": "allow"
+    },
+    {
+      "role": "papertrace-plan",
+      "action": "edit",
+      "resource": "src/papertrace/library/service.py",
+      "expected": "deny",
+      "actual": "deny"
+    },
+    {
+      "role": "papertrace-build-A",
+      "action": "edit",
+      "resource": "src/papertrace/library/service.py",
+      "expected": "ask",
+      "actual": "ask"
+    },
+    {
+      "role": "papertrace-build-A",
+      "action": "edit",
+      "resource": "src/papertrace/review/service.py",
+      "expected": "deny",
+      "actual": "deny"
+    },
+    {
+      "role": "papertrace-build-B",
+      "action": "read",
+      "resource": "src/paperqa/docs.py",
+      "expected": "allow",
+      "actual": "allow"
+    },
+    {
+      "role": "papertrace-build-B",
+      "action": "edit",
+      "resource": "src/paperqa/docs.py",
+      "expected": "deny",
+      "actual": "deny"
+    },
+    {
+      "role": "papertrace-build-D",
+      "action": "edit",
+      "resource": "src/papertrace/contracts.py",
+      "expected": "deny",
+      "actual": "deny"
+    },
+    {
+      "role": "papertrace-build-A",
+      "action": "edit",
+      "resource": ".opencode/rules.md",
+      "expected": "deny",
+      "actual": "deny"
+    },
+    {
+      "role": "papertrace-plan",
+      "action": "read",
+      "resource": ".env",
+      "expected": "deny",
+      "actual": "deny"
+    },
+    {
+      "role": "papertrace-plan",
+      "action": "read",
+      "resource": "../synthetic-private.txt",
+      "expected": "deny",
+      "actual": "deny"
+    },
+    {
+      "role": "papertrace-plan",
+      "action": "external_directory",
+      "resource": "/synthetic-private/*",
+      "expected": "deny",
+      "actual": "deny"
+    },
+    {
+      "role": "papertrace-build-A",
+      "action": "shell",
+      "resource": "git push",
+      "expected": "deny",
+      "actual": "deny"
+    },
+    {
+      "role": "papertrace-build-A",
+      "action": "shell",
+      "resource": "python -c synthetic-no-op",
+      "expected": "deny",
+      "actual": "deny"
+    }
+  ],
+  "passed": 13,
+  "sessions_with_no_messages": 4,
+  "limits": [
+    "Permission API engine probes, not model-driven tool execution",
+    "No provider requests; no claim of full official Bun tool suites",
+    "Sandbox applies to this verifier only; unwrapped launches are not isolated"
+  ]
+}

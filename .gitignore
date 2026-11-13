@@ -312,3 +312,17 @@ tests/example2.*
 
 # Client data
 src/paperqa/clients/client_data/retractions.csv
+
+# PaperTrace: private local materials, isolated agent state, and caches
+.local/
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*auth.json
+credentials*.json
+.ruff_cache/
+artifacts/verification/transient/
+.opencode/node_modules/
+.opencode/package-lock.json

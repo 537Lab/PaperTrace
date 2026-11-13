@@ -1,0 +1,96 @@
+{
+  "additionalProperties": false,
+  "description": "INV-04: deterministic check claims; never a substitute for D's checks.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "answer_id": {
+      "pattern": "^ans-[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "Answer Id",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "pattern": "^snap-[0-9a-f]{64}$",
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "question_id": {
+      "pattern": "^q-[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "Question Id",
+      "type": "string"
+    },
+    "review_revision": {
+      "minimum": 0,
+      "title": "Review Revision",
+      "type": "integer"
+    },
+    "review_digest": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Review Digest",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "released",
+        "blocked"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "reason_codes": {
+      "items": {
+        "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+        "type": "string"
+      },
+      "title": "Reason Codes",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "snapshot_check_passed": {
+      "title": "Snapshot Check Passed",
+      "type": "boolean"
+    },
+    "review_check_passed": {
+      "title": "Review Check Passed",
+      "type": "boolean"
+    },
+    "evidence_check_passed": {
+      "title": "Evidence Check Passed",
+      "type": "boolean"
+    },
+    "citation_check_passed": {
+      "title": "Citation Check Passed",
+      "type": "boolean"
+    },
+    "answer_check_passed": {
+      "title": "Answer Check Passed",
+      "type": "boolean"
+    },
+    "decided_at": {
+      "format": "date-time",
+      "title": "Decided At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "answer_id",
+    "snapshot_id",
+    "question_id",
+    "review_revision",
+    "review_digest",
+    "status",
+    "reason_codes",
+    "snapshot_check_passed",
+    "review_check_passed",
+    "evidence_check_passed",
+    "citation_check_passed",
+    "answer_check_passed",
+    "decided_at"
+  ],
+  "title": "ReleaseDecision",
+  "type": "object"
+}

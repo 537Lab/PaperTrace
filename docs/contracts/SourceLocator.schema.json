@@ -1,0 +1,89 @@
+{
+  "additionalProperties": false,
+  "description": "INV-02, INV-04: parser metadata and page/line ranges, never free-form locations.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "page_start": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Page Start"
+    },
+    "page_end": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Page End"
+    },
+    "line_start": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Line Start"
+    },
+    "line_end": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Line End"
+    },
+    "chunk_id": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Chunk Id",
+      "type": "string"
+    },
+    "parser_name": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Parser Name",
+      "type": "string"
+    },
+    "parser_version": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Parser Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "chunk_id",
+    "parser_name",
+    "parser_version"
+  ],
+  "title": "SourceLocator",
+  "type": "object"
+}

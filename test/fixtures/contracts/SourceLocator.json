@@ -1,0 +1,15 @@
+{
+  "synthetic": true,
+  "provenance": "handwritten; not a model response, human approval, or runtime release",
+  "contract": "SourceLocator",
+  "data": {
+    "schema_version": 1,
+    "page_start": null,
+    "page_end": null,
+    "line_start": 1,
+    "line_end": 1,
+    "chunk_id": "chunk-synthetic-a",
+    "parser_name": "synthetic-lines",
+    "parser_version": "1.0"
+  }
+}

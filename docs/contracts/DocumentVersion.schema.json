@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "description": "INV-02: a logical document and its distinct content version.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "document_id": {
+      "pattern": "^doc-[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "Document Id",
+      "type": "string"
+    },
+    "version_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Version Sha256",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Title",
+      "type": "string"
+    },
+    "source_name": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Source Name",
+      "type": "string"
+    },
+    "status": {
+      "const": "ready",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "document_id",
+    "version_sha256",
+    "title",
+    "source_name",
+    "status"
+  ],
+  "title": "DocumentVersion",
+  "type": "object"
+}

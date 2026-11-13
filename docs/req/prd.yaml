@@ -1,0 +1,50 @@
+schema_version: 1
+product: PaperTrace — Evidence Review Workbench
+status: proposed-awaiting-student-review
+scope:
+  workflow:
+  - 导入论文
+  - AI检索候选证据
+  - 人工接受/排除
+  - 仅据获准证据回答
+  - 追溯报告导出
+  modules:
+    A: library
+    B: retrieval
+    C: review
+    D: answer
+    E: reports
+  platform: Python + 原PaperQA2 + 薄适配 + 本地Streamlit；单机单人单写者
+  not_in_scope:
+  - 独立重写PaperQA2
+  - 大型前端/数据库服务器/云平台
+  - 全网获取论文
+  - 第三方预建pickle索引
+  - 自动认定科学事实正确
+  - 运行中物理回收全部上游索引
+priorities:
+  Must:
+  - 五模块各有业务功能/测试/真实OpenCode过程
+  - 不可变快照与人审授权发布边界
+  - D1-D9及六类门禁证据
+  Should:
+  - 证据比较与报告可读性提升
+  Could:
+  - 批量操作的便利性改进
+  Wont:
+  - 多用户/云部署/多模态/自主Agent循环
+tradeoffs:
+- 先减少便利性而非授权边界/完整回归/真实披露
+- 先单机单写者，存在并发写需求时重开ADR
+- 初始化不是学生正式OpenCode开发贡献
+registry: requirements.yaml
+course_sources:
+  project: CS5351-2026-2027-project.pdf:p3-10
+  introduction: cs5351-2026-2027-introduction.pdf:p5,20-26
+unresolved_student_decisions:
+- 原文角色轮换与一次功能分工的流程角色安排
+- 五份会话与D5一份/from-scratch表述的最终口径
+- 以PaperQA2扩展作为同复杂度项目的教师确认
+- 本轮初始化不是OpenCode产出的课程认可边界
+- 真实截止时间与工作投入
+- 真实模型provider/model/数据/费用授权

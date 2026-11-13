@@ -1,0 +1,51 @@
+FF...                                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_initial_review_revision_zero_can_record_abstention ____________
+
+    def test_initial_review_revision_zero_can_record_abstention():
+        """INV-01/03: a question with no human events has revision zero, not a fake event."""
+        payload = fixture_payload("AnswerDraft") | {
+            "review_revision": 0,
+            "approved_evidence_ids": [],
+            "sent_evidence_ids": [],
+            "citation_evidence_ids": [],
+            "status": "abstained",
+            "body": "",
+            "refusal_reason": "NO_APPROVED_EVIDENCE",
+        }
+>       answer = AnswerDraft.model_validate(payload)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for AnswerDraft
+E       review_revision
+E         Input should be greater than or equal to 1 [type=greater_than_equal, input_value=0, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.14/v/greater_than_equal
+
+test/offline/test_initialization_edges.py:32: ValidationError
+_________ test_initial_review_revision_zero_can_record_blocked_release _________
+
+    def test_initial_review_revision_zero_can_record_blocked_release():
+        """INV-01/04: a blocked decision may describe the initial unreviewed state."""
+        payload = fixture_payload("ReleaseDecision") | {
+            "review_revision": 0,
+            "status": "blocked",
+            "review_check_passed": False,
+            "reason_codes": ["NO_REVIEW_EVENTS"],
+        }
+>       decision = ReleaseDecision.model_validate(payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ReleaseDecision
+E       review_revision
+E         Input should be greater than or equal to 1 [type=greater_than_equal, input_value=0, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.14/v/greater_than_equal
+
+test/offline/test_initialization_edges.py:45: ValidationError
+=============================== warnings summary ===============================
+test/offline/test_initialization_edges.py::test_offline_socket_creation_is_blocked
+  <HOME>/Documents/PaperTrace/.venv/lib/python3.14/site-packages/pytest_socket/__init__.py:138: UserWarning: A test tried to use socket.socket.
+    raise SocketBlockedError()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/offline/test_initialization_edges.py::test_initial_review_revision_zero_can_record_abstention
+FAILED test/offline/test_initialization_edges.py::test_initial_review_revision_zero_can_record_blocked_release
+2 failed, 3 passed, 1 warning in 0.06s

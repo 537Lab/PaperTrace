@@ -1,0 +1,23 @@
+{
+  "synthetic": true,
+  "provenance": "handwritten; not a model response, human approval, or runtime release",
+  "contract": "ReleaseDecision",
+  "data": {
+    "schema_version": 1,
+    "answer_id": "ans-synthetic-a",
+    "snapshot_id": "snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5",
+    "question_id": "q-synthetic-a",
+    "review_revision": 1,
+    "review_digest": "98acd79c4446be3675733a105a003591d427487fc56102258750c1b1ed2adffd",
+    "status": "blocked",
+    "reason_codes": [
+      "SYNTHETIC_NOT_RUNTIME_VERIFIED"
+    ],
+    "snapshot_check_passed": false,
+    "review_check_passed": false,
+    "evidence_check_passed": false,
+    "citation_check_passed": false,
+    "answer_check_passed": false,
+    "decided_at": "2026-01-01T00:04:00Z"
+  }
+}

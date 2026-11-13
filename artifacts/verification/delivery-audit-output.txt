@@ -1,0 +1,28 @@
+{
+  "required_file_count": 46,
+  "missing_or_empty": [],
+  "missing_relative_markdown_links": [],
+  "requirement_count": 27,
+  "unique_requirement_ids": 27,
+  "missing_requirement_trace": [],
+  "nonexistent_pytest_references": [],
+  "team_identity_or_placeholder_findings": [],
+  "frozen_baseline_unchanged": true,
+  "upstream_archive_byte_match": {
+    "README.md": true,
+    ".github/workflows/tests.yml": true,
+    ".github/workflows/build.yml": true
+  },
+  "business_modules_absent": true,
+  "benchmark": {
+    "scope": "100 synthetic AnswerDraft JSON round trips, not PaperQA2 performance",
+    "python": "3.14.6",
+    "wall_seconds": 0.0015625829983036965,
+    "threshold_seconds": 2.0,
+    "passed": true
+  },
+  "remote_configuration": [
+    "upstream\thttps://github.com/Future-House/paper-qa.git (fetch)",
+    "upstream\tdisabled://papertrace-read-only-upstream (push)"
+  ]
+}

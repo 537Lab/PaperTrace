@@ -1,0 +1,109 @@
+{
+  "additionalProperties": false,
+  "description": "INV-04, INV-02, INV-01, QA-01: declared review scope, not proof of a genuine current ledger.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "answer_id": {
+      "pattern": "^ans-[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "Answer Id",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "pattern": "^snap-[0-9a-f]{64}$",
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "question_id": {
+      "pattern": "^q-[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "Question Id",
+      "type": "string"
+    },
+    "review_revision": {
+      "minimum": 0,
+      "title": "Review Revision",
+      "type": "integer"
+    },
+    "review_digest": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Review Digest",
+      "type": "string"
+    },
+    "approved_evidence_ids": {
+      "items": {
+        "pattern": "^ev-[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Approved Evidence Ids",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "sent_evidence_ids": {
+      "items": {
+        "pattern": "^ev-[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Sent Evidence Ids",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "citation_evidence_ids": {
+      "items": {
+        "pattern": "^ev-[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Citation Evidence Ids",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "abstained",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "body": {
+      "title": "Body",
+      "type": "string"
+    },
+    "refusal_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Refusal Reason"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "answer_id",
+    "snapshot_id",
+    "question_id",
+    "review_revision",
+    "review_digest",
+    "approved_evidence_ids",
+    "sent_evidence_ids",
+    "citation_evidence_ids",
+    "status",
+    "body",
+    "generated_at"
+  ],
+  "title": "AnswerDraft",
+  "type": "object"
+}

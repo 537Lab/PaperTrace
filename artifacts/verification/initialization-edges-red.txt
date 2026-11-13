@@ -1,0 +1,123 @@
+FF...                                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_initial_review_revision_zero_can_record_abstention ____________
+
+    def test_initial_review_revision_zero_can_record_abstention():
+        """INV-01/03: a question with no human events has revision zero, not a fake event."""
+        payload = fixture_payload("AnswerDraft") | {
+            "review_revision": 0,
+            "approved_evidence_ids": [],
+            "sent_evidence_ids": [],
+            "citation_evidence_ids": [],
+            "status": "abstained",
+            "body": "",
+            "refusal_reason": "NO_APPROVED_EVIDENCE",
+        }
+>       answer = AnswerDraft.model_validate(payload)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 11 validation errors for AnswerDraft
+E       schema_version
+E         Field required [type=missing, input_value={'synthetic': True, 'prov... 'NO_APPROVED_EVIDENCE'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       answer_id
+E         Field required [type=missing, input_value={'synthetic': True, 'prov... 'NO_APPROVED_EVIDENCE'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       snapshot_id
+E         Field required [type=missing, input_value={'synthetic': True, 'prov... 'NO_APPROVED_EVIDENCE'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       question_id
+E         Field required [type=missing, input_value={'synthetic': True, 'prov... 'NO_APPROVED_EVIDENCE'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       review_revision
+E         Input should be greater than or equal to 1 [type=greater_than_equal, input_value=0, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.14/v/greater_than_equal
+E       review_digest
+E         Field required [type=missing, input_value={'synthetic': True, 'prov... 'NO_APPROVED_EVIDENCE'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       generated_at
+E         Field required [type=missing, input_value={'synthetic': True, 'prov... 'NO_APPROVED_EVIDENCE'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       synthetic
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=True, input_type=bool]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+E       provenance
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='handwritten; not a model...val, or runtime release', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+E       contract
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='AnswerDraft', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+E       data
+E         Extra inputs are not permitted [type=extra_forbidden, input_value={'schema_version': 1, 'an... '2026-01-01T00:03:00Z'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+
+test/offline/test_initialization_edges.py:32: ValidationError
+_________ test_initial_review_revision_zero_can_record_blocked_release _________
+
+    def test_initial_review_revision_zero_can_record_blocked_release():
+        """INV-01/04: a blocked decision may describe the initial unreviewed state."""
+        payload = fixture_payload("ReleaseDecision") | {
+            "review_revision": 0,
+            "status": "blocked",
+            "review_check_passed": False,
+            "reason_codes": ["NO_REVIEW_EVENTS"],
+        }
+>       decision = ReleaseDecision.model_validate(payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 15 validation errors for ReleaseDecision
+E       schema_version
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       answer_id
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       snapshot_id
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       question_id
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       review_revision
+E         Input should be greater than or equal to 1 [type=greater_than_equal, input_value=0, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.14/v/greater_than_equal
+E       review_digest
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       snapshot_check_passed
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       evidence_check_passed
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       citation_check_passed
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       answer_check_passed
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       decided_at
+E         Field required [type=missing, input_value={'synthetic': True, 'prov...': ['NO_REVIEW_EVENTS']}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       synthetic
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=True, input_type=bool]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+E       provenance
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='handwritten; not a model...val, or runtime release', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+E       contract
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='ReleaseDecision', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+E       data
+E         Extra inputs are not permitted [type=extra_forbidden, input_value={'schema_version': 1, 'an... '2026-01-01T00:04:00Z'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+
+test/offline/test_initialization_edges.py:45: ValidationError
+=============================== warnings summary ===============================
+test/offline/test_initialization_edges.py::test_offline_socket_creation_is_blocked
+  <HOME>/Documents/PaperTrace/.venv/lib/python3.14/site-packages/pytest_socket/__init__.py:138: UserWarning: A test tried to use socket.socket.
+    raise SocketBlockedError()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/offline/test_initialization_edges.py::test_initial_review_revision_zero_can_record_abstention
+FAILED test/offline/test_initialization_edges.py::test_initial_review_revision_zero_can_record_blocked_release
+2 failed, 3 passed, 1 warning in 0.06s

@@ -1,0 +1,17 @@
+{
+  "synthetic": true,
+  "provenance": "handwritten; not a model response, human approval, or runtime release",
+  "contract": "ReviewDecision",
+  "data": {
+    "schema_version": 1,
+    "snapshot_id": "snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5",
+    "evidence_id": "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a",
+    "question_id": "q-synthetic-a",
+    "status": "accepted",
+    "actor_kind": "human",
+    "reviewer_ref": "reviewer-A",
+    "revision": 1,
+    "reason": "synthetic：模拟结构，不表示真实人工批准。",
+    "decided_at": "2026-01-01T00:02:00Z"
+  }
+}

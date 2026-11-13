@@ -1,0 +1,182 @@
+=== cycle 1 schema RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_schema_accepts_real_registry_and_rejects_injected_errors _________
+
+repository = (PosixPath('/private/var/folders/3z/ml898l5542b45vc4s7th6v_40000gn/T/pytest-of-usagi/pytest-0/test_schema_accepts_real_regis0'), '729c33b2f721e953043bdddbe2fdff5aa3e8a7a7')
+
+    def test_schema_accepts_real_registry_and_rejects_injected_errors(repository):
+        """GOV-02 / D1: schema, duplicate identity and zero-tolerance invariants."""
+        root, _ = repository
+>       module = gates_module()
+                 ^^^^^^^^^^^^^^
+
+test/offline/test_gates.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def gates_module():
+        """A missing gate is an intentional assertion in the first RED cycle."""
+        path = ROOT / "scripts/gates.py"
+>       assert path.is_file(), "GOV-02: executable gates implementation is missing"
+E       AssertionError: GOV-02: executable gates implementation is missing
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = PosixPath('<repository>/scripts/gates.py').is_file
+
+test/offline/test_gates.py:22: AssertionError
+=========================== short test summary info ============================
+FAILED test/offline/test_gates.py::test_schema_accepts_real_registry_and_rejects_injected_errors
+1 failed in 0.48s
+
+exit=1
+=== cycle 1 schema GREEN ===
+.                                                                        [100%]
+1 passed in 0.38s
+
+exit=0
+=== cycle 2 diff-driven AI log RED ===
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_ai_log_requires_new_semantic_entry_for_code_or_prompt_change _______
+test/offline/test_gates.py:118: in test_ai_log_requires_new_semantic_entry_for_code_or_prompt_change
+    assert module.ai_log_gate(context(repository))["status"] == "FAIL"
+           ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'papertrace_gates' has no attribute 'ai_log_gate'
+=========================== short test summary info ============================
+FAILED test/offline/test_gates.py::test_ai_log_requires_new_semantic_entry_for_code_or_prompt_change
+1 failed, 1 passed in 0.24s
+
+exit=1
+=== cycle 2 diff-driven AI log GREEN ===
+..                                                                       [100%]
+2 passed in 0.51s
+
+exit=0
+=== cycle 3 static architecture/frozen tree RED ===
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+___________________ test_architecture_and_frozen_tree_faults ___________________
+test/offline/test_gates.py:149: in test_architecture_and_frozen_tree_faults
+    assert module.frozen_check(ctx)["status"] == "PASS"
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'papertrace_gates' has no attribute 'frozen_check'
+=========================== short test summary info ============================
+FAILED test/offline/test_gates.py::test_architecture_and_frozen_tree_faults
+1 failed, 2 passed in 0.55s
+
+exit=1
+=== cycle 3 static architecture/frozen tree GREEN ===
+...                                                                      [100%]
+3 passed in 0.64s
+
+exit=0
+=== cycle 4 executable tool/dependency/security checks RED ===
+...FF                                                                    [100%]
+=================================== FAILURES ===================================
+______________ test_real_lint_type_dependency_and_timeout_faults _______________
+test/offline/test_gates.py:183: in test_real_lint_type_dependency_and_timeout_faults
+    assert module.tool_check(ctx, "lint")["status"] == "PASS"
+           ^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'papertrace_gates' has no attribute 'tool_check'
+________________ test_contract_surface_and_scoped_secret_faults ________________
+test/offline/test_gates.py:205: in test_contract_surface_and_scoped_secret_faults
+    assert module.contract_check(ctx)["status"] == "FAIL"
+           ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'papertrace_gates' has no attribute 'contract_check'
+=========================== short test summary info ============================
+FAILED test/offline/test_gates.py::test_real_lint_type_dependency_and_timeout_faults
+FAILED test/offline/test_gates.py::test_contract_surface_and_scoped_secret_faults
+2 failed, 3 passed in 0.81s
+
+exit=1
+=== cycle 4 executable tool/dependency/security checks GREEN attempt ===
+.....                                                                    [100%]
+5 passed in 1.91s
+
+exit=0
+=== cycle 5 six-gate CLI, untrusted evidence and actual regression RED ===
+.....FFF                                                                 [100%]
+=================================== FAILURES ===================================
+___________ test_approval_and_semantic_reports_cannot_self_authorize ___________
+test/offline/test_gates.py:225: in test_approval_and_semantic_reports_cannot_self_authorize
+    assert module.test_approval_gate(ctx)["status"] == "BLOCKED"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'papertrace_gates' has no attribute 'test_approval_gate'
+_ test_regression_executes_every_team_offline_test_and_rejects_fail_skip_empty _
+test/offline/test_gates.py:243: in test_regression_executes_every_team_offline_test_and_rejects_fail_skip_empty
+    report = module.regression_gate(ctx)
+             ^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'papertrace_gates' has no attribute 'regression_gate'
+__________________ test_static_aggregate_and_cli_fail_closed ___________________
+test/offline/test_gates.py:273: in test_static_aggregate_and_cli_fail_closed
+    assert module.static_gate(context(repository))["status"] == "PASS"
+           ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'papertrace_gates' has no attribute 'static_gate'
+=========================== short test summary info ============================
+FAILED test/offline/test_gates.py::test_approval_and_semantic_reports_cannot_self_authorize
+FAILED test/offline/test_gates.py::test_regression_executes_every_team_offline_test_and_rejects_fail_skip_empty
+FAILED test/offline/test_gates.py::test_static_aggregate_and_cli_fail_closed
+3 failed, 5 passed in 1.70s
+
+exit=1
+=== cycle 5 six-gate CLI, untrusted evidence and actual regression GREEN attempt ===
+........                                                                 [100%]
+8 passed in 3.37s
+
+exit=0
+=== cycle 6 ambiguous input / disclosure replay RED ===
+........FF.                                                              [100%]
+=================================== FAILURES ===================================
+___________ test_schema_rejects_duplicate_yaml_keys_and_remote_refs ____________
+test/offline/test_gates.py:290: in test_schema_rejects_duplicate_yaml_keys_and_remote_refs
+    assert module.schema_gate(ctx)["status"] == "FAIL"
+E   AssertionError: assert 'PASS' == 'FAIL'
+E     
+E     - FAIL
+E     + PASS
+_____________ test_log_new_id_only_is_not_new_semantic_disclosure ______________
+test/offline/test_gates.py:307: in test_log_new_id_only_is_not_new_semantic_disclosure
+    assert module.ai_log_gate(context((root, base)))["status"] == "FAIL"
+E   AssertionError: assert 'PASS' == 'FAIL'
+E     
+E     - FAIL
+E     + PASS
+=========================== short test summary info ============================
+FAILED test/offline/test_gates.py::test_schema_rejects_duplicate_yaml_keys_and_remote_refs
+FAILED test/offline/test_gates.py::test_log_new_id_only_is_not_new_semantic_disclosure
+2 failed, 9 passed in 3.54s
+
+exit=1
+=== cycle 6 duplicate-input / disclosure-replay GREEN ===
+Error while loading plugin "pytest11".
+ValueError: Plugin already registered under a different name: socket=<module 'pytest_socket' from '<repository>/.venv/lib/python3.14/site-packages/pytest_socket/__init__.py'>
+{'4390628928': <_pytest.config.PytestPluginManager object at 0x105b3ae40>, 'pytestconfig': <_pytest.config.Config object at 0x105cc8590>, 'mark': <module '_pytest.mark' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/mark/__init__.py'>, 'main': <module '_pytest.main' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/main.py'>, 'runner': <module '_pytest.runner' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/runner.py'>, 'fixtures': <module '_pytest.fixtures' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/fixtures.py'>, 'helpconfig': <module '_pytest.helpconfig' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/helpconfig.py'>, 'python': <module '_pytest.python' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/python.py'>, 'terminal': <module '_pytest.terminal' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/terminal.py'>, 'debugging': <module '_pytest.debugging' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/debugging.py'>, 'unittest': <module '_pytest.unittest' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/unittest.py'>, 'capture': <module '_pytest.capture' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/capture.py'>, 'skipping': <module '_pytest.skipping' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/skipping.py'>, 'legacypath': <module '_pytest.legacypath' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/legacypath.py'>, 'tmpdir': <module '_pytest.tmpdir' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/tmpdir.py'>, 'monkeypatch': <module '_pytest.monkeypatch' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/monkeypatch.py'>, 'recwarn': <module '_pytest.recwarn' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/recwarn.py'>, 'pastebin': <module '_pytest.pastebin' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/pastebin.py'>, 'assertion': <module '_pytest.assertion' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/assertion/__init__.py'>, 'junitxml': <module '_pytest.junitxml' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/junitxml.py'>, 'doctest': <module '_pytest.doctest' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/doctest.py'>, 'cacheprovider': <module '_pytest.cacheprovider' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/cacheprovider.py'>, 'setuponly': <module '_pytest.setuponly' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/setuponly.py'>, 'setupplan': <module '_pytest.setupplan' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/setupplan.py'>, 'stepwise': <module '_pytest.stepwise' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/stepwise.py'>, 'unraisableexception': <module '_pytest.unraisableexception' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/unraisableexception.py'>, 'threadexception': <module '_pytest.threadexception' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/threadexception.py'>, 'warnings': <module '_pytest.warnings' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/warnings.py'>, 'logging': <module '_pytest.logging' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/logging.py'>, 'reports': <module '_pytest.reports' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/reports.py'>, 'faulthandler': <module '_pytest.faulthandler' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/faulthandler.py'>, 'subtests': <module '_pytest.subtests' from '<repository>/.venv/lib/python3.14/site-packages/_pytest/subtests.py'>, 'pytest_socket': <module 'pytest_socket' from '<repository>/.venv/lib/python3.14/site-packages/pytest_socket/__init__.py'>}
+
+exit=3
+=== final GREEN: all team offline (not full prior suites) ===
+........................................................................ [ 45%]
+........................................................................ [ 90%]
+................                                                         [100%]
+160 passed in 4.04s
+
+exit=0
+
+=== final local gate schema ===
+{"exit_code": 0, "full_course_status": {"ai-log": "NOT_RUN", "regression": "BLOCKED", "schema": "PASS", "semantic": "BLOCKED", "static": "BLOCKED", "test-approval": "BLOCKED"}, "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED", "results": [{"details": {"errors": [], "limitation": "Does not prove implementation of fit criteria or human approval", "requirement_count": 27}, "gate": "schema", "status": "PASS", "summary": "Registry structural validation"}], "schema_version": 1, "scope": "initialization", "status": "PASS", "target": {"base": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a", "head": "WORKTREE", "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"}}
+exit=0
+
+=== final local gate static ===
+{"exit_code": 0, "full_course_status": {"ai-log": "NOT_RUN", "regression": "BLOCKED", "schema": "NOT_RUN", "semantic": "BLOCKED", "static": "BLOCKED", "test-approval": "BLOCKED"}, "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED", "results": [{"details": {"checks": [{"details": {"output_bytes": 19, "returncode": 0, "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "stdout_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"}, "gate": "lint", "status": "PASS", "summary": "Command completed"}, {"details": {"output_bytes": 43, "returncode": 0, "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "stdout_sha256": "f9b031e5c45aa702cd4fef028d465551cb20a2c4698e0913c7b00766b20ac4d8"}, "gate": "types", "status": "PASS", "summary": "Command completed"}, {"details": {"errors": [], "limitation": "Version/metadata consistency only; no online advisory scan, hash/provenance or full upstream environment certification", "locked_packages": 25}, "gate": "dependencies", "status": "PASS", "summary": "Initialization environment matches exact pins"}, {"details": {"baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a", "changed_paths": []}, "gate": "frozen-baseline", "status": "PASS", "summary": "Upstream baseline byte integrity"}, {"details": {"errors": [], "limitation": "AST fitness function, not a Python sandbox; live adapter spy/integration still required"}, "gate": "architecture", "status": "PASS", "summary": "AST import boundary"}, {"details": {"limitation": "AST surface presence only; round-trip/negative tests run in initialization regression, not module integration", "missing": []}, "gate": "contract-api", "status": "PASS", "summary": "Shared five-contract API presence"}, {"details": {"findings": [], "limitation": "Heuristics are incomplete; no private environment or whole upstream scan, no guarantee of absence"}, "gate": "secrets", "status": "PASS", "summary": "Changed-team-file secret heuristic"}], "full_course_static": "BLOCKED", "pending": ["complete vulnerability/provenance audit", "real adapter API/integration safety", "effective runtime permissions and independent human review"]}, "gate": "static", "status": "PASS", "summary": "Initialization static checks; not a full security/integration audit"}], "schema_version": 1, "scope": "initialization", "status": "PASS", "target": {"base": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a", "head": "WORKTREE", "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"}}
+exit=0
+
+=== final local gate ai-log ===
+{"exit_code": 0, "full_course_status": {"ai-log": "PASS", "regression": "BLOCKED", "schema": "NOT_RUN", "semantic": "BLOCKED", "static": "BLOCKED", "test-approval": "BLOCKED"}, "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED", "results": [{"details": {"changed_paths": [".agent/rules.md", "AGENTS.md", "Prompt.md", "prompts/README.md", "prompts/prompt_v1.0.yaml", "scripts/gates.py", "src/papertrace/__init__.py", "src/papertrace/contracts.py", "test/evaluation/README.md", "test/evaluation/cases.json", "test/evaluation/report-schema.json", "test/fixtures/contracts/AnswerDraft.json", "test/fixtures/contracts/CorpusSnapshot.json", "test/fixtures/contracts/DocumentVersion.json", "test/fixtures/contracts/EvidenceRecord.json", "test/fixtures/contracts/README.md", "test/fixtures/contracts/ReleaseDecision.json", "test/fixtures/contracts/ReviewDecision.json", "test/fixtures/contracts/SourceLocator.json", "test/fixtures/contracts/synthetic-paper-a.txt", "test/live/README.md", "test/offline/test_contracts.py", "test/offline/test_gates.py"], "limitation": "Structural disclosure evidence, not proof of authorship or genuine human approval", "new_entries": 1}, "gate": "ai-log", "status": "PASS", "summary": "New semantic AI-use disclosure found"}], "schema_version": 1, "scope": "initialization", "status": "PASS", "target": {"base": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a", "head": "WORKTREE", "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"}}
+exit=0
+
+=== final local gate test-approval ===
+{"exit_code": 2, "full_course_status": {"ai-log": "NOT_RUN", "regression": "BLOCKED", "schema": "NOT_RUN", "semantic": "BLOCKED", "static": "BLOCKED", "test-approval": "BLOCKED"}, "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED", "results": [{"details": {"changed_paths": [".agent/rules.md", "AGENTS.md", "Prompt.md", "prompts/README.md", "prompts/prompt_v1.0.yaml", "scripts/gates.py", "src/papertrace/__init__.py", "src/papertrace/contracts.py", "test/evaluation/README.md", "test/evaluation/cases.json", "test/evaluation/report-schema.json", "test/fixtures/contracts/AnswerDraft.json", "test/fixtures/contracts/CorpusSnapshot.json", "test/fixtures/contracts/DocumentVersion.json", "test/fixtures/contracts/EvidenceRecord.json", "test/fixtures/contracts/README.md", "test/fixtures/contracts/ReleaseDecision.json", "test/fixtures/contracts/ReviewDecision.json", "test/fixtures/contracts/SourceLocator.json", "test/fixtures/contracts/synthetic-paper-a.txt", "test/live/README.md", "test/offline/test_contracts.py", "test/offline/test_gates.py"], "rejected_evidence": "PR-owned approved:true, local signatures or mutable timestamps are never accepted", "required_evidence": ["independent authorized reviewer", "approved test tree SHA", "approval before first implementation event", "trusted-base workflow and GitHub API verification"]}, "gate": "test-approval", "status": "BLOCKED", "summary": "Trusted prior test-approval verification is not deployed"}], "schema_version": 1, "scope": "initialization", "status": "BLOCKED", "target": {"base": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a", "head": "WORKTREE", "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"}}
+exit=2
+
+=== final local gate semantic ===
+{"exit_code": 2, "full_course_status": {"ai-log": "NOT_RUN", "regression": "BLOCKED", "schema": "NOT_RUN", "semantic": "BLOCKED", "static": "BLOCKED", "test-approval": "BLOCKED"}, "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED", "results": [{"details": {"changed_paths": [".agent/rules.md", "AGENTS.md", "Prompt.md", "docs/architecture/permission-model.md", "prompts/README.md", "prompts/prompt_v1.0.yaml", "src/papertrace/__init__.py", "src/papertrace/contracts.py"], "contract": "test/evaluation/README.md", "fixed_set": "test/evaluation/cases.json", "pending": ["business adapter (not part of initialization)", "provider/model/data/call/cost approval", "trusted CI provenance and report verification"], "rejected_evidence": "local PASS JSON, fixed mock replies, skipped calls or PR-owned approvals"}, "gate": "semantic", "status": "BLOCKED", "summary": "No trusted real-model evaluation pipeline/report verifier is deployed"}], "schema_version": 1, "scope": "initialization", "status": "BLOCKED", "target": {"base": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a", "head": "WORKTREE", "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"}}
+exit=2

@@ -1,0 +1,1177 @@
+PaperTrace 共享契约 TDD 实际执行记录
+范围：src/papertrace/contracts.py；仅离线共享接口，不实现 A–E 业务。
+数据：手写 synthetic 样例，不是论文事实、模型输出、人工审批或课程 OpenCode Transcript。
+环境已实际读取：Python 3.14.6，Pydantic 2.14.3，pytest 9.2.0。
+命令固定前缀：PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py
+本文件保留每次真实 RED / GREEN / 回归输出及退出码；首轮缺失公开模型用断言失败表达。
+
+=== RUN 01: RED 01 — DocumentVersion missing ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_document_version_json_round_trip
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_document_version_json_round_trip _____________________
+test/offline/test_contracts.py:29: in test_document_version_json_round_trip
+    model = contract("DocumentVersion")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:19: in contract
+    assert package is not None, "REQ-CONTRACTS: papertrace package is missing"
+E   AssertionError: REQ-CONTRACTS: papertrace package is missing
+E   assert None is not None
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_document_version_json_round_trip
+1 failed in 0.07s
+EXIT_CODE=1
+
+=== RUN 02: GREEN 01 — DocumentVersion JSON and Unicode ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+.                                                                        [100%]
+1 passed in 0.11s
+EXIT_CODE=0
+
+=== RUN 03: RED 02 — frozen + closed shared envelope ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_shared_envelope
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_shared_envelope_is_frozen_and_forbids_extra _______________
+test/offline/test_contracts.py:59: in test_shared_envelope_is_frozen_and_forbids_extra
+    with pytest.raises(ValidationError, match="extra_forbidden"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_shared_envelope_is_frozen_and_forbids_extra
+1 failed, 1 deselected in 0.04s
+EXIT_CODE=1
+
+=== RUN 04: GREEN 02 — immutable closed envelope ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+..                                                                       [100%]
+2 passed in 0.06s
+EXIT_CODE=0
+
+=== RUN 05: RED 03 — schema version explicit strict 1 ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_schema_version
+.FFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_____________ test_schema_version_requires_explicit_integer_one[0] _____________
+test/offline/test_contracts.py:72: in test_schema_version_requires_explicit_integer_one
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_____________ test_schema_version_requires_explicit_integer_one[2] _____________
+test/offline/test_contracts.py:72: in test_schema_version_requires_explicit_integer_one
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_____________ test_schema_version_requires_explicit_integer_one[1] _____________
+test/offline/test_contracts.py:72: in test_schema_version_requires_explicit_integer_one
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+___________ test_schema_version_requires_explicit_integer_one[True] ____________
+test/offline/test_contracts.py:72: in test_schema_version_requires_explicit_integer_one
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_schema_version_requires_explicit_integer_one[0]
+FAILED test/offline/test_contracts.py::test_schema_version_requires_explicit_integer_one[2]
+FAILED test/offline/test_contracts.py::test_schema_version_requires_explicit_integer_one[1]
+FAILED test/offline/test_contracts.py::test_schema_version_requires_explicit_integer_one[True]
+4 failed, 1 passed, 2 deselected in 0.04s
+EXIT_CODE=1
+
+=== RUN 06: GREEN 03 — explicit protocol version ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+.......                                                                  [100%]
+7 passed in 0.05s
+EXIT_CODE=0
+
+=== RUN 07: RED 04 — document identity and metadata ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_document_identity
+FFFFFFFFFFFFF                                                            [100%]
+=================================== FAILURES ===================================
+_ test_document_identity_and_safe_ready_metadata[version_sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] _
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_document_identity_and_safe_ready_metadata[version_sha256-GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG] _
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_document_identity_and_safe_ready_metadata[version_sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA] _
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_document_identity_and_safe_ready_metadata[document_id-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] _
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_document_identity_and_safe_ready_metadata[document_id-doc-../secret] ___
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_document_identity_and_safe_ready_metadata[document_id-doc-] _______
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_document_identity_and_safe_ready_metadata[source_name-../synthetic.pdf] _
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_document_identity_and_safe_ready_metadata[source_name-/synthetic.pdf] __
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_document_identity_and_safe_ready_metadata[source_name-dir\\synthetic.pdf] _
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+________ test_document_identity_and_safe_ready_metadata[source_name-..] ________
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+___ test_document_identity_and_safe_ready_metadata[source_name-bad\x00.pdf] ____
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+___________ test_document_identity_and_safe_ready_metadata[title-  ] ___________
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+______ test_document_identity_and_safe_ready_metadata[status-processing] _______
+test/offline/test_contracts.py:93: in test_document_identity_and_safe_ready_metadata
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[version_sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[version_sha256-GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[version_sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[document_id-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[document_id-doc-../secret]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[document_id-doc-]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[source_name-../synthetic.pdf]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[source_name-/synthetic.pdf]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[source_name-dir\\synthetic.pdf]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[source_name-..]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[source_name-bad\x00.pdf]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[title-  ]
+FAILED test/offline/test_contracts.py::test_document_identity_and_safe_ready_metadata[status-processing]
+13 failed, 7 deselected in 0.05s
+EXIT_CODE=1
+
+=== RUN 08: GREEN 04 — ready document metadata and safe filenames ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+....................                                                     [100%]
+20 passed in 0.07s
+EXIT_CODE=0
+
+=== RUN 09: RED 05 — CorpusSnapshot canonical identity ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_snapshot_identity
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_snapshot_identity_is_canonical_and_round_trips ______________
+test/offline/test_contracts.py:102: in test_snapshot_identity_is_canonical_and_round_trips
+    model = contract("CorpusSnapshot")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: CorpusSnapshot public contract is missing
+E   assert None is not None
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_snapshot_identity_is_canonical_and_round_trips
+1 failed, 20 deselected in 0.05s
+EXIT_CODE=1
+
+=== RUN 10: GREEN 05 — canonical snapshot generation and round trip ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+.....................                                                    [100%]
+21 passed in 0.06s
+EXIT_CODE=0
+
+=== RUN 11: RED 06 — snapshot rejects mismatch and duplicate identities ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_snapshot_rejects
+FFF..                                                                    [100%]
+=================================== FAILURES ===================================
+__ test_snapshot_rejects_mismatch_duplicate_versions_and_naive_time[changes0] __
+test/offline/test_contracts.py:128: in test_snapshot_rejects_mismatch_duplicate_versions_and_naive_time
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_snapshot_rejects_mismatch_duplicate_versions_and_naive_time[changes1] __
+test/offline/test_contracts.py:128: in test_snapshot_rejects_mismatch_duplicate_versions_and_naive_time
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_snapshot_rejects_mismatch_duplicate_versions_and_naive_time[changes2] __
+test/offline/test_contracts.py:128: in test_snapshot_rejects_mismatch_duplicate_versions_and_naive_time
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_snapshot_rejects_mismatch_duplicate_versions_and_naive_time[changes0]
+FAILED test/offline/test_contracts.py::test_snapshot_rejects_mismatch_duplicate_versions_and_naive_time[changes1]
+FAILED test/offline/test_contracts.py::test_snapshot_rejects_mismatch_duplicate_versions_and_naive_time[changes2]
+3 failed, 2 passed, 21 deselected in 0.05s
+EXIT_CODE=1
+
+=== RUN 12: GREEN 06 — snapshot id integrity and duplicate identity rejection ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+..........................                                               [100%]
+26 passed in 0.07s
+EXIT_CODE=0
+
+=== RUN 13: RED 07 — SourceLocator page and line serialization ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_source_locator_round
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_source_locator_round_trips_page_or_line_coordinates[changes0] ______
+test/offline/test_contracts.py:144: in test_source_locator_round_trips_page_or_line_coordinates
+    model = contract("SourceLocator")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: SourceLocator public contract is missing
+E   assert None is not None
+______ test_source_locator_round_trips_page_or_line_coordinates[changes1] ______
+test/offline/test_contracts.py:144: in test_source_locator_round_trips_page_or_line_coordinates
+    model = contract("SourceLocator")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: SourceLocator public contract is missing
+E   assert None is not None
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_source_locator_round_trips_page_or_line_coordinates[changes0]
+FAILED test/offline/test_contracts.py::test_source_locator_round_trips_page_or_line_coordinates[changes1]
+2 failed, 26 deselected in 0.04s
+EXIT_CODE=1
+
+=== RUN 14: GREEN 07 — SourceLocator JSON round trips ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+............................                                             [100%]
+28 passed in 0.06s
+EXIT_CODE=0
+
+=== RUN 15: RED 08 — locator range boundaries ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_source_locator_rejects
+FFFFFFFFFFF..                                                            [100%]
+=================================== FAILURES ===================================
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes0] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes1] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes2] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes3] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes4] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes5] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes6] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes7] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes8] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes9] ________
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_______ test_source_locator_rejects_missing_or_invalid_ranges[changes10] _______
+test/offline/test_contracts.py:159: in test_source_locator_rejects_missing_or_invalid_ranges
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes0]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes1]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes2]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes3]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes4]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes5]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes6]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes7]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes8]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes9]
+FAILED test/offline/test_contracts.py::test_source_locator_rejects_missing_or_invalid_ranges[changes10]
+11 failed, 2 passed, 28 deselected in 0.06s
+EXIT_CODE=1
+
+=== RUN 16: GREEN 08 — complete positive locator ranges ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+.........................................                                [100%]
+41 passed in 0.06s
+EXIT_CODE=0
+
+=== RUN 17: RED 09 — EvidenceRecord canonical provenance identity ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_evidence_identity
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_evidence_identity_excludes_advisory_summary_and_upstream_id _______
+test/offline/test_contracts.py:179: in test_evidence_identity_excludes_advisory_summary_and_upstream_id
+    model = contract("EvidenceRecord")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: EvidenceRecord public contract is missing
+E   assert None is not None
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_evidence_identity_excludes_advisory_summary_and_upstream_id
+1 failed, 41 deselected in 0.05s
+EXIT_CODE=1
+
+=== RUN 18: GREEN 09 — evidence identity and advisory boundary ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+..........................................                               [100%]
+42 passed in 0.06s
+EXIT_CODE=0
+
+=== RUN 19: RED 10 — evidence supplied hash mismatch ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_evidence_rejects
+F........                                                                [100%]
+=================================== FAILURES ===================================
+________ test_evidence_rejects_forged_identity_and_authority[changes0] _________
+test/offline/test_contracts.py:202: in test_evidence_rejects_forged_identity_and_authority
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_evidence_rejects_forged_identity_and_authority[changes0]
+1 failed, 8 passed, 42 deselected in 0.05s
+EXIT_CODE=1
+
+=== RUN 20: GREEN 10 — evidence hash tampering rejection ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+...................................................                      [100%]
+51 passed in 0.06s
+EXIT_CODE=0
+
+=== RUN 21: RED 11 — ReviewDecision event serialization ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_review_decision_round
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_review_decision_round_trips_human_event[pending] _____________
+test/offline/test_contracts.py:220: in test_review_decision_round_trips_human_event
+    model = contract("ReviewDecision")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: ReviewDecision public contract is missing
+E   assert None is not None
+____________ test_review_decision_round_trips_human_event[accepted] ____________
+test/offline/test_contracts.py:220: in test_review_decision_round_trips_human_event
+    model = contract("ReviewDecision")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: ReviewDecision public contract is missing
+E   assert None is not None
+____________ test_review_decision_round_trips_human_event[excluded] ____________
+test/offline/test_contracts.py:220: in test_review_decision_round_trips_human_event
+    model = contract("ReviewDecision")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: ReviewDecision public contract is missing
+E   assert None is not None
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_review_decision_round_trips_human_event[pending]
+FAILED test/offline/test_contracts.py::test_review_decision_round_trips_human_event[accepted]
+FAILED test/offline/test_contracts.py::test_review_decision_round_trips_human_event[excluded]
+3 failed, 51 deselected in 0.06s
+EXIT_CODE=1
+
+=== RUN 22: GREEN 11 — ReviewDecision JSON and UTC ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+......................................................                   [100%]
+54 passed in 0.07s
+EXIT_CODE=0
+
+=== RUN 23: RED 12 — review actor and status boundaries ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_review_rejects
+FFFF.....F...                                                            [100%]
+=================================== FAILURES ===================================
+______ test_review_rejects_nonhuman_or_unaccountable_decisions[changes0] _______
+test/offline/test_contracts.py:236: in test_review_rejects_nonhuman_or_unaccountable_decisions
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+______ test_review_rejects_nonhuman_or_unaccountable_decisions[changes1] _______
+test/offline/test_contracts.py:236: in test_review_rejects_nonhuman_or_unaccountable_decisions
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+______ test_review_rejects_nonhuman_or_unaccountable_decisions[changes2] _______
+test/offline/test_contracts.py:236: in test_review_rejects_nonhuman_or_unaccountable_decisions
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+______ test_review_rejects_nonhuman_or_unaccountable_decisions[changes3] _______
+test/offline/test_contracts.py:236: in test_review_rejects_nonhuman_or_unaccountable_decisions
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+______ test_review_rejects_nonhuman_or_unaccountable_decisions[changes9] _______
+test/offline/test_contracts.py:236: in test_review_rejects_nonhuman_or_unaccountable_decisions
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_review_rejects_nonhuman_or_unaccountable_decisions[changes0]
+FAILED test/offline/test_contracts.py::test_review_rejects_nonhuman_or_unaccountable_decisions[changes1]
+FAILED test/offline/test_contracts.py::test_review_rejects_nonhuman_or_unaccountable_decisions[changes2]
+FAILED test/offline/test_contracts.py::test_review_rejects_nonhuman_or_unaccountable_decisions[changes3]
+FAILED test/offline/test_contracts.py::test_review_rejects_nonhuman_or_unaccountable_decisions[changes9]
+5 failed, 8 passed, 54 deselected in 0.06s
+EXIT_CODE=1
+
+=== RUN 24: GREEN 12 — human-only bounded review event ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+...................................................................      [100%]
+67 passed in 0.07s
+EXIT_CODE=0
+
+=== RUN 25: RED 13 — AnswerDraft serialization and review binding ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_answer_draft_round
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_answer_draft_round_trip_binds_review_scope ________________
+test/offline/test_contracts.py:256: in test_answer_draft_round_trip_binds_review_scope
+    model = contract("AnswerDraft")
+            ^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: AnswerDraft public contract is missing
+E   assert None is not None
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_answer_draft_round_trip_binds_review_scope
+1 failed, 67 deselected in 0.05s
+EXIT_CODE=1
+
+=== RUN 26: GREEN 13 — AnswerDraft JSON and immutable scopes ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+....................................................................     [100%]
+68 passed in 0.11s
+EXIT_CODE=0
+
+=== RUN 27: RED 14 — answer subset and uniqueness invariants ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_answer_rejects
+FFFFFFF....                                                              [100%]
+=================================== FAILURES ===================================
+_________ test_answer_rejects_duplicate_or_noncurrent_scope[changes0] __________
+test/offline/test_contracts.py:281: in test_answer_rejects_duplicate_or_noncurrent_scope
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_________ test_answer_rejects_duplicate_or_noncurrent_scope[changes1] __________
+test/offline/test_contracts.py:281: in test_answer_rejects_duplicate_or_noncurrent_scope
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_________ test_answer_rejects_duplicate_or_noncurrent_scope[changes2] __________
+test/offline/test_contracts.py:281: in test_answer_rejects_duplicate_or_noncurrent_scope
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_________ test_answer_rejects_duplicate_or_noncurrent_scope[changes3] __________
+test/offline/test_contracts.py:281: in test_answer_rejects_duplicate_or_noncurrent_scope
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_________ test_answer_rejects_duplicate_or_noncurrent_scope[changes4] __________
+test/offline/test_contracts.py:281: in test_answer_rejects_duplicate_or_noncurrent_scope
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_________ test_answer_rejects_duplicate_or_noncurrent_scope[changes5] __________
+test/offline/test_contracts.py:281: in test_answer_rejects_duplicate_or_noncurrent_scope
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_________ test_answer_rejects_duplicate_or_noncurrent_scope[changes6] __________
+test/offline/test_contracts.py:281: in test_answer_rejects_duplicate_or_noncurrent_scope
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_answer_rejects_duplicate_or_noncurrent_scope[changes0]
+FAILED test/offline/test_contracts.py::test_answer_rejects_duplicate_or_noncurrent_scope[changes1]
+FAILED test/offline/test_contracts.py::test_answer_rejects_duplicate_or_noncurrent_scope[changes2]
+FAILED test/offline/test_contracts.py::test_answer_rejects_duplicate_or_noncurrent_scope[changes3]
+FAILED test/offline/test_contracts.py::test_answer_rejects_duplicate_or_noncurrent_scope[changes4]
+FAILED test/offline/test_contracts.py::test_answer_rejects_duplicate_or_noncurrent_scope[changes5]
+FAILED test/offline/test_contracts.py::test_answer_rejects_duplicate_or_noncurrent_scope[changes6]
+7 failed, 4 passed, 68 deselected in 0.07s
+EXIT_CODE=1
+
+=== RUN 28: GREEN 14 — current declared scope and unique identities ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 91%]
+.......                                                                  [100%]
+79 passed in 0.07s
+EXIT_CODE=0
+
+=== RUN 29: RED 15 — answer state machine fails closed ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k 'test_answer_fail_closed or test_answer_no_approved'
+FFFFFFFF..                                                               [100%]
+=================================== FAILURES ===================================
+_ test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes0] _
+test/offline/test_contracts.py:296: in test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes1] _
+test/offline/test_contracts.py:296: in test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes2] _
+test/offline/test_contracts.py:296: in test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes3] _
+test/offline/test_contracts.py:296: in test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes4] _
+test/offline/test_contracts.py:296: in test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes5] _
+test/offline/test_contracts.py:296: in test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes6] _
+test/offline/test_contracts.py:296: in test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes7] _
+test/offline/test_contracts.py:296: in test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes0]
+FAILED test/offline/test_contracts.py::test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes1]
+FAILED test/offline/test_contracts.py::test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes2]
+FAILED test/offline/test_contracts.py::test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes3]
+FAILED test/offline/test_contracts.py::test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes4]
+FAILED test/offline/test_contracts.py::test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes5]
+FAILED test/offline/test_contracts.py::test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes6]
+FAILED test/offline/test_contracts.py::test_answer_fail_closed_state_rejects_empty_draft_or_leaked_answer[changes7]
+8 failed, 2 passed, 79 deselected in 0.07s
+EXIT_CODE=1
+
+=== RUN 30: GREEN 15 — evidence-free output is an empty refusal ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 80%]
+.................                                                        [100%]
+89 passed in 0.07s
+EXIT_CODE=0
+
+=== RUN 31: RED 16 — ReleaseDecision explicit checks envelope ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_release_decision_round
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_release_decision_round_trips_explicit_checks[changes0] __________
+test/offline/test_contracts.py:333: in test_release_decision_round_trips_explicit_checks
+    model = contract("ReleaseDecision")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: ReleaseDecision public contract is missing
+E   assert None is not None
+_________ test_release_decision_round_trips_explicit_checks[changes1] __________
+test/offline/test_contracts.py:333: in test_release_decision_round_trips_explicit_checks
+    model = contract("ReleaseDecision")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/offline/test_contracts.py:23: in contract
+    assert model is not None, f"REQ-CONTRACTS: {name} public contract is missing"
+E   AssertionError: REQ-CONTRACTS: ReleaseDecision public contract is missing
+E   assert None is not None
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_release_decision_round_trips_explicit_checks[changes0]
+FAILED test/offline/test_contracts.py::test_release_decision_round_trips_explicit_checks[changes1]
+2 failed, 89 deselected in 0.06s
+EXIT_CODE=1
+
+=== RUN 32: GREEN 16 — ReleaseDecision JSON ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 79%]
+...................                                                      [100%]
+91 passed in 0.07s
+EXIT_CODE=0
+
+=== RUN 33: RED 17 — release safety boundary ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_release_rejects
+FFFFFFFFFFF...                                                           [100%]
+=================================== FAILURES ===================================
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes0] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes1] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes2] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes3] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes4] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes5] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes6] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes7] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes8] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+__ test_release_rejects_inappropriate_release_or_false_check_claims[changes9] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_ test_release_rejects_inappropriate_release_or_false_check_claims[changes10] __
+test/offline/test_contracts.py:351: in test_release_rejects_inappropriate_release_or_false_check_claims
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes0]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes1]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes2]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes3]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes4]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes5]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes6]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes7]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes8]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes9]
+FAILED test/offline/test_contracts.py::test_release_rejects_inappropriate_release_or_false_check_claims[changes10]
+11 failed, 3 passed, 91 deselected in 0.08s
+EXIT_CODE=1
+
+=== RUN 34: GREEN 17 — release decision structural consistency ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 68%]
+.................................                                        [100%]
+105 passed in 0.08s
+EXIT_CODE=0
+
+=== RUN 35: REGRESSION — guards and schema across all five models ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 65%]
+......................................                                   [100%]
+110 passed in 0.07s
+EXIT_CODE=0
+
+=== RUN 36: RED 18 — revalidate untrusted Pydantic instances ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_revalidate_untrusted
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_revalidate_untrusted_constructed_model_instances _____________
+test/offline/test_contracts.py:388: in test_revalidate_untrusted_constructed_model_instances
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_revalidate_untrusted_constructed_model_instances
+1 failed, 110 deselected in 0.07s
+EXIT_CODE=1
+
+=== RUN 37: GREEN 18 — nested and direct instances revalidated ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 64%]
+.......................................                                  [100%]
+111 passed in 0.07s
+EXIT_CODE=0
+
+=== RUN 38: RED 19 — portable basenames exclude drive and URI syntax ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_document_source_rejects
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_document_source_rejects_drive_relative_paths[C:synthetic.pdf] ______
+test/offline/test_contracts.py:399: in test_document_source_rejects_drive_relative_paths
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+____ test_document_source_rejects_drive_relative_paths[file:synthetic.pdf] _____
+test/offline/test_contracts.py:399: in test_document_source_rejects_drive_relative_paths
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_document_source_rejects_drive_relative_paths[C:synthetic.pdf]
+FAILED test/offline/test_contracts.py::test_document_source_rejects_drive_relative_paths[file:synthetic.pdf]
+2 failed, 111 deselected in 0.06s
+EXIT_CODE=1
+
+=== RUN 39: GREEN 19 — filename path syntax rejected ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 63%]
+.........................................                                [100%]
+113 passed in 0.08s
+EXIT_CODE=0
+
+=== RUN 40: RED 20 — schema collection uniqueness ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_json_schema_declares
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_json_schema_declares_identity_collection_uniqueness[AnswerDraft-fields0] _
+test/offline/test_contracts.py:411: in test_json_schema_declares_identity_collection_uniqueness
+    assert schema["properties"][field].get("uniqueItems") is True
+E   AssertionError: assert None is True
+E    +  where None = <built-in method get of dict object at 0x106f478c0>('uniqueItems')
+E    +    where <built-in method get of dict object at 0x106f478c0> = {'items': {'pattern': '^ev-[0-9a-f]{64}$', 'type': 'string'}, 'title': 'Approved Evidence Ids', 'type': 'array'}.get
+_ test_json_schema_declares_identity_collection_uniqueness[ReleaseDecision-fields1] _
+test/offline/test_contracts.py:411: in test_json_schema_declares_identity_collection_uniqueness
+    assert schema["properties"][field].get("uniqueItems") is True
+E   AssertionError: assert None is True
+E    +  where None = <built-in method get of dict object at 0x107031240>('uniqueItems')
+E    +    where <built-in method get of dict object at 0x107031240> = {'items': {'pattern': '^[A-Z][A-Z0-9_]{0,63}$', 'type': 'string'}, 'title': 'Reason Codes', 'type': 'array'}.get
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_json_schema_declares_identity_collection_uniqueness[AnswerDraft-fields0]
+FAILED test/offline/test_contracts.py::test_json_schema_declares_identity_collection_uniqueness[ReleaseDecision-fields1]
+2 failed, 113 deselected in 0.06s
+EXIT_CODE=1
+
+=== RUN 41: GREEN 20 — published uniqueItems mirrors validators ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 62%]
+...........................................                              [100%]
+115 passed in 0.08s
+EXIT_CODE=0
+
+=== RUN 42: RED 21 — missing published schema documents ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_published_json_schemas
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+__________ test_published_json_schemas_match_models[DocumentVersion] ___________
+test/offline/test_contracts.py:421: in test_published_json_schemas_match_models
+    assert path.is_file(), f"missing published schema: {name}"
+E   AssertionError: missing published schema: DocumentVersion
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/docs/contracts/DocumentVersion.schema.json').is_file
+___________ test_published_json_schemas_match_models[SourceLocator] ____________
+test/offline/test_contracts.py:421: in test_published_json_schemas_match_models
+    assert path.is_file(), f"missing published schema: {name}"
+E   AssertionError: missing published schema: SourceLocator
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/docs/contracts/SourceLocator.schema.json').is_file
+___________ test_published_json_schemas_match_models[CorpusSnapshot] ___________
+test/offline/test_contracts.py:421: in test_published_json_schemas_match_models
+    assert path.is_file(), f"missing published schema: {name}"
+E   AssertionError: missing published schema: CorpusSnapshot
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/docs/contracts/CorpusSnapshot.schema.json').is_file
+___________ test_published_json_schemas_match_models[EvidenceRecord] ___________
+test/offline/test_contracts.py:421: in test_published_json_schemas_match_models
+    assert path.is_file(), f"missing published schema: {name}"
+E   AssertionError: missing published schema: EvidenceRecord
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/docs/contracts/EvidenceRecord.schema.json').is_file
+___________ test_published_json_schemas_match_models[ReviewDecision] ___________
+test/offline/test_contracts.py:421: in test_published_json_schemas_match_models
+    assert path.is_file(), f"missing published schema: {name}"
+E   AssertionError: missing published schema: ReviewDecision
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/docs/contracts/ReviewDecision.schema.json').is_file
+____________ test_published_json_schemas_match_models[AnswerDraft] _____________
+test/offline/test_contracts.py:421: in test_published_json_schemas_match_models
+    assert path.is_file(), f"missing published schema: {name}"
+E   AssertionError: missing published schema: AnswerDraft
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/docs/contracts/AnswerDraft.schema.json').is_file
+__________ test_published_json_schemas_match_models[ReleaseDecision] ___________
+test/offline/test_contracts.py:421: in test_published_json_schemas_match_models
+    assert path.is_file(), f"missing published schema: {name}"
+E   AssertionError: missing published schema: ReleaseDecision
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/docs/contracts/ReleaseDecision.schema.json').is_file
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_published_json_schemas_match_models[DocumentVersion]
+FAILED test/offline/test_contracts.py::test_published_json_schemas_match_models[SourceLocator]
+FAILED test/offline/test_contracts.py::test_published_json_schemas_match_models[CorpusSnapshot]
+FAILED test/offline/test_contracts.py::test_published_json_schemas_match_models[EvidenceRecord]
+FAILED test/offline/test_contracts.py::test_published_json_schemas_match_models[ReviewDecision]
+FAILED test/offline/test_contracts.py::test_published_json_schemas_match_models[AnswerDraft]
+FAILED test/offline/test_contracts.py::test_published_json_schemas_match_models[ReleaseDecision]
+7 failed, 115 deselected in 0.06s
+EXIT_CODE=1
+
+=== RUN 43: GREEN 21 — seven reproducible published schemas ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 59%]
+..................................................                       [100%]
+122 passed in 0.06s
+EXIT_CODE=0
+
+=== RUN 44: RED 22 — missing explicitly synthetic fixtures ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short -k test_handwritten_synthetic
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_handwritten_synthetic_fixtures_round_trip[DocumentVersion] ________
+test/offline/test_contracts.py:432: in test_handwritten_synthetic_fixtures_round_trip
+    assert path.is_file(), f"missing handwritten synthetic fixture: {name}"
+E   AssertionError: missing handwritten synthetic fixture: DocumentVersion
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/test/fixtures/contracts/DocumentVersion.json').is_file
+________ test_handwritten_synthetic_fixtures_round_trip[SourceLocator] _________
+test/offline/test_contracts.py:432: in test_handwritten_synthetic_fixtures_round_trip
+    assert path.is_file(), f"missing handwritten synthetic fixture: {name}"
+E   AssertionError: missing handwritten synthetic fixture: SourceLocator
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/test/fixtures/contracts/SourceLocator.json').is_file
+________ test_handwritten_synthetic_fixtures_round_trip[CorpusSnapshot] ________
+test/offline/test_contracts.py:432: in test_handwritten_synthetic_fixtures_round_trip
+    assert path.is_file(), f"missing handwritten synthetic fixture: {name}"
+E   AssertionError: missing handwritten synthetic fixture: CorpusSnapshot
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/test/fixtures/contracts/CorpusSnapshot.json').is_file
+________ test_handwritten_synthetic_fixtures_round_trip[EvidenceRecord] ________
+test/offline/test_contracts.py:432: in test_handwritten_synthetic_fixtures_round_trip
+    assert path.is_file(), f"missing handwritten synthetic fixture: {name}"
+E   AssertionError: missing handwritten synthetic fixture: EvidenceRecord
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/test/fixtures/contracts/EvidenceRecord.json').is_file
+________ test_handwritten_synthetic_fixtures_round_trip[ReviewDecision] ________
+test/offline/test_contracts.py:432: in test_handwritten_synthetic_fixtures_round_trip
+    assert path.is_file(), f"missing handwritten synthetic fixture: {name}"
+E   AssertionError: missing handwritten synthetic fixture: ReviewDecision
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/test/fixtures/contracts/ReviewDecision.json').is_file
+_________ test_handwritten_synthetic_fixtures_round_trip[AnswerDraft] __________
+test/offline/test_contracts.py:432: in test_handwritten_synthetic_fixtures_round_trip
+    assert path.is_file(), f"missing handwritten synthetic fixture: {name}"
+E   AssertionError: missing handwritten synthetic fixture: AnswerDraft
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/test/fixtures/contracts/AnswerDraft.json').is_file
+_______ test_handwritten_synthetic_fixtures_round_trip[ReleaseDecision] ________
+test/offline/test_contracts.py:432: in test_handwritten_synthetic_fixtures_round_trip
+    assert path.is_file(), f"missing handwritten synthetic fixture: {name}"
+E   AssertionError: missing handwritten synthetic fixture: ReleaseDecision
+E   assert False
+E    +  where False = is_file()
+E    +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/test/fixtures/contracts/ReleaseDecision.json').is_file
+=========================== short test summary info ============================
+FAILED test/offline/test_contracts.py::test_handwritten_synthetic_fixtures_round_trip[DocumentVersion]
+FAILED test/offline/test_contracts.py::test_handwritten_synthetic_fixtures_round_trip[SourceLocator]
+FAILED test/offline/test_contracts.py::test_handwritten_synthetic_fixtures_round_trip[CorpusSnapshot]
+FAILED test/offline/test_contracts.py::test_handwritten_synthetic_fixtures_round_trip[EvidenceRecord]
+FAILED test/offline/test_contracts.py::test_handwritten_synthetic_fixtures_round_trip[ReviewDecision]
+FAILED test/offline/test_contracts.py::test_handwritten_synthetic_fixtures_round_trip[AnswerDraft]
+FAILED test/offline/test_contracts.py::test_handwritten_synthetic_fixtures_round_trip[ReleaseDecision]
+7 failed, 122 deselected in 0.06s
+EXIT_CODE=1
+
+=== RUN 45: GREEN 22 — handwritten synthetic examples serialize ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 55%]
+.........................................................                [100%]
+129 passed in 0.08s
+EXIT_CODE=0
+
+=== RUN 46: REGRESSION — synthetic source integrity and stale evidence IDs ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 53%]
+...............................................................          [100%]
+135 passed in 0.08s
+EXIT_CODE=0
+
+=== RUN 47: STATIC CHECK — actual lint feedback before refactor ===
+$ .venv/bin/python -m ruff check --config papertrace.ruff.toml src/papertrace/__init__.py src/papertrace/contracts.py test/offline/test_contracts.py
+I001 [*] Import block is un-sorted or un-formatted
+  --> src/papertrace/contracts.py:6:1
+   |
+ 4 |   """
+ 5 |
+ 6 | / from datetime import timezone
+ 7 | | from hashlib import sha256
+ 8 | | import json
+ 9 | | from typing import Annotated, Literal
+10 | |
+11 | | from pydantic import AfterValidator, AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints, StrictBool, field_validator, model_validator
+   | |_________________________________________________________________________________________________________________________________________________^
+help: Organize imports
+   |
+5  |
+6  + import json
+7  | from datetime import timezone
+8  | from hashlib import sha256
+   - import json
+9  | from typing import Annotated, Literal
+   -
+   - from pydantic import AfterValidator, AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints, StrictBool, field_validator, model_validator
+10 |
+11 + from pydantic import (
+12 +     AfterValidator,
+13 +     AwareDatetime,
+14 +     BaseModel,
+15 +     ConfigDict,
+16 +     Field,
+17 +     StrictBool,
+18 +     StringConstraints,
+19 +     field_validator,
+20 +     model_validator,
+21 + )
+22 |
+   |
+
+Found 1 error.
+[*] 1 fixable with `--fix`.
+EXIT_CODE=1
+
+=== RUN 48: STATIC CHECK — actual type feedback before refactor ===
+$ .venv/bin/python -m mypy --config-file mypy.ini src/papertrace/__init__.py src/papertrace/contracts.py
+src/papertrace/contracts.py:35: error: Function is missing a type annotation  [no-untyped-def]
+src/papertrace/contracts.py:53: error: Function is missing a type annotation  [no-untyped-def]
+src/papertrace/contracts.py:62: error: Function is missing a type annotation  [no-untyped-def]
+src/papertrace/contracts.py:68: error: Function is missing a type annotation  [no-untyped-def]
+src/papertrace/contracts.py:70: error: Call to untyped function "_canonical_hash" in typed context  [no-untyped-call]
+src/papertrace/contracts.py:81: error: Call to untyped function "_snapshot_id" in typed context  [no-untyped-call]
+src/papertrace/contracts.py:84: error: Function is missing a return type annotation  [no-untyped-def]
+src/papertrace/contracts.py:89: error: Call to untyped function "_snapshot_id" in typed context  [no-untyped-call]
+src/papertrace/contracts.py:107: error: Function is missing a return type annotation  [no-untyped-def]
+src/papertrace/contracts.py:114: error: Unsupported operand types for > ("int" and "None")  [operator]
+src/papertrace/contracts.py:114: note: Left operand is of type "int | None"
+src/papertrace/contracts.py:119: error: Function is missing a type annotation  [no-untyped-def]
+src/papertrace/contracts.py:123: error: Call to untyped function "_canonical_hash" in typed context  [no-untyped-call]
+src/papertrace/contracts.py:140: error: Function is missing a return type annotation  [no-untyped-def]
+src/papertrace/contracts.py:142: error: Call to untyped function "_evidence_id" in typed context  [no-untyped-call]
+src/papertrace/contracts.py:178: error: Function is missing a return type annotation  [no-untyped-def]
+src/papertrace/contracts.py:219: error: Function is missing a return type annotation  [no-untyped-def]
+Found 16 errors in 1 file (checked 2 source files)
+EXIT_CODE=1
+
+=== RUN 49: REFACTOR — lint autoformat on exclusively owned files ===
+$ .venv/bin/python -m ruff check --config papertrace.ruff.toml --select I --fix src/papertrace/contracts.py test/offline/test_contracts.py && .venv/bin/python -m ruff format --config papertrace.ruff.toml src/papertrace/__init__.py src/papertrace/contracts.py test/offline/test_contracts.py
+Found 1 error (1 fixed, 0 remaining).
+2 files reformatted, 1 file left unchanged
+EXIT_CODE=0
+
+=== RUN 50: REFACTOR GREEN — complete behavior + schema regression ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 53%]
+...............................................................          [100%]
+135 passed in 0.09s
+EXIT_CODE=0
+
+=== RUN 51: STATIC GREEN — scoped lint ===
+$ .venv/bin/python -m ruff check --config papertrace.ruff.toml src/papertrace/__init__.py src/papertrace/contracts.py test/offline/test_contracts.py
+All checks passed!
+EXIT_CODE=0
+
+=== RUN 52: STATIC GREEN — strict scoped typing ===
+$ .venv/bin/python -m mypy --config-file mypy.ini src/papertrace/__init__.py src/papertrace/contracts.py
+Success: no issues found in 2 source files
+EXIT_CODE=0
+
+=== RUN 53: REGRESSION — real JSON Schema + refusal + mandatory release checks ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q --tb=short
+........................................................................ [ 48%]
+........................................................................ [ 96%]
+.....                                                                    [100%]
+149 passed in 0.14s
+EXIT_CODE=0
+
+=== RUN 54: FORMAT — final scoped test cleanup ===
+$ .venv/bin/python -m ruff format --config papertrace.ruff.toml test/offline/test_contracts.py
+1 file reformatted
+EXIT_CODE=0
+
+=== RUN 55: STATIC GREEN — final lint and strict types ===
+$ .venv/bin/python -m ruff check --config papertrace.ruff.toml src/papertrace/__init__.py src/papertrace/contracts.py test/offline/test_contracts.py && .venv/bin/python -m mypy --config-file mypy.ini src/papertrace/__init__.py src/papertrace/contracts.py
+All checks passed!
+Success: no issues found in 2 source files
+EXIT_CODE=0
+
+=== RUN 56: PERF-01 — actual 100 small synthetic JSON round trips ===
+$ PYTHONPATH=src .venv/bin/python -c 'import json, platform, subprocess, time
+from pathlib import Path
+import pydantic
+import papertrace.contracts as contracts
+names = ["CorpusSnapshot", "EvidenceRecord", "ReviewDecision", "AnswerDraft", "ReleaseDecision"]
+records = [(getattr(contracts, name), getattr(contracts, name).model_validate(json.loads((Path("test/fixtures/contracts") / (name + ".json")).read_text(encoding="utf-8"))["data"])) for name in names]
+start = time.perf_counter()
+count = 0
+for _ in range(20):
+    for model, record in records:
+        encoded = record.model_dump_json()
+        decoded = model.model_validate_json(encoded)
+        assert decoded == record
+        count += 1
+elapsed = time.perf_counter() - start
+cpu = subprocess.check_output(["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"], text=True).strip()
+print(json.dumps({"requirement": "PERF-01", "scope": "synthetic small contract JSON only; not PaperQA runtime", "round_trips": count, "wall_seconds": elapsed, "threshold_seconds": 2.0, "passed": elapsed <= 2.0, "cpu": cpu, "platform": platform.platform(), "machine": platform.machine(), "python": platform.python_version(), "pydantic": pydantic.__version__}, ensure_ascii=False, indent=2))
+assert count == 100
+assert elapsed <= 2.0
+'
+{
+  "requirement": "PERF-01",
+  "scope": "synthetic small contract JSON only; not PaperQA runtime",
+  "round_trips": 100,
+  "wall_seconds": 0.0013552079908549786,
+  "threshold_seconds": 2.0,
+  "passed": true,
+  "cpu": "Apple M5",
+  "platform": "macOS-27.2.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "python": "3.14.6",
+  "pydantic": "2.14.3"
+}
+EXIT_CODE=0
+
+=== RUN 57: FINAL GREEN — exact delegated offline command ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.2.0, pluggy-1.7.0
+rootdir: <HOME>/Documents/PaperTrace/test/offline
+configfile: ../../../../../../dev/null
+plugins: socket-0.8.1
+collected 149 items
+
+test/offline/test_contracts.py ......................................... [ 27%]
+........................................................................ [ 75%]
+....................................                                     [100%]
+
+============================= 149 passed in 0.11s ==============================
+EXIT_CODE=0
+
+=== RUN 58: BASELINE — frozen upstream paths unchanged ===
+$ git diff --exit-code c692d0dfeac4a0296599f7fe21a253a58b7ac12a -- src/paperqa packages tests pyproject.toml uv.lock
+
+EXIT_CODE=0
+
+=== RUN 59: FINAL GREEN — final labels, lint, and strict typing ===
+$ .venv/bin/python -m ruff check --config papertrace.ruff.toml src/papertrace/__init__.py src/papertrace/contracts.py test/offline/test_contracts.py && .venv/bin/python -m mypy --config-file mypy.ini src/papertrace/__init__.py src/papertrace/contracts.py && PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py -q
+All checks passed!
+Success: no issues found in 2 source files
+........................................................................ [ 48%]
+........................................................................ [ 96%]
+.....                                                                    [100%]
+149 passed in 0.14s
+EXIT_CODE=0
+
+=== RUN 60: FINAL GREEN — fresh verification requested after handoff ===
+$ PYTHONPATH=src .venv/bin/python -m pytest -c /dev/null --disable-socket test/offline/test_contracts.py
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.2.0, pluggy-1.7.0
+rootdir: <HOME>/Documents/PaperTrace/test/offline
+configfile: ../../../../../../dev/null
+plugins: socket-0.8.1
+collected 149 items
+
+test/offline/test_contracts.py ......................................... [ 27%]
+........................................................................ [ 75%]
+....................................                                     [100%]
+
+============================= 149 passed in 0.13s ==============================
+EXIT_CODE=0
+
+=== COMPLETE ===
+实际记录 60 次执行；22 组行为/样例 RED→GREEN，全部先观察失败再实施对应功能。
+后加继承保护/Schema/fixture完整性/拒答状态的回归覆盖已有实现，没有破坏代码来制造RED。
+真实静态检查最初发现1个导入排序问题及16个typing报错，修复后scoped Ruff和strict mypy均通过。
+最终契约离线测试149 passed；上游冻结路径git diff退出码0。
+PERF-01是100次小型synthetic契约JSON往返，不代表PaperQA或真实模型性能。
+早期REQ-CONTRACTS及INV编号是初始化临时标签；最终源码和测试已对齐父任务的QA-01、INV-01..05、SEC-01，历史原始输出保持未改写。
+样例均synthetic；本轮没有真实人工审批、模型调用、真实发布、学生OpenCode贡献或D5 Transcript。
+仅共享接口：外部ledger真实性/当前revision/digest、真实出站与引用解析、跨对象版本匹配、真正发布判断均留待C/D等业务开发。
+
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.2.0, pluggy-1.7.0
+rootdir: <HOME>/Documents/PaperTrace/test/offline
+configfile: ../../../../../../dev/null
+plugins: socket-0.8.1
+collected 149 items
+
+test/offline/test_contracts.py ......................................... [ 27%]
+........................................................................ [ 75%]
+....................................                                     [100%]
+
+============================= 149 passed in 0.14s ==============================

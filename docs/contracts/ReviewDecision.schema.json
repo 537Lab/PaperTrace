@@ -1,0 +1,75 @@
+{
+  "additionalProperties": false,
+  "description": "INV-03: human review event; authenticity belongs to C's future ledger.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "evidence_id": {
+      "pattern": "^ev-[0-9a-f]{64}$",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "pattern": "^snap-[0-9a-f]{64}$",
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "question_id": {
+      "pattern": "^q-[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "Question Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "accepted",
+        "excluded"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "actor_kind": {
+      "const": "human",
+      "title": "Actor Kind",
+      "type": "string"
+    },
+    "reviewer_ref": {
+      "pattern": "^reviewer-[A-Z][A-Z0-9_-]{0,31}$",
+      "title": "Reviewer Ref",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "reason": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Reason",
+      "type": "string"
+    },
+    "decided_at": {
+      "format": "date-time",
+      "title": "Decided At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "snapshot_id",
+    "question_id",
+    "status",
+    "actor_kind",
+    "reviewer_ref",
+    "revision",
+    "reason",
+    "decided_at"
+  ],
+  "title": "ReviewDecision",
+  "type": "object"
+}

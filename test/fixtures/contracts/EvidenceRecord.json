@@ -1,0 +1,26 @@
+{
+  "synthetic": true,
+  "provenance": "handwritten; not a model response, human approval, or runtime release",
+  "contract": "EvidenceRecord",
+  "data": {
+    "schema_version": 1,
+    "snapshot_id": "snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5",
+    "document_id": "doc-synthetic-a",
+    "version_sha256": "1f008283b605be4baa1da0f90d4204eda7d8dd66646135f8ba501830f9538e6c",
+    "locator": {
+      "schema_version": 1,
+      "page_start": null,
+      "page_end": null,
+      "line_start": 1,
+      "line_end": 1,
+      "chunk_id": "chunk-synthetic-a",
+      "parser_name": "synthetic-lines",
+      "parser_version": "1.0"
+    },
+    "excerpt": "SYNTHETIC：本行只是共享契约测试样例，不是真实论文或科学结论。",
+    "retrieved_at": "2026-01-01T00:01:00Z",
+    "advisory_summary": "synthetic 手写摘要；没有审核权威。",
+    "upstream_context_id": "synthetic-upstream-context-a",
+    "evidence_id": "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a"
+  }
+}

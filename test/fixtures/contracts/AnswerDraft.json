@@ -1,0 +1,26 @@
+{
+  "synthetic": true,
+  "provenance": "handwritten; not a model response, human approval, or runtime release",
+  "contract": "AnswerDraft",
+  "data": {
+    "schema_version": 1,
+    "answer_id": "ans-synthetic-a",
+    "snapshot_id": "snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5",
+    "question_id": "q-synthetic-a",
+    "review_revision": 1,
+    "review_digest": "98acd79c4446be3675733a105a003591d427487fc56102258750c1b1ed2adffd",
+    "approved_evidence_ids": [
+      "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a"
+    ],
+    "sent_evidence_ids": [
+      "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a"
+    ],
+    "citation_evidence_ids": [
+      "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a"
+    ],
+    "status": "draft",
+    "body": "SYNTHETIC：仅为可序列化草稿示例，没有真实研究答案或模型生成。",
+    "refusal_reason": null,
+    "generated_at": "2026-01-01T00:03:00Z"
+  }
+}

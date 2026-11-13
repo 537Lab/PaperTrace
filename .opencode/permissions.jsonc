@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "engine_version": "2.0.12",
+  "engine_configuration": "opencode.jsonc",
+  "not_auto_loaded_by_opencode": true,
+  "status": "initialization-proposal-awaiting-human-review",
+  "default_read": "deny",
+  "default_write": "deny",
+  "read_common": [
+    ".agent/rules.md",
+    ".opencode/permissions.jsonc",
+    ".opencode/rules.md",
+    "AGENTS.md",
+    "LICENSE",
+    "Prompt.md",
+    "README.md",
+    "TEAM_START_HERE.md",
+    "TEAM_WORK_PLAN.md",
+    "architecture-blueprint.md",
+    "docs/ai-use-log.yaml",
+    "docs/architecture/adr/001-architecture.md",
+    "docs/architecture/architecture-blueprint.md",
+    "docs/architecture/evaluation-logbook.md",
+    "docs/architecture/evaluation-table.md",
+    "docs/architecture/invariants.md",
+    "docs/architecture/memory-design.md",
+    "docs/architecture/option-ledger.md",
+    "docs/architecture/permission-model.md",
+    "docs/architecture/risk-list.md",
+    "docs/architecture/runtime-policy-catalog.md",
+    "docs/architecture/source-register.md",
+    "docs/architecture/trace-matrix.md",
+    "docs/ci/gates.md",
+    "docs/code-governance/mcp-tool-manifest.md",
+    "docs/code-governance/structural-constraints.md",
+    "docs/code-governance/verification-constraints.md",
+    "docs/contracts/AnswerDraft.schema.json",
+    "docs/contracts/CorpusSnapshot.schema.json",
+    "docs/contracts/DocumentVersion.schema.json",
+    "docs/contracts/EvidenceRecord.schema.json",
+    "docs/contracts/ReleaseDecision.schema.json",
+    "docs/contracts/ReviewDecision.schema.json",
+    "docs/contracts/SourceLocator.schema.json",
+    "docs/contracts/schema.md",
+    "docs/req/prd.yaml",
+    "docs/req/req-schema.json",
+    "docs/req/requirements.yaml",
+    "docs/sources/course-compliance.md",
+    "docs/team/handover-checklist.md",
+    "docs/team/integration-contract.md",
+    "docs/team/module-A.md",
+    "docs/team/module-B.md",
+    "docs/team/module-C.md",
+    "docs/team/module-D.md",
+    "docs/team/module-E.md",
+    "docs/upstream/BASELINE.md",
+    "mypy.ini",
+    "opencode.jsonc",
+    "papertrace.pytest.ini",
+    "papertrace.ruff.toml",
+    "requirements-init.lock",
+    "src/papertrace/__init__.py",
+    "src/papertrace/contracts.py",
+    "test/fixtures/contracts/AnswerDraft.json",
+    "test/fixtures/contracts/CorpusSnapshot.json",
+    "test/fixtures/contracts/DocumentVersion.json",
+    "test/fixtures/contracts/EvidenceRecord.json",
+    "test/fixtures/contracts/ReleaseDecision.json",
+    "test/fixtures/contracts/ReviewDecision.json",
+    "test/fixtures/contracts/SourceLocator.json"
+  ],
+  "roles": {
+    "papertrace-plan": {
+      "read_additions": [],
+      "write_candidates": [],
+      "description": "只读计划；输出后等待学生及非作者测试批准"
+    },
+    "papertrace-verify": {
+      "read_additions": [
+        "test/offline/test_contracts.py",
+        "test/offline/test_gates.py",
+        "test/offline/test_initialization_edges.py",
+        "test/offline/test_opencode_configuration.py"
+      ],
+      "write_candidates": [],
+      "description": "只读验证；不改实现或测试求绿"
+    },
+    "papertrace-build-A": {
+      "read_additions": [
+        "src/papertrace/library/__init__.py",
+        "src/papertrace/library/service.py",
+        "src/papertrace/library/view.py",
+        "test/offline/test_library.py",
+        "test/live/test_library.py"
+      ],
+      "write_candidates": [
+        "src/papertrace/library/__init__.py",
+        "src/papertrace/library/service.py",
+        "src/papertrace/library/view.py",
+        "test/offline/test_library.py",
+        "test/live/test_library.py"
+      ],
+      "description": "模块A限定构建，精确修改仍逐项ask，不代表计划已批准"
+    },
+    "papertrace-build-B": {
+      "read_additions": [
+        "src/papertrace/retrieval/__init__.py",
+        "src/papertrace/retrieval/service.py",
+        "src/papertrace/retrieval/view.py",
+        "test/offline/test_retrieval.py",
+        "test/live/test_retrieval.py",
+        "src/papertrace/retrieval/gateway.py",
+        "src/paperqa/docs.py",
+        "src/paperqa/types.py",
+        "src/paperqa/settings.py",
+        "src/paperqa/core.py",
+        "src/paperqa/readers.py",
+        "src/paperqa/llms.py",
+        "src/paperqa/prompts.py",
+        "src/paperqa/agents/main.py",
+        "src/paperqa/agents/env.py",
+        "src/paperqa/agents/search.py",
+        "src/paperqa/agents/tools.py",
+        "src/paperqa/agents/models.py",
+        "src/paperqa/agents/__init__.py",
+        "pyproject.toml",
+        "uv.lock",
+        "packages/paper-qa-pypdf/src/paperqa_pypdf/reader.py"
+      ],
+      "write_candidates": [
+        "src/papertrace/retrieval/__init__.py",
+        "src/papertrace/retrieval/service.py",
+        "src/papertrace/retrieval/view.py",
+        "test/offline/test_retrieval.py",
+        "test/live/test_retrieval.py",
+        "src/papertrace/retrieval/gateway.py"
+      ],
+      "description": "模块B限定构建，精确修改仍逐项ask，不代表计划已批准"
+    },
+    "papertrace-build-C": {
+      "read_additions": [
+        "src/papertrace/review/__init__.py",
+        "src/papertrace/review/service.py",
+        "src/papertrace/review/view.py",
+        "test/offline/test_review.py",
+        "test/live/test_review.py"
+      ],
+      "write_candidates": [
+        "src/papertrace/review/__init__.py",
+        "src/papertrace/review/service.py",
+        "src/papertrace/review/view.py",
+        "test/offline/test_review.py",
+        "test/live/test_review.py"
+      ],
+      "description": "模块C限定构建，精确修改仍逐项ask，不代表计划已批准"
+    },
+    "papertrace-build-D": {
+      "read_additions": [
+        "src/papertrace/answer/__init__.py",
+        "src/papertrace/answer/service.py",
+        "src/papertrace/answer/view.py",
+        "test/offline/test_answer.py",
+        "test/live/test_answer.py",
+        "src/papertrace/retrieval/service.py",
+        "src/papertrace/retrieval/gateway.py"
+      ],
+      "write_candidates": [
+        "src/papertrace/answer/__init__.py",
+        "src/papertrace/answer/service.py",
+        "src/papertrace/answer/view.py",
+        "test/offline/test_answer.py",
+        "test/live/test_answer.py"
+      ],
+      "description": "模块D限定构建，精确修改仍逐项ask，不代表计划已批准"
+    },
+    "papertrace-build-E": {
+      "read_additions": [
+        "src/papertrace/reports/__init__.py",
+        "src/papertrace/reports/service.py",
+        "src/papertrace/reports/view.py",
+        "test/offline/test_reports.py",
+        "test/live/test_reports.py"
+      ],
+      "write_candidates": [
+        "src/papertrace/reports/__init__.py",
+        "src/papertrace/reports/service.py",
+        "src/papertrace/reports/view.py",
+        "test/offline/test_reports.py",
+        "test/live/test_reports.py"
+      ],
+      "description": "模块E限定构建，精确修改仍逐项ask，不代表计划已批准"
+    }
+  },
+  "guard_rules": [
+    "No shell/subagent/web/MCP/plugin permissions",
+    "Model provider.use denied until separately approved",
+    "Human-only/config/shared contracts/upstream/git write denied",
+    "Launcher must run at repo root with isolated HOME/XDG and reject symlinks",
+    "Agent/session additions can override application rules; do not use --auto or mutate permissions",
+    "Rules mirrored in native agent.system; instructions[] is inert in v2.0.12"
+  ],
+  "enforcement_limits": [
+    "Rules plus OS isolation are separate layers; engine probes do not execute agent tools",
+    "No human approval is fabricated by initialization",
+    "Full model-driven tool loop remains NOT_RUN"
+  ]
+}

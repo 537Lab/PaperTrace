@@ -1,0 +1,25 @@
+{
+  "verified_on": "2026-11-13",
+  "scope": "本地原文与交接包校验；未实时核对Canvas更新",
+  "materials": [
+    {
+      "file": "CS5351-2026-2027-project__15805980__f3c327e63026.pdf",
+      "sha256": "6af742d3cbc0973b056a084ba54ff413a5885b1bb4d6a97b0b08b93f64f2ef7e",
+      "bytes": 364844,
+      "pages": 10
+    },
+    {
+      "file": "cs5351-2026-2027-introduction__15921983__95870f9547ff.pdf",
+      "sha256": "16d399f7ca14e0c49dea382cec3893bbee8f589edcaee5131f10fad257d3acb5",
+      "bytes": 841744,
+      "pages": 27
+    },
+    {
+      "file": "CS5351_PaperQA2_Audit_2026-11-13_handover.zip",
+      "sha256": "21f1c516a57e975a284d1d278926fedd9755a6d0036314279663c4074063942a",
+      "bytes": 173005,
+      "crc": "valid"
+    }
+  ],
+  "upstream_commit": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"
+}

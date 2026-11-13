@@ -1,0 +1,43 @@
+{
+  "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a",
+  "junit_totals": {
+    "tests": 170,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "workflow_job_count": 6,
+  "workflow_shell_syntax": "PASS",
+  "checks": {
+    "pytest": "170 passed, direct command exit 0",
+    "ruff": "All checks passed, direct command exit 0",
+    "mypy": "Success: no issues found in 2 source files, direct command exit 0",
+    "schema": "PASS",
+    "ai_log": "PASS (2 newly disclosed entries)",
+    "opencode_configuration_and_engine": "PASS at documented scope; tool E2E NOT_RUN"
+  },
+  "source_test_configuration_sha256": {
+    "docs/req/prd.yaml": "ce5eeb17e0c79c9f91576e55bf888bb570a4d5a754a4bf45fbc7342fe1dd749d",
+    "docs/req/req-schema.json": "a8b25959429363c03ba14790845e73adb1ed7db167188d5c671e204af85b344a",
+    "docs/req/requirements.yaml": "e05f97eb15859f7c4d9ec2b52cf8994635dbb1310d235b0ce2c46a924e85e749",
+    "mypy.ini": "76a2a4229717cde1c9ee28710534b27865e192d74358b0279be44270bde9c902",
+    "opencode.jsonc": "5bcd9881af0804a012629c1fd8b29de481672db534c5861925da10c9f7f33d99",
+    "papertrace.pytest.ini": "7099dad0678708feb393c0c90355a9d096a0ce09a9e5c94b7a0a179bbc3aeb13",
+    "papertrace.ruff.toml": "ff8c4374eff5dc8e43f78f51be679214686f47f07d7addbe82cca63a575883af",
+    "requirements-init.lock": "1332b71447526f64a1a54e212fd319730f614f24e6c4ce39502d2a228d19e4a3",
+    "scripts/gates.py": "905d6f5a221e1cd5ef6bdc393c0e60bd9ebdca22c6a64443f5a1282b0dc3cb0b",
+    "scripts/opencode_support.py": "372a3c106640ed8f1c4b605261c301bdbd09320edd0ba7846bbf7a8df2b73bb2",
+    "src/papertrace/__init__.py": "0a2b871749a7e2acf1863fbfe1233a609a7665fa85e6c9eaa712694bf78b3cc9",
+    "src/papertrace/contracts.py": "510e66828aa819f4e3b49a148979e33a384fff18d3e656aed16791a20308eaa5",
+    "test/offline/test_contracts.py": "9855326f4994984e2cd0bfa261182875ac52dd4735d59860f548f547c7fddec4",
+    "test/offline/test_gates.py": "ff05a89599e322183fa067f9b3c834cde1d78af3b9e7b9d598f50a0ef0dc939b",
+    "test/offline/test_initialization_edges.py": "2112b2fbdf4a12863dc16b4c361452a3a5ea5fff391434e7dba71ede931576bf",
+    "test/offline/test_opencode_configuration.py": "23f4db23633c9609fab2ff3007c41ec9bbfcca7ab21dfe7f8b687db3e7cf8546"
+  },
+  "evidence_privacy": "Only home paths redacted in selected logs; originals ignored under .local/raw-evidence",
+  "pending": [
+    "GitHub team repository creation, push and branch protection authorization",
+    "trusted test approval / real semantic evaluation / full upstream regression",
+    "student architecture and plan adoption / authentic OpenCode sessions / A-E development"
+  ]
+}

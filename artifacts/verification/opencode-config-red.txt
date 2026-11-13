@@ -1,0 +1,98 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+______ test_native_configuration_defaults_to_plan_with_model_use_disabled ______
+
+    def test_native_configuration_defaults_to_plan_with_model_use_disabled():
+        """GOV-01/04: configuration is native v2, offline and not unattended Build."""
+        path = ROOT / "opencode.jsonc"
+>       assert path.is_file(), "native OpenCode configuration is not created"
+E       AssertionError: native OpenCode configuration is not created
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/opencode.jsonc').is_file
+
+test/offline/test_opencode_configuration.py:24: AssertionError
+_____________ test_rules_are_embedded_in_every_active_agent_system _____________
+
+    def test_rules_are_embedded_in_every_active_agent_system():
+        """GOV-04: v2.0.12 instructions[] is inert; actual agent.system carries rules."""
+        path = ROOT / ".opencode" / "rules.md"
+>       assert path.is_file(), "human-only rule proposal is not created"
+E       AssertionError: human-only rule proposal is not created
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/.opencode/rules.md').is_file
+
+test/offline/test_opencode_configuration.py:38: AssertionError
+___ test_role_permissions_separate_course_manifest_from_engine_configuration ___
+
+    def test_role_permissions_separate_course_manifest_from_engine_configuration():
+        """INV-06: explicit read/write lists; plan is read only; module scopes are disjoint."""
+>       module = support()
+                 ^^^^^^^^^
+
+test/offline/test_opencode_configuration.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def support():
+        """INV-06: fail explicitly if the safe launcher support is absent."""
+        path = ROOT / "scripts" / "opencode_support.py"
+>       assert path.is_file(), "safe OpenCode support is not implemented"
+E       AssertionError: safe OpenCode support is not implemented
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/scripts/opencode_support.py').is_file
+
+test/offline/test_opencode_configuration.py:13: AssertionError
+_________________ test_credential_environment_is_not_inherited _________________
+
+tmp_path = PosixPath('<HOME>/Documents/PaperTrace/.local/tmp/pytest-of-usagi/pytest-1/test_credential_environment_is0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x105225e00>
+
+    def test_credential_environment_is_not_inherited(tmp_path, monkeypatch):
+        """SEC-01/COST-01: only nonsecret process settings are forwarded."""
+>       module = support()
+                 ^^^^^^^^^
+
+test/offline/test_opencode_configuration.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def support():
+        """INV-06: fail explicitly if the safe launcher support is absent."""
+        path = ROOT / "scripts" / "opencode_support.py"
+>       assert path.is_file(), "safe OpenCode support is not implemented"
+E       AssertionError: safe OpenCode support is not implemented
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/scripts/opencode_support.py').is_file
+
+test/offline/test_opencode_configuration.py:13: AssertionError
+________________ test_preflight_rejects_even_internal_symlinks _________________
+
+tmp_path = PosixPath('<HOME>/Documents/PaperTrace/.local/tmp/pytest-of-usagi/pytest-1/test_preflight_rejects_even_in0')
+
+    def test_preflight_rejects_even_internal_symlinks(tmp_path):
+        """INV-06: installed engine has lexical paths, so the launcher refuses symlinks."""
+>       module = support()
+                 ^^^^^^^^^
+
+test/offline/test_opencode_configuration.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def support():
+        """INV-06: fail explicitly if the safe launcher support is absent."""
+        path = ROOT / "scripts" / "opencode_support.py"
+>       assert path.is_file(), "safe OpenCode support is not implemented"
+E       AssertionError: safe OpenCode support is not implemented
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = PosixPath('<HOME>/Documents/PaperTrace/scripts/opencode_support.py').is_file
+
+test/offline/test_opencode_configuration.py:13: AssertionError
+=========================== short test summary info ============================
+FAILED test/offline/test_opencode_configuration.py::test_native_configuration_defaults_to_plan_with_model_use_disabled
+FAILED test/offline/test_opencode_configuration.py::test_rules_are_embedded_in_every_active_agent_system
+FAILED test/offline/test_opencode_configuration.py::test_role_permissions_separate_course_manifest_from_engine_configuration
+FAILED test/offline/test_opencode_configuration.py::test_credential_environment_is_not_inherited
+FAILED test/offline/test_opencode_configuration.py::test_preflight_rejects_even_internal_symlinks
+5 failed in 0.02s

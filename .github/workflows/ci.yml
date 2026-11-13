@@ -1,0 +1,195 @@
+# Initialization foundation only; trusted enforcement is not deployed.
+name: gates
+'on':
+  push: {}
+  pull_request: {}
+permissions:
+  contents: read
+jobs:
+  test-approval:
+    name: test-approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
+        }}
+      PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PIP_CONFIG_FILE: /dev/null
+      PYTHONNOUSERSITE: '1'
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      with:
+        python-version: 3.14.6
+    - name: Install only the initialization lock
+      run: 'python -m venv .venv
+
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
+
+        '
+    - name: Run the gate without provider credentials
+      shell: bash
+      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
+        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
+        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
+        \ --gate test-approval --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope\
+        \ full\n"
+  static-analysis:
+    name: static-analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
+        }}
+      PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PIP_CONFIG_FILE: /dev/null
+      PYTHONNOUSERSITE: '1'
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      with:
+        python-version: 3.14.6
+    - name: Install only the initialization lock
+      run: 'python -m venv .venv
+
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
+
+        '
+    - name: Run the gate without provider credentials
+      shell: bash
+      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
+        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
+        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
+        \ --gate static --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope initialization\n"
+  schema:
+    name: schema
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
+        }}
+      PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PIP_CONFIG_FILE: /dev/null
+      PYTHONNOUSERSITE: '1'
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      with:
+        python-version: 3.14.6
+    - name: Install only the initialization lock
+      run: 'python -m venv .venv
+
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
+
+        '
+    - name: Run the gate without provider credentials
+      shell: bash
+      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
+        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
+        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
+        \ --gate schema --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope initialization\n"
+  semantic-evaluation:
+    name: semantic-evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
+        }}
+      PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PIP_CONFIG_FILE: /dev/null
+      PYTHONNOUSERSITE: '1'
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      with:
+        python-version: 3.14.6
+    - name: Install only the initialization lock
+      run: 'python -m venv .venv
+
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
+
+        '
+    - name: Run the gate without provider credentials
+      shell: bash
+      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
+        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
+        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
+        \ --gate semantic --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope full\n"
+  regression:
+    name: regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
+        }}
+      PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PIP_CONFIG_FILE: /dev/null
+      PYTHONNOUSERSITE: '1'
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      with:
+        python-version: 3.14.6
+    - name: Install only the initialization lock
+      run: 'python -m venv .venv
+
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
+
+        '
+    - name: Run the gate without provider credentials
+      shell: bash
+      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
+        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
+        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
+        \ --gate regression --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope full\n"
+  ai-use-log:
+    name: ai-use-log
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
+        }}
+      PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PIP_CONFIG_FILE: /dev/null
+      PYTHONNOUSERSITE: '1'
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      with:
+        python-version: 3.14.6
+    - name: Install only the initialization lock
+      run: 'python -m venv .venv
+
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
+
+        '
+    - name: Run the gate without provider credentials
+      shell: bash
+      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
+        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
+        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
+        \ --gate ai-log --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope initialization\n"

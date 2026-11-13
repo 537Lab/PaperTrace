@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PaperTrace requirements registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project",
+    "baseline",
+    "status",
+    "requirements"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "project": {
+      "const": "PaperTrace"
+    },
+    "baseline": {
+      "const": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"
+    },
+    "status": {
+      "enum": [
+        "proposed-awaiting-student-review",
+        "approved"
+      ]
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 27,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "owner",
+          "statement",
+          "fit_criterion",
+          "priority",
+          "tradeoff",
+          "sources",
+          "implementation_status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(FR-[A-E]-[0-9]{2}|INV-[0-9]{2}|QA-[0-9]{2}|PERF-[0-9]{2}|COST-[0-9]{2}|SEC-[0-9]{2}|GOV-[0-9]{2})$"
+          },
+          "type": {
+            "enum": [
+              "functional",
+              "invariant",
+              "quality",
+              "performance",
+              "cost",
+              "security",
+              "governance"
+            ]
+          },
+          "owner": {
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "all",
+              "governance"
+            ]
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 12
+          },
+          "fit_criterion": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "metric",
+              "operator",
+              "threshold",
+              "verification"
+            ],
+            "properties": {
+              "metric": {
+                "type": "string",
+                "minLength": 3
+              },
+              "operator": {
+                "enum": [
+                  "==",
+                  "<=",
+                  ">="
+                ]
+              },
+              "threshold": {
+                "type": "number"
+              },
+              "verification": {
+                "type": "string",
+                "minLength": 5
+              }
+            }
+          },
+          "priority": {
+            "enum": [
+              "Must",
+              "Should",
+              "Could",
+              "Wont"
+            ]
+          },
+          "tradeoff": {
+            "type": "string",
+            "minLength": 10
+          },
+          "sources": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 3
+            }
+          },
+          "implementation_status": {
+            "enum": [
+              "planned",
+              "implemented",
+              "verified"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
