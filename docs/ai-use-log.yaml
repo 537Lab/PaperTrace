@@ -58,3 +58,25 @@ entries:
   - 不替学生开发A–E正式业务、不签署学生测试或计划批准、不冒充D5正式OpenCode贡献
   - 不读取私人模型凭据、不进行未获准收费或私人数据调用；mock输出不是真实语义质量评估
   - CI可见状态不等于分支保护强制生效；私有仓库保护API仍返回套餐限制403
+- entry_id: CLOSEOUT-20261114-01
+  timestamp: '2026-11-14T13:19:37.142685+00:00'
+  tool: Hermes Agent Desktop with bounded configuration helper and independent AI review
+  model: gpt-6.1-sol (parent runtime-reported); gpt-6-luna (delegation metadata, not separate provider attestation)
+  purpose: 续接931cea6，仅收尾语义验证器的请求材料、实际运行依赖绑定及Gate4准确触发
+  scope:
+  - scripts/semantic_evidence.py
+  - scripts/semantic_changes.py
+  - scripts/gate_evidence.py-trusted-helper-list
+  - semantic-schema-contract-and-positive-negative-regressions
+  status: engineering-repair-not-student-approval
+  approvals:
+  - 用户授权继续本地专用分支修复、验证、推送和创建人工审核PR；不得合并main
+  verification:
+  - 请求替换及改锁重绑定head误放行、无关工具配置误触发均先复现，再做正负回归
+  - 全部团队离线299 passed、0 skip；原250项保留；PaperQA2离线集成1 passed
+  - Ruff和mypy通过；静态门禁与schema通过；实际隔离runtime的83包与锁逐包核对通过
+  - 独立复核与最终提交对应证据见artifacts/verification/closeout-semantic.json，不以本日志冒充审核批准
+  limitations:
+  - 不代写A–E正式功能，不代签学生测试/计划批准，不把mock工具会话当D5或真实模型质量
+  - 未调用任何产品模型或使用私人模型凭据；完整上游此前真实FAIL及9个未授权live不改写
+  - 新门禁采纳、真实学生审批、模型预算及独立评分仍需真实人员；不自批bootstrap

@@ -8,11 +8,12 @@
     "authorization",
     "deterministic_results",
     "runs",
-    "scores"
+    "scores",
+    "runtime_environment"
   ],
   "properties": {
     "schema_version": {
-      "const": 2
+      "const": 3
     },
     "provenance": {
       "type": "object",
@@ -47,7 +48,9 @@
         "evaluator_sha",
         "dataset_sha256",
         "prompt_sha256",
-        "model_config_sha256"
+        "model_config_sha256",
+        "system_prompt_path",
+        "runtime_lock_sha256"
       ],
       "properties": {
         "head_sha": {
@@ -79,6 +82,14 @@
           "pattern": "^[0-9a-f]{64}$"
         },
         "model_config_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "system_prompt_path": {
+          "type": "string",
+          "pattern": "^prompts/[A-Za-z0-9_./-]+\\.(txt|md)$"
+        },
+        "runtime_lock_sha256": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
         }
@@ -488,8 +499,30 @@
           }
         }
       }
+    },
+    "runtime_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python_version",
+        "packages"
+      ],
+      "properties": {
+        "python_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9.+-]*$"
+        },
+        "packages": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "PaperTrace real-model evidence report v2; verified by native GitHub run/artifact/reviews, no self-signed approval"
+  "title": "PaperTrace real-model evidence report v3; verified by native GitHub run/artifact/reviews, no self-signed approval"
 }

@@ -81,7 +81,7 @@ def fixture(tmp_path):
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes((ROOT / name).read_bytes())
-    for name, content in {".github/workflows/evaluate.yml": "# Synthetic workflow text, not an actual evaluation\n", "test/evaluation/evaluator.py": "# Synthetic evaluator blob, not executed\n", "prompts/runtime.txt": "old synthetic prompt\n", "src/example.py": "VALUE = 1\n"}.items():
+    for name, content in {".github/workflows/evaluate.yml": "# Synthetic workflow text, not an actual evaluation\n", "test/evaluation/evaluator.py": "# Synthetic evaluator blob, not executed\n", "prompts/runtime.txt": "old synthetic prompt\n", "prompts/system.txt": "Synthetic request for verifier tests, not a real provider call", "requirements-runtime.in": "litellm==1.84.1\nhttpx==0.28.1\n", "requirements-runtime.lock": "litellm==1.84.1\nhttpx==0.28.1\n", "pyproject.toml": '[project]\nname = "synthetic-runtime"\nrequires-python = ">=3.11,<3.15"\n', "src/example.py": "VALUE = 1\n"}.items():
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
@@ -97,10 +97,11 @@ def fixture(tmp_path):
     dataset = json.loads(dataset_bytes)
     auth = {"review_id": 301, "provider": "provider-a", "model": "model-a", "model_version": "version-a", "data_scope": "fixed self-authored synthetic cases", "max_calls": 18, "max_cost": 1.0, "currency": "USD", "timeout_seconds": 30}
     report = {
-        "schema_version": 2,
+        "schema_version": 3,
         "provenance": {"repository": "537Lab/PaperTrace", "run_id": 401, "artifact_id": 501},
-        "target": {"head_sha": head, "source_tree_sha": git(tmp_path, "rev-parse", f"{head}:src").decode().strip(), "test_tree_sha": git(tmp_path, "rev-parse", f"{head}:test").decode().strip(), "evaluator_path": "test/evaluation/evaluator.py", "evaluator_sha": git(tmp_path, "rev-parse", f"{head}:test/evaluation/evaluator.py").decode().strip(), "dataset_sha256": sha256(dataset_bytes).hexdigest(), "prompt_sha256": sha256(git(tmp_path, "ls-tree", "-r", head, "--", "prompts")).hexdigest(), "model_config_sha256": sha256(git(tmp_path, "ls-tree", "-r", head, "--", "src/papertrace/retrieval", "src/papertrace/answer", "src/paperqa", "pyproject.toml", "uv.lock")).hexdigest()},
+        "target": {"runtime_lock_sha256": sha256((tmp_path / "requirements-runtime.lock").read_bytes()).hexdigest(), "system_prompt_path": "prompts/system.txt", "head_sha": head, "source_tree_sha": git(tmp_path, "rev-parse", f"{head}:src").decode().strip(), "test_tree_sha": git(tmp_path, "rev-parse", f"{head}:test").decode().strip(), "evaluator_path": "test/evaluation/evaluator.py", "evaluator_sha": git(tmp_path, "rev-parse", f"{head}:test/evaluation/evaluator.py").decode().strip(), "dataset_sha256": sha256(dataset_bytes).hexdigest(), "prompt_sha256": sha256(git(tmp_path, "ls-tree", "-r", head, "--", "prompts")).hexdigest(), "model_config_sha256": sha256(git(tmp_path, "ls-tree", "-r", head, "--", "src/papertrace/retrieval", "src/papertrace/answer", "src/paperqa", "packages", "pyproject.toml", "uv.lock", "requirements-runtime.in", "requirements-runtime.lock")).hexdigest()},
         "authorization": auth,
+        "runtime_environment": {"python_version": "3.14.6", "packages": {"litellm": "1.84.1", "httpx": "0.28.1"}},
         "deterministic_results": [], "runs": [],
         "scores": {"deterministic_safety_escapes": 0, "citation_precision": 1.0, "unsupported_claim_ratio": 0.0, "rubric_completion_ratio": 1.0, "mean_relevance_1_to_5": 4.5, "injection_successes": 0, "independent_ratings": []},
     }
@@ -201,6 +202,134 @@ def test_invalid_real_evaluation_evidence_is_rejected(tmp_path, fault):
     assert checked["status"] == "FAIL", checked
     if fault.endswith("threshold") or fault in {"safety-escape", "injection-success"}:
         assert checked["details"]["reason"] == "frozen-quality-threshold-failed"
+
+
+@pytest.mark.parametrize("mutation", ["question-replaced", "unknown-evidence", "approved-text-replaced", "sent-id-mismatch", "extra-message", "system-replaced"])
+def test_rehashed_substituted_request_is_rejected(tmp_path, mutation):
+    """INV-01/GOV-02: recomputing self-hashes cannot authorize different inputs."""
+    ctx, github = fixture(tmp_path)
+    item = github.report["runs"][0]
+    content = json.loads(item["request"][1]["content"])
+    if mutation == "question-replaced":
+        content["question"] = "A different, unauthorized question"
+    elif mutation == "unknown-evidence":
+        content["approved_evidence"].append({"id": "ev-unapproved", "text": "Unapproved synthetic source material"})
+    elif mutation == "approved-text-replaced":
+        content["approved_evidence"][0]["text"] = "Different material under an otherwise approved ID"
+    elif mutation == "sent-id-mismatch":
+        content["approved_evidence"] = []  # The report still claims ev-a was actually sent.
+    elif mutation == "extra-message":
+        item["request"].append({"role": "assistant", "content": "Unapproved evidence from a previous session"})
+    else:
+        item["request"][0]["content"] = "Replaced system prompt with unrelated instructions"
+    item["request"][1]["content"] = json.dumps(content, ensure_ascii=False)
+    item["prompt_sha256"] = sha256(canonical(item["request"])).hexdigest()
+    github.pack()  # All report/artifact/review hashes agree, but material is wrong.
+    checked = module().verify_semantic(ctx, github=github, pr_number=20)
+    assert checked["status"] == "FAIL", checked
+    assert checked["details"]["reason"].startswith("request-")
+
+
+def retarget_fixture(ctx, github):
+    """Rebind synthetic server/head identities, not runtime evidence or test payloads."""
+    ctx.head = git(ctx.root, "rev-parse", "HEAD").decode().strip()
+    github.report["target"]["head_sha"] = ctx.head
+    github.responses["/repos/537Lab/PaperTrace/pulls/20"]["head"]["sha"] = ctx.head
+    github.responses["/repos/537Lab/PaperTrace/actions/runs/401"]["head_sha"] = ctx.head
+    github.responses["/repos/537Lab/PaperTrace/actions/artifacts/501"]["workflow_run"]["head_sha"] = ctx.head
+    for review in github.responses["/repos/537Lab/PaperTrace/pulls/20/reviews?per_page=100"]:
+        review["commit_id"] = ctx.head
+    github.pack()
+
+
+def test_runtime_lock_change_cannot_reuse_old_evaluation_dependencies(tmp_path):
+    """GOV-02: even fresh head/review metadata cannot substitute old runtime pins."""
+    ctx, github = fixture(tmp_path)
+    (tmp_path / "requirements-runtime.lock").write_text("litellm==1.85.0\nhttpx==0.28.1\n")
+    git(tmp_path, "add", ".")
+    git(tmp_path, "commit", "-qm", "synthetic actual runtime pin change")
+    ctx.changed.append("requirements-runtime.lock")
+    retarget_fixture(ctx, github)
+    checked = module().verify_semantic(ctx, github=github, pr_number=20)
+    assert checked["status"] == "FAIL", checked
+
+
+@pytest.mark.parametrize("fault", ["wrong-version", "missing-package", "wrong-lock-digest", "wrong-python", "duplicate-name"])
+def test_runtime_manifest_must_match_actual_locked_packages(tmp_path, fault):
+    ctx, github = fixture(tmp_path)
+    environment = github.report["runtime_environment"]
+    if fault == "wrong-version":
+        environment["packages"]["litellm"] = "1.80.0"
+    elif fault == "missing-package":
+        del environment["packages"]["httpx"]
+    elif fault == "wrong-lock-digest":
+        github.report["target"]["runtime_lock_sha256"] = "0" * 64
+    elif fault == "wrong-python":
+        environment["python_version"] = "3.10.9"
+    else:
+        environment["packages"]["LiteLLM"] = environment["packages"]["litellm"]
+    github.pack()
+    checked = module().verify_semantic(ctx, github=github, pr_number=20)
+    assert checked["status"] == "FAIL", checked
+    assert checked["details"]["reason"].startswith("runtime-")
+
+
+def test_new_pins_with_matching_runtime_and_fresh_bound_evidence_can_pass(tmp_path):
+    ctx, github = fixture(tmp_path)
+    for name in ("requirements-runtime.in", "requirements-runtime.lock"):
+        (tmp_path / name).write_text("litellm==1.85.0\nhttpx==0.28.1\n")
+    git(tmp_path, "add", ".")
+    git(tmp_path, "commit", "-qm", "synthetic fresh runtime and manifest")
+    retarget_fixture(ctx, github)
+    github.report["target"]["model_config_sha256"] = sha256(git(tmp_path, "ls-tree", "-r", ctx.head, "--", "src/papertrace/retrieval", "src/papertrace/answer", "src/paperqa", "packages", "pyproject.toml", "uv.lock", "requirements-runtime.in", "requirements-runtime.lock")).hexdigest()
+    github.report["target"]["runtime_lock_sha256"] = sha256((tmp_path / "requirements-runtime.lock").read_bytes()).hexdigest()
+    github.report["runtime_environment"]["packages"]["litellm"] = "1.85.0"
+    github.pack()
+    assert module().verify_semantic(ctx, github=github, pr_number=20)["status"] == "PASS"
+
+
+def test_rehashed_lock_cannot_hide_an_old_installed_runtime(tmp_path):
+    ctx, github = fixture(tmp_path)
+    for name in ("requirements-runtime.in", "requirements-runtime.lock"):
+        (tmp_path / name).write_text("litellm==1.85.0\nhttpx==0.28.1\n")
+    git(tmp_path, "add", ".")
+    git(tmp_path, "commit", "-qm", "synthetic lock changed but installed environment not changed")
+    retarget_fixture(ctx, github)
+    github.report["target"]["model_config_sha256"] = sha256(git(tmp_path, "ls-tree", "-r", ctx.head, "--", "src/papertrace/retrieval", "src/papertrace/answer", "src/paperqa", "packages", "pyproject.toml", "uv.lock", "requirements-runtime.in", "requirements-runtime.lock")).hexdigest()
+    github.report["target"]["runtime_lock_sha256"] = sha256((tmp_path / "requirements-runtime.lock").read_bytes()).hexdigest()
+    github.pack()
+    checked = module().verify_semantic(ctx, github=github, pr_number=20)
+    assert checked["status"] == "FAIL"
+    assert checked["details"]["reason"] == "runtime-installed-versions-do-not-match-lock"
+
+
+def test_runtime_capture_reads_real_current_interpreter_metadata():
+    import importlib.metadata
+    import platform
+    captured = module().capture_runtime_environment()
+    assert captured["python_version"] == platform.python_version()
+    assert captured["packages"]["pytest"] == importlib.metadata.version("pytest")
+    assert captured["packages"]["jsonschema"] == importlib.metadata.version("jsonschema")
+
+
+@pytest.mark.parametrize("path", ["src/papertrace/answer/ui.py", "src/papertrace/retrieval/view.py", "packages/lmi/src/lmi/llms.py"])
+def test_product_ui_and_upstream_model_code_cannot_bypass_semantic_trigger(path):
+    checked = module().verify_semantic(Context(ROOT, changed=[path]))
+    assert checked["status"] == "BLOCKED", checked
+
+
+def test_upstream_model_source_change_cannot_reuse_old_evaluation(tmp_path):
+    ctx, github = fixture(tmp_path)
+    path = tmp_path / "packages/lmi/src/lmi/synthetic.py"
+    path.parent.mkdir(parents=True)
+    path.write_text("SYNTHETIC_MODEL_SETTING = 'changed'\n")
+    git(tmp_path, "add", ".")
+    git(tmp_path, "commit", "-qm", "synthetic upstream AI code change")
+    ctx.changed.append("packages/lmi/src/lmi/synthetic.py")
+    retarget_fixture(ctx, github)
+    checked = module().verify_semantic(ctx, github=github, pr_number=20)
+    assert checked["status"] == "FAIL", checked
+    assert checked["details"]["reason"] == "report-code-tests-dataset-prompt-or-config-binding-mismatch"
 
 
 def test_candidate_evaluation_workflow_cannot_certify_itself(tmp_path):

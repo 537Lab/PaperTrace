@@ -1,10 +1,23 @@
 # Gate 4：固定集真实模型评估与独立复核
 
-执行验证器：`scripts/semantic_evidence.py`，经 `gates.py --gate semantic` 调用；报告结构为 `report-schema.json` v2。没有模型调用代码在此自动执行，也不从 `.env` 找密钥。
+执行验证器：`scripts/semantic_evidence.py`，经 `gates.py --gate semantic` 调用；报告结构为 `report-schema.json` v3。旧报告缺少请求/运行环境绑定时不再接受；固定案例、次数、质量阈值和真实人工批准要求不变。没有模型调用代码在此自动执行，也不从 `.env` 找密钥。
 
 ## 何时适用
 
-产品 `prompts/`、B 检索/模型适配、D 生成及模型配置/运行依赖变更触发。纯文档、AGENTS/Prompt/OpenCode 编码助手治理、A/C/E 确定性列表/导出不做虚假 LLM 评估；`NOT_REQUIRED` 只表示本差异不适用，绝不证明真实模型质量。
+产品 `prompts/`、B 检索/模型适配、D 生成（包含其UI/view内可能影响模型的代码）、上游模型源码及模型配置/运行依赖变更触发。`pyproject.toml` 中明确的 Ruff/pytest/mypy 等静态工具与作者描述不触发；`uv.lock` 按生产和非dev extras可达闭包判断，生产共享传递依赖、source/hash/marker变化仍触发，缺失/无法判定则保守触发。纯文档、AGENTS/Prompt/OpenCode 编码助手治理、A/C/E 确定性列表/导出不做虚假 LLM 评估；`NOT_REQUIRED` 只表示本差异不适用，绝不证明真实模型质量。
+
+## v3 请求与运行环境绑定
+
+每次记录的 `request` 必须是真实发送的消息，而不是事后摘出的证据摘要。当前最小可验证封装为两条消息：
+
+- `system`：正文逐字匹配本次 head 的 `target.system_prompt_path`（`prompts/` 下版本化的 txt/md，受现有 prompt tree 摘要绑定）。
+- `user`：JSON 对象仅含 `question` 和 `approved_evidence`；问题与固定 case 相同，证据对象逐字来自固定 case 的获准集合，并按 `sent_ids` 对应的实际顺序排列。可使用不同 JSON 空白/键顺序，不能替换正文、额外材料、角色、历史或隐藏来源。被裁剪未发送的获准证据不能假报已发送。
+
+请求自身哈希、`cited ⊆ sent ⊆ approved` 与上述内容核对必须同时成立；只重算哈希不能给新材料授权。此为评估序列化合同，不是本轮提前实现 B/D 业务；将来确需其他序列化格式时，对相应确定性验证器另作受审修改，不能省略实际 payload。
+
+`target.model_config_sha256` 还包含 `requirements-runtime.in/.lock`；`target.runtime_lock_sha256` 为实际 head 锁文件原始字节 SHA256。报告必须有 `runtime_environment`，由**运行 evaluator 的同一解释器**执行 `scripts/semantic_evidence.py` 的 `capture_runtime_environment()` 采集 Python/已安装包版本，不可从 lock 反向拼造。验证器逐包核对全部 flat exact pins、缺失/重复包和项目 Python 范围；当前有条件 markers 的锁应先导出目标平台的 flat lock，不能含糊放行。
+
+锁改变后必须有匹配的新运行环境与新评估证据；只更新 PR/head/报告哈希而保留旧依赖不能通过。采集真实解释器元数据不请求模型；独立 reviewer 仍须核查同一受审 workflow 是否确实在该环境调用模型。此机制不是密码学证明运行环境或 provider 行为。
 
 ## 不变的数据与阈值
 

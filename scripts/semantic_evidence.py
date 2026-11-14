@@ -4,10 +4,13 @@ Native GitHub run/artifact provenance and independent reviews establish the
 record's origin and human adoption, not a cryptographic proof of provider truth.
 """
 
+import importlib.metadata
 import importlib.util
 import io
 import json
+import platform
 import re
+import tomllib
 import zipfile
 from decimal import Decimal
 from fractions import Fraction
@@ -15,12 +18,21 @@ from hashlib import sha256
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
+from packaging.requirements import Requirement
+from packaging.specifiers import SpecifierSet
+from packaging.utils import canonicalize_name
+from packaging.version import Version
 
 _spec = importlib.util.spec_from_file_location("papertrace_semantic_control", Path(__file__).with_name("gate_evidence.py"))
 if _spec is None or _spec.loader is None:
     raise RuntimeError("Trusted evidence helper cannot be loaded")
 control = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(control)
+_changes_spec = importlib.util.spec_from_file_location("papertrace_semantic_changes_control", Path(__file__).with_name("semantic_changes.py"))
+if _changes_spec is None or _changes_spec.loader is None:
+    raise RuntimeError("Trusted configuration helper cannot be loaded")
+changes = importlib.util.module_from_spec(_changes_spec)
+_changes_spec.loader.exec_module(changes)
 
 
 def canonical(value):
@@ -53,10 +65,10 @@ def triggered_paths(ctx):
         lower = path.lower()
         if lower.startswith(("docs/", ".opencode/", ".agent/")) or lower in {"agents.md", "prompt.md", "opencode.jsonc"}:
             continue
-        product_ai = path.startswith(("prompts/", "src/paperqa/", "src/papertrace/retrieval/", "src/papertrace/answer/"))
-        configuration = lower in {"pyproject.toml", "uv.lock", "requirements-runtime.in", "requirements-runtime.lock"}
+        product_ai = path.startswith(("prompts/", "src/paperqa/", "src/papertrace/retrieval/", "src/papertrace/answer/")) or (path.startswith("packages/") and "/src/" in path)
+        configuration = changes.configuration_changed(ctx, path)
         named_model = lower.startswith("src/") and bool(re.search(r"(?:^|[/_.-])(?:llm|model|embedding|prompt)(?:[/_.-]|$)", lower))
-        if (product_ai or configuration or named_model) and Path(lower).name not in {"readme.md", "view.py", "ui.py"}:
+        if (product_ai or configuration or named_model) and Path(lower).name != "readme.md":
             found.append(path)
     return sorted(found)
 
@@ -126,7 +138,70 @@ def _authorization(report, current, reviews, client, head, participants):
     return control._parse_time(approval.get("submitted_at"))
 
 
-def _check_runs(report, dataset, approved_at, run):
+def capture_runtime_environment():
+    """GOV-02: call INSIDE the evaluator interpreter, never infer it from the lock."""
+    packages = {}
+    for distribution in importlib.metadata.distributions():
+        name = distribution.metadata.get("Name")
+        if name:
+            normalized = canonicalize_name(name)
+            if normalized in packages:
+                raise RuntimeError("Duplicate installed distribution identity")
+            packages[normalized] = distribution.version
+    return {"python_version": platform.python_version(), "packages": dict(sorted(packages.items()))}
+
+
+def _check_runtime(report, ctx, head):
+    """GOV-02: bind committed pins AND the evaluator's actual installed versions."""
+    raw = ctx.read("requirements-runtime.lock", ref=head)
+    if report["target"]["runtime_lock_sha256"] != sha256(raw.encode()).hexdigest():
+        raise control._EvidenceInvalid("runtime-lock-digest-mismatch")
+    pins = {}
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line or line.startswith(("#", "--hash=")):
+            continue
+        requirement = Requirement(line.removesuffix("\\").strip())
+        versions = list(requirement.specifier)
+        if requirement.marker or requirement.url or len(versions) != 1 or versions[0].operator != "==" or "*" in versions[0].version:
+            raise control._EvidenceInvalid("runtime-lock-must-have-flat-exact-pins")
+        name = canonicalize_name(requirement.name)
+        if name in pins:
+            raise control._EvidenceInvalid("runtime-lock-duplicate-package")
+        pins[name] = versions[0].version
+    environment = report["runtime_environment"]
+    installed = {}
+    for name, value in environment["packages"].items():
+        normalized = canonicalize_name(name)
+        if normalized in installed:
+            raise control._EvidenceInvalid("runtime-environment-duplicate-package")
+        installed[normalized] = value
+    if not pins or any(name not in installed or Version(installed[name]) != Version(value) for name, value in pins.items()):
+        raise control._EvidenceInvalid("runtime-installed-versions-do-not-match-lock")
+    requirement = tomllib.loads(ctx.read("pyproject.toml", ref=head)).get("project", {}).get("requires-python")
+    if not requirement or Version(environment["python_version"]) not in SpecifierSet(requirement):
+        raise control._EvidenceInvalid("runtime-python-does-not-match-project")
+
+
+def _check_request(item, case, system_prompt):
+    """INV-01: validate actual messages, not a self-reported ID set/hash."""
+    messages = item["request"]
+    if len(messages) != 2 or [message["role"] for message in messages] != ["system", "user"]:
+        raise control._EvidenceInvalid("request-message-envelope-mismatch")
+    if messages[0]["content"] != system_prompt:
+        raise control._EvidenceInvalid("request-system-prompt-mismatch")
+    approved = {evidence["id"]: evidence for evidence in case["input"]["approved_evidence"]}
+    expected = {"question": case["input"]["question"],
+                "approved_evidence": [approved[identifier] for identifier in item["sent_ids"]]}
+    try:
+        actual = _json(messages[1]["content"].encode())
+    except (ValueError, control._EvidenceInvalid) as error:
+        raise control._EvidenceInvalid("request-invalid-structured-material") from error
+    if actual != expected:
+        raise control._EvidenceInvalid("request-question-evidence-or-sent-ids-mismatch")
+
+
+def _check_runs(report, dataset, approved_at, run, system_prompt):
     """GOV-02: exact fixed-set coverage, raw consistency, attempts and bounded usage."""
     quality = {case["id"]: case for case in dataset["cases"] if case["kind"] == "real-model-quality"}
     expected = {(identifier, repeat) for identifier in quality for repeat in range(1, 4)}
@@ -144,6 +219,7 @@ def _check_runs(report, dataset, approved_at, run):
         approved_ids = {evidence["id"] for evidence in case["input"]["approved_evidence"]}
         if not set(item["cited_ids"]).issubset(item["sent_ids"]) or not set(item["sent_ids"]).issubset(approved_ids):
             raise control._EvidenceInvalid("cited-sent-approved-boundary-violation")
+        _check_request(item, case, system_prompt)
         request_text = canonical(item["request"]).decode()
         for excluded in case["input"].get("excluded_evidence", []):
             if excluded["text"] in request_text:
@@ -237,9 +313,10 @@ def _verify(ctx, client, number):
     if _blob(ctx, ctx.base, "test/evaluation/cases.json") != _blob(ctx, head, "test/evaluation/cases.json"):
         raise control._EvidenceInvalid("fixed-dataset-changed-in-the-evaluated-pr")
     target = report["target"]
-    bound = {"head_sha": head, "source_tree_sha": _blob(ctx, head, "src"), "test_tree_sha": _blob(ctx, head, "test"), "dataset_sha256": sha256(dataset_raw).hexdigest(), "prompt_sha256": sha256(ctx.git("ls-tree", "-r", head, "--", "prompts")).hexdigest(), "model_config_sha256": sha256(ctx.git("ls-tree", "-r", head, "--", "src/papertrace/retrieval", "src/papertrace/answer", "src/paperqa", "pyproject.toml", "uv.lock")).hexdigest()}
+    bound = {"head_sha": head, "source_tree_sha": _blob(ctx, head, "src"), "test_tree_sha": _blob(ctx, head, "test"), "dataset_sha256": sha256(dataset_raw).hexdigest(), "prompt_sha256": sha256(ctx.git("ls-tree", "-r", head, "--", "prompts")).hexdigest(), "model_config_sha256": sha256(ctx.git("ls-tree", "-r", head, "--", "src/papertrace/retrieval", "src/papertrace/answer", "src/paperqa", "packages", "pyproject.toml", "uv.lock", "requirements-runtime.in", "requirements-runtime.lock")).hexdigest()}
     if any(target[key] != value for key, value in bound.items()):
         raise control._EvidenceInvalid("report-code-tests-dataset-prompt-or-config-binding-mismatch")
+    _check_runtime(report, ctx, head)
     evaluator = target["evaluator_path"]
     if ".." in Path(evaluator).parts or not evaluator.startswith("test/evaluation/") or target["evaluator_sha"] != _blob(ctx, head, evaluator) or _blob(ctx, ctx.base, evaluator) != target["evaluator_sha"]:
         raise control._EvidenceInvalid("evaluator-not-bound-to-trusted-base")
@@ -254,7 +331,13 @@ def _verify(ctx, client, number):
     final, rated_at = control._select_approval(client, number, head, participants, control._trusted_reviewers(), control._parse_time(current.get("created_at")), None)
     if (final.get("user") or {}).get("type") == "Bot" or rated_at < control._parse_time(run["updated_at"]) or not re.search(r"(?m)^Semantic report SHA256:\s*" + re.escape(report_sha) + r"\s*$", final.get("body") or ""):
         raise control._EvidenceInvalid("independent-post-run-report-review-missing-or-wrong-hash")
-    expected, quality, cost, attempts = _check_runs(report, _json(dataset_raw), approved_at, run)
+    system_path = target["system_prompt_path"]
+    if ".." in Path(system_path).parts or not re.fullmatch(r"prompts/[A-Za-z0-9_./-]+\.(?:txt|md)", system_path):
+        raise control._EvidenceInvalid("request-invalid-system-prompt-path")
+    system_prompt = ctx.read(system_path, ref=head)
+    if not system_prompt.strip():
+        raise control._EvidenceInvalid("request-empty-system-prompt")
+    expected, quality, cost, attempts = _check_runs(report, _json(dataset_raw), approved_at, run, system_prompt)
     computed = _scores(report, _json(dataset_raw), expected, quality, control._login(final))
     return {"pr_number": number, "run_id": run_id, "artifact_id": artifact_id, "report_sha256": report_sha, "real_model_runs": len(expected), "recorded_attempts": attempts, "recorded_cost": str(cost), "currency": report["authorization"]["currency"], "independent_reviewer": control._login(final), "review_id": final.get("id"), "scores": computed, "limitation": "GitHub provenance plus independent human adoption; not cryptographic proof that a provider was called or every natural-language claim is true"}
 

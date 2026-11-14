@@ -18,7 +18,7 @@ REPOSITORY = "537Lab/PaperTrace"
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 PROTECTED_GATE_PATHS = {
     "scripts/gates.py", "scripts/gate_evidence.py", ".github/workflows/ci.yml",
-    "scripts/full_regression.py", "scripts/semantic_evidence.py", "scripts/opencode_support.py", "opencode.jsonc",
+    "scripts/full_regression.py", "scripts/semantic_evidence.py", "scripts/semantic_changes.py", "scripts/opencode_support.py", "opencode.jsonc",
     "test/offline/test_gate_evidence.py", "test/evaluation/cases.json",
     "test/evaluation/report-schema.json",
 }

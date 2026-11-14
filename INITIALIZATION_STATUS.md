@@ -8,13 +8,19 @@
 
 | 范围 | 实际结果 | 不能据此宣称 |
 |---|---|---|
-| 全部团队离线测试 | **250 passed，0 skip**；真实正负例、原170节点全部保留 | 不是完整上游/API/真实模型通过 |
+| 全部团队离线测试 | **299 passed，0 skip**；上一轮250项保留，本轮新增49项语义材料/环境/触发正负检查 | 不是完整上游/API/真实模型通过 |
 | OpenCode v2.0.12 | 真实 loopback fake + 工具循环2用例通过：Plan写拒绝、仅测试准备RED、模拟审查后自有源码写成功、跨模块写拒绝、Verify GREEN | 模拟审查不是学生批准、D5贡献或真实模型质量 |
-| 静态/Schema/披露 | 实际 gate 执行结果见 artifacts/verification/unblock-* | 静态分析不是供应链安全认证 |
+| 静态/Schema/披露 | 本轮真实static、schema、ai-log均PASS；见 artifacts/verification/closeout-semantic.json，原unblock证据保留 | 静态分析不是供应链安全认证 |
 | PaperQA2 | 83包隔离runtime；真实 aadd→aget_evidence→aquery，三来源同索引仅获准1项送新会话；排除/pending未重入prompt；零获准且仍有文献时零检索/模型调用；1 integration passed | embedding/summary/answer均为明确fake，不是正式B/D模块或真实模型评估 |
 | 完整上游 | 原uv.lock实际安装261包，另用独立hash锁补pytest-socket；base/current均收集 **377** 节点，9个live待授权，无prior节点丢失；默认禁网执行有真实失败且限时停止 | **完整回归 FAIL/未通过**，不降成初始化、不删未标记项、不隐去失败 |
 
 完整回归原始汇总见 `artifacts/verification/unblock-full-regression.json`。首个故障 `tests/test_agents.py::test_get_directory_index` 实测尝试OpenAI调用，被socket guard拒绝；即使未标记live也没有漏掉或放行。真实API/付费/私密数据未获准，本轮不解除边界、不读私人模型密钥、不重试收费调用。全部失败不应归因为唯一这一原因；完整API结果仍缺。
+
+### 本轮收尾范围（续接931cea6，不重初始化）
+
+仅修复独立复审的三项语义门禁问题：请求必须对应固定问题/获准证据正文/发送ID及版本化system prompt；v3报告绑定runtime锁、配置输入及同一evaluator解释器实际Python/安装版本；Gate4按配置内容与生产依赖闭包触发，不再对Ruff/pytest等无关改动要求付费评估。B/D界面和上游模型源码仍受触发及摘要绑定保护。实际83包runtime核对通过；固定数据/阈值、六门禁、A–E功能职责不变。
+
+这次增量只修验证器/测试/合同，局部Gate4为NOT_REQUIRED；不等于整个修复分支、未来B/D业务或真实质量评估获批。新报告仍须真实Actions artifact、预算和独立人审；无有效真实证据时不放行。
 
 ## 六类门禁真实状态
 
@@ -22,7 +28,7 @@
 2. **static：本地 PASS**，含实际OpenCode配置与精确锁/固定字节检查；只豁免Git ignored的标准SCM/egg-info构建元数据，任意新增上游源码仍FAIL。
 3. **schema：本地执行校验**，27条registry不重定义、不冒称业务实现。
 4. **semantic：验证器已实现；适用改动无真实artifact/批准/评分则 BLOCKED**。固定4安全+6质量×3=18真实质量调用及原阈值不变；报告绑定真实GitHub run/artifact/digest/current head/review，普通文档/编码助手规则不做虚假评估。业务evaluator由B/D在接口实现后单独受审落入base，本轮不提前代写。
-5. **regression：实际full FAIL**（上游禁网失败/限时，且live待授权）；团队250+runtime1通过不能代替full。
+5. **regression：实际full FAIL**（上游禁网失败/限时，且live待授权）；团队299+runtime1通过不能代替full。
 6. **ai-log：按真实新增披露验证**；Hermes工程修复与学生正式OpenCode过程分开。
 
 ## 远端与首次采纳
