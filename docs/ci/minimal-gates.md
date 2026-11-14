@@ -70,7 +70,14 @@ gh api repos/537Lab/PaperTrace/pulls/<测试PR号> \
 | 3 schema | `schema` = **success** | 27 条 registry 结构校验；远端已真实执行 |
 | 6 AI-use log | `ai-use-log` = **success** | 相对 base 的真实新增披露；不证明披露内容真实性，仍需人审 |
 
-CI 首跑（[run 43434164875](https://github.com/537Lab/PaperTrace/actions/runs/43434164875)）真实结论：3 success / 3 failure(BLOCKED, exit 2)，整体 `failure` —— 这是**预期的 fail-closed**，不是配置错误。六个 job 名保持不变，便于日后设为 required checks。
+两次真实运行要分开读：
+
+| 运行 | 提交 | 结果 |
+|---|---|---|
+| [首跑 43434164875](https://github.com/537Lab/PaperTrace/actions/runs/43434164875) | `9d7e985`（含代码/prompt） | 3 success / 3 failure(BLOCKED, exit 2) |
+| [修正 43582067150](https://github.com/537Lab/PaperTrace/actions/runs/43582067150) | `4656a8d`（仅文档） | static/schema/ai-log success；test-approval、semantic-evaluation = `NOT_REQUIRED`（job 绿但课程状态仍 BLOCKED）；regression 仍 BLOCKED |
+
+两次整体 `conclusion` 都是 `failure` —— **预期的 fail-closed**，不是配置错误。`NOT_REQUIRED` 表示「差异中没有适用变更」，**绝不能读成门禁通过**。六个 job 名保持不变，便于日后设为 required checks。
 
 ## 三、分支保护限制的调研结论（不擅自升级、不公开）
 

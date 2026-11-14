@@ -6,7 +6,7 @@
 
 **GitHub 团队仓库（私有）：https://github.com/537Lab/PaperTrace**，分支 `main`，HEAD `9d7e985`（启动修正后见最新提交）；远端与本地提交/树/289 文件一致，保留完整上游历史与基线 `c692d0d`，仅推送 3 个 `papertrace-*` 标签。私有仓库**需所有者邀请后才能打开**，请先把自己的 GitHub 用户名发给仓库所有者。
 
-[GitHub Actions 已真实运行](https://github.com/537Lab/PaperTrace/actions/runs/43434164875)：`static-analysis`/`schema`/`ai-use-log` 通过；`test-approval`/`semantic-evaluation`/`regression` 为 **BLOCKED**（fail-closed，非配置错误，未伪造通过）。**分支保护与 required checks 尚未生效**：免费套餐私有仓库调用保护 API 返回 403（需 Pro/Team/Enterprise 或公开仓库）；仓库保持私有，未升级套餐、未公开。最小落地方案见 [docs/ci/minimal-gates.md](docs/ci/minimal-gates.md)。本轮没有 PaperQA2 模型调用/真实语义 PASS，也没有学生人工审批或个人 OpenCode 会话。
+[GitHub Actions 已真实运行两次](https://github.com/537Lab/PaperTrace/actions/runs/43434164875)：初始化提交 `9d7e985`（含代码/prompt）上 `static-analysis`/`schema`/`ai-use-log` 通过、`test-approval`/`semantic-evaluation`/`regression` 为 **BLOCKED**；纯文档提交 `4656a8d` 上前两项显示 `NOT_REQUIRED`（**表示本次无适用变更，不等于通过**，课程状态仍 BLOCKED），`regression` 仍 BLOCKED。两次整体结论都是 failure，属 fail-closed，非配置错误，未伪造通过。**分支保护与 required checks 尚未生效**：免费套餐私有仓库调用保护 API 返回 403（需 Pro/Team/Enterprise 或公开仓库）；仓库保持私有，未升级套餐、未公开。最小落地方案见 [docs/ci/minimal-gates.md](docs/ci/minimal-gates.md)。本轮没有 PaperQA2 模型调用/真实语义 PASS，也没有学生人工审批或个人 OpenCode 会话。
 
 ## 架构和文件
 

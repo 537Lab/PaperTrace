@@ -32,7 +32,16 @@
 
 ## 六类GitHub Blocking Gates
 
-| 门禁 | 本地真实状态 | 远端真实状态（[CI 首跑](https://github.com/537Lab/PaperTrace/actions/runs/43434164875)） | 课程完整状态 |
+**两次真实 CI 运行要分开读，不要混为一谈：**
+
+| 运行 | 提交 | 变更性质 | test-approval | semantic-evaluation | regression | static / schema / ai-log |
+|---|---|---|---|---|---|---|
+| [首跑 43434164875](https://github.com/537Lab/PaperTrace/actions/runs/43434164875) | `9d7e985`（初始化，含代码/prompt） | 有代码与 prompt 变更 | failure（BLOCKED, exit 2） | failure（BLOCKED, exit 2） | failure（BLOCKED, exit 2） | 全部 success |
+| [修正 43582067150](https://github.com/537Lab/PaperTrace/actions/runs/43582067150) | `4656a8d`（仅文档） | 无代码/prompt/source 变更 | **NOT_REQUIRED**（job 绿，但课程状态仍 BLOCKED） | **NOT_REQUIRED**（job 绿，但课程状态仍 BLOCKED） | failure（BLOCKED, exit 2） | 全部 success |
+
+`NOT_REQUIRED` 的正确含义是「差异证明本次没有适用的变更」，**不是门禁通过**：两个 job 的 `full_course_status` 仍写着 `test-approval: BLOCKED`、`semantic: BLOCKED`。整体 workflow 在两次运行中都是 `failure`，因为 `regression` 在 `--scope full` 下始终 BLOCKED（其 `details` 显示 170 项团队离线测试实际执行且 0 失败，但完整上游 prior suites 未跑）。这是预期的 fail-closed，不是配置错误。
+
+| 门禁 | 本地真实状态 | 远端真实状态（首跑 `9d7e985`） | 课程完整状态 |
 |---|---|---|---|
 | 1 事前测试批准 | 入口 fail-closed；PR 自写 approved 不能自证 | `test-approval` = failure（BLOCKED, exit 2） | **BLOCKED**：无学生事前批准；最小路线见 `docs/ci/minimal-gates.md` |
 | 2 静态分析 | lint/type/锁一致/冻结/AST/API表面/敏感启发式 PASS；故意失败已验证 | `static-analysis` = **success** | **部分完成**：完整漏洞/来源审计、真实适配集成、安全路径人审仍待完成 |
