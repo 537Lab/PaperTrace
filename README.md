@@ -2,7 +2,11 @@
 
 基于固定PaperQA2的本地科研证据审核工作台。目标流程是：导入论文 → AI检索候选 → **人工接受/排除** → 仅据本轮获准证据生成草稿 → 确定性核查后保存可追溯报告。模型不决定授权、不自动证明科学结论正确。
 
-**当前交付：开发前初始化；不是五模块已经实现的应用。** 先读[团队一页入口](TEAM_START_HERE.md)、[完整任务书](TEAM_WORK_PLAN.md)与[真实状态](INITIALIZATION_STATUS.md)。GitHub团队仓库：**尚未创建**；未设置团队origin，未上传、未配置分支保护。本轮没有PaperQA2模型调用/真实语义PASS，也没有学生人工审批或个人OpenCode会话。
+**当前交付：开发前初始化；不是五模块已经实现的应用。** 先读[团队一页入口](TEAM_START_HERE.md)、[完整任务书](TEAM_WORK_PLAN.md)、[新人启动流程](docs/team/startup.md)与[真实状态](INITIALIZATION_STATUS.md)。
+
+**GitHub 团队仓库（私有）：https://github.com/537Lab/PaperTrace**，分支 `main`，HEAD `9d7e985`（启动修正后见最新提交）；远端与本地提交/树/289 文件一致，保留完整上游历史与基线 `c692d0d`，仅推送 3 个 `papertrace-*` 标签。私有仓库**需所有者邀请后才能打开**，请先把自己的 GitHub 用户名发给仓库所有者。
+
+[GitHub Actions 已真实运行](https://github.com/537Lab/PaperTrace/actions/runs/43434164875)：`static-analysis`/`schema`/`ai-use-log` 通过；`test-approval`/`semantic-evaluation`/`regression` 为 **BLOCKED**（fail-closed，非配置错误，未伪造通过）。**分支保护与 required checks 尚未生效**：免费套餐私有仓库调用保护 API 返回 403（需 Pro/Team/Enterprise 或公开仓库）；仓库保持私有，未升级套餐、未公开。最小落地方案见 [docs/ci/minimal-gates.md](docs/ci/minimal-gates.md)。本轮没有 PaperQA2 模型调用/真实语义 PASS，也没有学生人工审批或个人 OpenCode 会话。
 
 ## 架构和文件
 
@@ -21,7 +25,9 @@ A `library/`：导入/状态/文献版本；B `retrieval/`：唯一PaperQA2薄�
 
 ## 从零建立初始化环境
 
-本轮实测CPython3.14.6。先安装官方Python和uv；已有环境只执行下面同步。本仓库根pyproject属于上游，不用裸`uv sync`把所有extra装进来。
+**新成员请先读 [新人启动流程](docs/team/startup.md)**：包含被邀请/clone、macOS 与 Windows 命令、B/D 的完整 PaperQA2 依赖、OpenCode 获准后配置，以及哪些步骤已实测/未验证。下面是**所有人都能立即跑的离线初始化环境**。
+
+本轮实测CPython3.14.6。先安装官方Python和uv；已有环境只执行下面同步。本仓库根pyproject属于上游，不用裸`uv sync`把所有extra装进来；`requirements-init.lock` 只锁 25 个初始化工具包，**不含 PaperQA2 运行依赖与 Streamlit**。
 
 ```sh
 uv venv .venv --python 3.14

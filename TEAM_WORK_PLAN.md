@@ -6,7 +6,7 @@ PaperTrace 是基于 PaperQA2 的 Evidence Review Workbench。研究者导入自
 
 **本轮只做开发前基础：共享数据契约、合成测试及离线门禁，不预先实现五个成员的业务功能。**任务书中的源码目录、界面和业务验收是后续成员的交付范围，不表示现在已有可演示应用。初始化文件的创建、实际验证、外部授权和业务实现分开记账；最新实跑状态看 [docs/ci/gates.md](docs/ci/gates.md)，不能从文档存在推断测试通过。
 
-固定上游：`https://github.com/Future-House/paper-qa`；源码基线：`c692d0dfeac4a0296599f7fe21a253a58b7ac12a`。上游只读，**团队 GitHub 仓库尚未创建，origin、仓库访问与 branch protection 待授权**。默认目标是新的私有团队仓库，不得擅自公开、推送上游或填写猜测的 owner/URL。
+固定上游：`https://github.com/Future-House/paper-qa`；源码基线：`c692d0dfeac4a0296599f7fe21a253a58b7ac12a`。上游只读。团队私有仓库 **https://github.com/537Lab/PaperTrace** 已建立（分支 `main`），`origin` 已设置；clone 与被邀请步骤见 `docs/team/startup.md`。**分支保护与 required checks 仍未生效**（免费套餐私有仓库 403，需 Pro/Team/Enterprise），六类门禁保持不伪造通过，最小落地方案见 `docs/ci/minimal-gates.md`。仓库保持私有，不推送上游，不擅自升级套餐或公开。
 
 ### 课程依据（已读原文提取全文）
 

@@ -1,6 +1,6 @@
 # PaperTrace｜模块交接与合并检查清单
 
-用途：每位成员在自己的模块 PR/本地交接中逐项提供**真实证据**。本页给出检查语义，不预填任何审批或 PASS。`[ ]` 表示待实际核验，不是空白结论模板。尚无 GitHub 团队仓库时交本地分支/diff 与记录，不能虚构 PR 链接；GitHub/保护项保持待授权。
+用途：每位成员在自己的模块 PR/本地交接中逐项提供**真实证据**。本页给出检查语义，不预填任何审批或 PASS。`[ ]` 表示待实际核验，不是空白结论模板。团队私有仓库 https://github.com/537Lab/PaperTrace 已建立，PR 链接须真实；分支保护与 required checks 仍未生效（403），该项明确标注待处理，不能虚构 PR、审批或通过记录。
 
 ## 1. 先判断能不能开始审查
 
@@ -36,7 +36,7 @@
 | D4 验证治理 | 事前测试批准；结构/负面/回归/行为结果；真实 bug、debt；独立 verdict | verification-constraints、`docs/review-memo.md`、bug/debt 条目及原始日志；无 bug 不编造 bug |
 | D5 真实 session | 原始完整 OpenCode transcript、学生干预标注及理由、计划批准/拒绝/重定向；可定位到本模块实现 | `transcripts/`；不得用 Hermes 初始化记录冒充或事后编写逐字对话；最终数量/命名遵教师确认 |
 | D6 过程报告素材 | 实际完成工作、可核对贡献量、遇到的歧义/缺陷/人类发现问题、个人真实反思素材 | 最终 `Report.md` 由学生本人填真实身份/贡献/反思；本页和任务书仍匿名，不虚构相同贡献权重 |
-| D7 仓库与门禁 | 实际 PR/commit/CI，失败案例阻断和人审证据；有授权后核对保护 | 新团队 GitHub，而非 upstream；未建仓/未设保护明确待授权，不能拿 workflow 代替 |
+| D7 仓库与门禁 | 实际 PR/commit/CI，失败案例阻断和人审证据；保护未生效如实标注 | https://github.com/537Lab/PaperTrace（非 upstream）；分支保护/required checks 未生效（403），不能拿 workflow 代替 |
 | D8 源码与测试 | 模块源码、view、规范合成 fixtures、正负测试、回归、复现输入与依赖 | `src/papertrace/<module>/`、`test/offline/test_<module>.py`、获批 `test/fixtures/<module>/` 精确文件；live 另隔离，上游 `tests/` 不删除 |
 | D9 静态启动 Prompt | 从已有根 `Prompt.md` 开始、Plan 停止等待、人工批准版本和后续执行的真实记录 | 不复制成五个互相冲突的启动 prompt；模块专属任务补充不能绕过根规则 |
 
@@ -79,7 +79,7 @@
 ## 7. 合并/最终提交前的最后一道检查
 
 - [ ] 当前 diff 与批准范围一致，新增外部副作用/工具权限再次获批。
-- [ ] 本地证据、GitHub required checks、非作者人审与安全路径 ADR 对应同一版本；GitHub 尚未授权则明确只完成本地交接。
+- [ ] 本地证据、六个 CI 检查、非作者人审与安全路径 ADR 对应同一版本；**required checks 尚未启用**（免费套餐私有仓库 403），此项保持未完成并如实标注，不能写成已通过。
 - [ ] 集成后的团队完整 prior suite 零回归；live 与真实质量状态没有被离线结果覆盖。
 - [ ] 最终包不含 keys、个人缓存、外来索引或未经许可的论文原件；保留上游 attribution/许可证。
 - [ ] D1–D9、真实身份/贡献/反思和 transcript 口径由学生本人核对；10 分钟视频与 ZIP 分开准备，教师确切截止已查证再填写。

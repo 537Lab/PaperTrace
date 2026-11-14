@@ -29,10 +29,10 @@
 
 静态命令只检查团队新增路径，不重写原版的静态配置、测试或依赖。子进程有超时，使用无提供商变量、隔离HOME的白名单环境，pytest禁用socket；这不是对恶意Python/OS进程的安全沙箱。秘密扫描不读私人目录或凭据文件，不输出命中值；仅启发式，不能认证秘密不存在。工具失败返回码及输出摘要保留在JSON，避免把含秘密的源码行复制到CI日志；需要诊断时在受控本地直接运行对应工具。
 
-## GitHub工作流与尚未生效的边界
+## GitHub工作流与远端真实边界
 
 `.github/workflows/ci.yml`提供六个稳定job：`test-approval`、`static-analysis`、`schema`、`semantic-evaluation`、`regression`、`ai-use-log`，workflow名为`gates`。push（每次提交）与pull_request均运行；无路径skip/continue-on-error，无pull_request_target，不传提供商密钥，不触发收费评估。actions版本固定为官方tag查询得到的commit SHA，checkout不保留凭据，顶层权限仅contents:read。安装初始化锁需要包下载；这不是离线安装或软件供应链审计。
 
-未创建或未验证远端、分支保护、required checks、CODEOWNERS/独立审批规则、失败PR演示。管理员部署后必须回读规则，并创建真实失败PR核对阻断；不能仅凭本文件宣称生效。PR可修改工作流和门禁脚本，因此现有PR-head工作流**不具抗绕过保证**。正式部署需组织规则/受信任base或外部固定workflow、不可由被审PR替换的验证程序、独立受保护审批来源和禁止自行批准的权限；所有安全路径需ADR及人审。action SHA固定不等于工作流本身不可被PR替换。
+远端 https://github.com/537Lab/PaperTrace 已建立并真实运行六个 job（[首跑](https://github.com/537Lab/PaperTrace/actions/runs/43434164875)：static/schema/ai-log success；test-approval/semantic-evaluation/regression BLOCKED exit 2）。**分支保护、required checks、CODEOWNERS/独立审批规则、失败 PR 演示均未生效/未做**：经典保护 API 与 Rulesets API 均返回 403（免费套餐私有仓库限制）。管理员部署后必须回读规则，并创建真实失败PR核对阻断；不能仅凭本文件宣称生效。PR可修改工作流和门禁脚本，因此现有PR-head工作流**不具抗绕过保证**。正式部署需组织规则/受信任base或外部固定workflow、不可由被审PR替换的验证程序、独立受保护审批来源和禁止自行批准的权限；所有安全路径需ADR及人审。action SHA固定不等于工作流本身不可被PR替换。
 
-见[事前批准合同](test-approval.md)、[完整回归合同](full-regression.md)与[语义运行合同](../../test/evaluation/README.md)。
+**学生团队最小落地方案见 [minimal-gates.md](minimal-gates.md)**（用 GitHub PR 事件与轮值人工复核替代企业级认证系统）；严格参考合同见[事前批准](test-approval.md)、[完整回归](full-regression.md)与[语义运行](../../test/evaluation/README.md)。

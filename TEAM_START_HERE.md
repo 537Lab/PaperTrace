@@ -16,6 +16,7 @@
 
 ## 拿到仓库后的启动顺序
 
+0. **先按[新人启动流程](docs/team/startup.md)接通仓库与环境**：被邀请 → 克隆 → 建 Python 3.14 初始化环境 → 实跑 170 项离线测试。任何人这一步都可以立即做，不需要模型或凭据。
 1. 阅读已有 `AGENTS.md`、`Prompt.md`，按其中顺序读架构与治理文件；再读[接口约定](docs/team/integration-contract.md)和自己的任务书。
 2. 核对本模块需求及测试，先用合成 fixtures。启动 OpenCode **Plan**，要求输出改动路径、接口、正负测试和步骤，**停下等待人工批准**。
 3. 非作者批准测试和计划，且确认本次 Build 的写权限后，才进入 **Build → Verify → 独立 PR 审查**。一次启动不等于获准无人监督开发。
@@ -36,6 +37,7 @@ uv pip sync --python .venv/bin/python requirements-init.lock
 - **本轮范围：**基线、共享契约、合成测试和离线门禁；业务待成员开发，需求/架构/计划待学生审核，不是已实现或已获批准。
 - **禁止随意改：**`src/paperqa/`、`packages/`、上游 `tests/`、`pyproject.toml`、`uv.lock`。跨模块通过应用编排合同连接；各人的 view 留在自己模块，不争改同一个 app 入口。
 - **安全底线：**没有人工决定即 pending；没有获准证据不调模型；回答必须满足 `cited ⊆ sent ⊆ approved`，且生成前后文库快照、审核版本一致。界面不能另建授权逻辑。
-- **GitHub 团队仓库尚未创建；分支保护尚未生效。**上游只读，不是团队 origin。取得仓库创建/访问/保护授权后再配置，不能虚构链接。
+- **GitHub 团队仓库已建立（私有）：https://github.com/537Lab/PaperTrace**，分支 `main`，完整上游历史与基线 `c692d0d` 保留，仅 3 个 `papertrace-*` 标签。私有仓库须先把自己的 GitHub 用户名发给所有者获得邀请才能打开；详细接入与安装见[新人启动流程](docs/team/startup.md)。`upstream` 仍是只读上游，不是团队 origin。
+- **CI 已真实运行**：`static-analysis`/`schema`/`ai-use-log` 通过；`test-approval`/`semantic-evaluation`/`regression` 为 BLOCKED（fail-closed，非故障，未伪造通过）。**分支保护与 required checks 仍未生效**（免费套餐私有仓库 403，需 Pro/Team/Enterprise），所以 CI 检查目前不强制拦截合并；最小落地方案见 [docs/ci/minimal-gates.md](docs/ci/minimal-gates.md)。六类门禁全部保留，不能虚构链接、审批或通过记录。
 - **学生确认：**课程材料对工具、D5 transcript 口径与复用既有代码的边界须核实；初始化由 Hermes 协助，不能冒充任何成员的 OpenCode 开发贡献。正式成果由学生监督 OpenCode 形成真实记录。
 - S0–S4 是相对检查点，不是教师截止日。介绍课只给出暂定 Week 13；确切时间与最终提交方式须学生核对。团队页匿名；最终 D6 要求的真实身份由学生本人填写。

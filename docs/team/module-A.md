@@ -2,6 +2,8 @@
 
 > 可独立认领：成员 A。长期功能 ownership 不随流程轮换改变。本轮初始化未实现本模块；拿到任务书后先做审核与 OpenCode Plan，不能直接开始无人监督 Build。
 
+> **动手前先按 [新人启动流程](startup.md) 接通私有仓库与环境**：被邀请 → clone → Python 3.14 初始化环境 → 实跑 170 项离线测试。任何人都能立即做，不需要模型或凭据；B/D 的真实 PaperQA2 依赖与 OpenCode 获准配置见该文档第 1/2 层。门禁真实状态与最小落地方案见 [../ci/minimal-gates.md](../ci/minimal-gates.md)。
+
 ## 1. 目标用户与完整用户流程
 
 研究者明确选择自己有权使用的本地 PDF/TXT → 看见每个文件的等待/处理中/成功/失败及原因 → 得到只包含可用版本的文献库快照 → 换版或移除文献时创建新快照 → 仍能查看历史研究使用的原版本。
@@ -97,10 +99,10 @@
 | D4 | 事前批准的测试；负例/全回归/路径检查结果；逐 PR review memo，真实 bug/debt |
 | D5 | 自己监督 OpenCode 的原始完整会话与人工干预/批准理由；不能把 Hermes 初始化归为自己的开发 |
 | D6 | 实际功能、首装配额外贡献与可核对工作量，个人真实反思素材；最终身份由本人填 |
-| D7 | 本地 diff/后续真实 PR/CI 与独立 review；GitHub 未授权则保护项明确待授权 |
+| D7 | 本地 diff/真实 PR/CI 与独立 review；分支保护与 required checks 未生效（403），如实标注待处理 |
 | D8 | library 源码、view、合成 fixtures、正负与回归测试及复现步骤 |
 | D9 | 读取根 Prompt 后的 Plan、停等批准及按步骤 Build/Verify 的真实记录 |
 
 第一轮：**B 批准测试/计划，C 独立 review，D 集成**；A 不能自批。后续按 [TEAM_WORK_PLAN.md](../../TEAM_WORK_PLAN.md) 非作者轮换，共同实现者须回避。对照 [handover-checklist.md](handover-checklist.md) 交接；契约冲突按 [integration-contract.md](integration-contract.md) 先审批后改。
 
-时间使用 S0–S4 相对检查点，建议每 sprint 1–2 工作日但非教师截止。课程仅有暂定 Week 13；正式时间、OpenCode/复用与 D5 口径由学生核实。GitHub 尚未创建，不能编造 URL/审批。**本文件让你可以启动审核与 Plan，不授权真实模型、凭据读取或无人监督开发。**
+时间使用 S0–S4 相对检查点，建议每 sprint 1–2 工作日但非教师截止。课程仅有暂定 Week 13；正式时间、OpenCode/复用与 D5 口径由学生核实。团队私有仓库 https://github.com/537Lab/PaperTrace 已建立，须先被邀请才能访问；分支保护未生效，不能编造审批或通过记录。**本文件让你可以启动审核与 Plan，不授权真实模型、凭据读取或无人监督开发。**
