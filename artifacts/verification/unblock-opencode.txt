@@ -1,0 +1,9 @@
+OpenCode v2 offline workflow verification
+Status: PASS; opencode v2.0.12
+Scope: loopback fake Plan -> simulated plan approval -> test-only Build -> simulated test review -> source Build -> Verify
+Provider: loopback fake (12 HTTP request(s))
+Real tools: test-only prep PASS; source unchanged pre-review; own edit PASS; cross-module edit DENIED; verify read PASS
+Test: RED after test prep; GREEN after simulated review + source build (1 passed)
+Review: simulated fixtures only, not student or GitHub approval
+Raw argv: retained locally in .local/unblock/opencode/workflow-commands.json; no environment/key values
+Limit: not real-model quality, identity verification, student D5, or course completion

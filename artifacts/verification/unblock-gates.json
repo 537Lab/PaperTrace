@@ -1,0 +1,327 @@
+{
+  "schema": {
+    "command": ".venv/bin/python scripts/gates.py --gate schema --scope full --base e6ab25299a9b962099bd22edeba2dd745428b39d",
+    "process_exit_code": 0,
+    "payload": {
+      "exit_code": 0,
+      "full_course_status": {
+        "ai-log": "NOT_RUN",
+        "regression": "NOT_RUN",
+        "schema": "PASS",
+        "semantic": "NOT_RUN",
+        "static": "NOT_RUN",
+        "test-approval": "NOT_RUN"
+      },
+      "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED",
+      "results": [
+        {
+          "details": {
+            "errors": [],
+            "limitation": "Does not prove implementation of fit criteria or human approval",
+            "requirement_count": 27
+          },
+          "gate": "schema",
+          "status": "PASS",
+          "summary": "Registry structural validation"
+        }
+      ],
+      "schema_version": 1,
+      "scope": "full",
+      "status": "PASS",
+      "target": {
+        "base": "e6ab25299a9b962099bd22edeba2dd745428b39d",
+        "head": "WORKTREE",
+        "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"
+      }
+    }
+  },
+  "ai-log": {
+    "command": ".venv/bin/python scripts/gates.py --gate ai-log --scope full --base e6ab25299a9b962099bd22edeba2dd745428b39d",
+    "process_exit_code": 0,
+    "payload": {
+      "exit_code": 0,
+      "full_course_status": {
+        "ai-log": "PASS",
+        "regression": "NOT_RUN",
+        "schema": "NOT_RUN",
+        "semantic": "NOT_RUN",
+        "static": "NOT_RUN",
+        "test-approval": "NOT_RUN"
+      },
+      "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED",
+      "results": [
+        {
+          "details": {
+            "changed_paths": [
+              ".agent/rules.md",
+              ".github/workflows/ci.yml",
+              ".opencode/permissions.jsonc",
+              ".opencode/rules.md",
+              "AGENTS.md",
+              "Prompt.md",
+              "opencode.jsonc",
+              "requirements-runtime.in",
+              "requirements-runtime.lock",
+              "requirements-upstream-test.in",
+              "requirements-upstream-test.lock",
+              "scripts/full_regression.py",
+              "scripts/gate_evidence.py",
+              "scripts/gates.py",
+              "scripts/opencode_support.py",
+              "scripts/paperqa_smoke.py",
+              "scripts/semantic_evidence.py",
+              "test/evaluation/README.md",
+              "test/evaluation/report-schema.json",
+              "test/integration/test_paperqa_smoke.py",
+              "test/offline/test_full_regression.py",
+              "test/offline/test_gate_evidence.py",
+              "test/offline/test_gates.py",
+              "test/offline/test_opencode_configuration.py",
+              "test/offline/test_opencode_workflow.py",
+              "test/offline/test_semantic_evidence.py"
+            ],
+            "limitation": "Structural disclosure evidence, not proof of authorship or genuine human approval",
+            "new_entries": 1
+          },
+          "gate": "ai-log",
+          "status": "PASS",
+          "summary": "New semantic AI-use disclosure found"
+        }
+      ],
+      "schema_version": 1,
+      "scope": "full",
+      "status": "PASS",
+      "target": {
+        "base": "e6ab25299a9b962099bd22edeba2dd745428b39d",
+        "head": "WORKTREE",
+        "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"
+      }
+    }
+  },
+  "static": {
+    "command": ".venv/bin/python scripts/gates.py --gate static --scope full --base e6ab25299a9b962099bd22edeba2dd745428b39d",
+    "process_exit_code": 0,
+    "payload": {
+      "exit_code": 0,
+      "full_course_status": {
+        "ai-log": "NOT_RUN",
+        "regression": "NOT_RUN",
+        "schema": "NOT_RUN",
+        "semantic": "NOT_RUN",
+        "static": "PASS",
+        "test-approval": "NOT_RUN"
+      },
+      "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED",
+      "results": [
+        {
+          "details": {
+            "checks": [
+              {
+                "details": {
+                  "output_bytes": 19,
+                  "returncode": 0,
+                  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "stdout_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+                },
+                "gate": "lint",
+                "status": "PASS",
+                "summary": "Command completed"
+              },
+              {
+                "details": {
+                  "output_bytes": 43,
+                  "returncode": 0,
+                  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "stdout_sha256": "f9b031e5c45aa702cd4fef028d465551cb20a2c4698e0913c7b00766b20ac4d8"
+                },
+                "gate": "types",
+                "status": "PASS",
+                "summary": "Command completed"
+              },
+              {
+                "details": {
+                  "errors": [],
+                  "limitation": "Version/metadata consistency only; no online advisory scan, hash/provenance or full upstream environment certification",
+                  "locked_packages": 25
+                },
+                "gate": "dependencies",
+                "status": "PASS",
+                "summary": "Initialization environment matches exact pins"
+              },
+              {
+                "details": {
+                  "baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a",
+                  "changed_paths": []
+                },
+                "gate": "frozen-baseline",
+                "status": "PASS",
+                "summary": "Upstream baseline byte integrity"
+              },
+              {
+                "details": {
+                  "errors": [],
+                  "limitation": "AST fitness function, not a Python sandbox; live adapter spy/integration still required"
+                },
+                "gate": "architecture",
+                "status": "PASS",
+                "summary": "AST import boundary"
+              },
+              {
+                "details": {
+                  "limitation": "AST surface presence only; round-trip/negative tests run in initialization regression, not module integration",
+                  "missing": []
+                },
+                "gate": "contract-api",
+                "status": "PASS",
+                "summary": "Shared five-contract API presence"
+              },
+              {
+                "details": {
+                  "findings": [],
+                  "limitation": "Heuristics are incomplete; no private environment or whole upstream scan, no guarantee of absence"
+                },
+                "gate": "secrets",
+                "status": "PASS",
+                "summary": "Changed-team-file secret heuristic"
+              },
+              {
+                "details": {
+                  "limitation": "Portable configuration check; not OS isolation or model-driven runtime enforcement",
+                  "output_bytes": 2915,
+                  "returncode": 0,
+                  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "stdout_sha256": "3dbaef6626e78e2652e619c6dc98d58fa53bac0e60b4085addfaac70daf442e3"
+                },
+                "gate": "permissions",
+                "status": "PASS",
+                "summary": "Command completed"
+              }
+            ],
+            "limitation": "Static fitness and exact initialization pins; not a vulnerability certification or proof of live AI behavior"
+          },
+          "gate": "static",
+          "status": "PASS",
+          "summary": "Lint/type/dependency/contract/security/API/permission fitness checks"
+        }
+      ],
+      "schema_version": 1,
+      "scope": "full",
+      "status": "PASS",
+      "target": {
+        "base": "e6ab25299a9b962099bd22edeba2dd745428b39d",
+        "head": "WORKTREE",
+        "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"
+      }
+    }
+  },
+  "test-approval": {
+    "command": ".venv/bin/python scripts/gates.py --gate test-approval --scope full --base e6ab25299a9b962099bd22edeba2dd745428b39d",
+    "process_exit_code": 2,
+    "payload": {
+      "exit_code": 2,
+      "full_course_status": {
+        "ai-log": "NOT_RUN",
+        "regression": "NOT_RUN",
+        "schema": "NOT_RUN",
+        "semantic": "NOT_RUN",
+        "static": "NOT_RUN",
+        "test-approval": "BLOCKED"
+      },
+      "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED",
+      "results": [
+        {
+          "details": {
+            "changed_paths": [
+              ".agent/rules.md",
+              ".github/workflows/ci.yml",
+              ".opencode/permissions.jsonc",
+              ".opencode/rules.md",
+              "AGENTS.md",
+              "Prompt.md",
+              "opencode.jsonc",
+              "requirements-runtime.in",
+              "requirements-runtime.lock",
+              "requirements-upstream-test.in",
+              "requirements-upstream-test.lock",
+              "scripts/full_regression.py",
+              "scripts/gate_evidence.py",
+              "scripts/gates.py",
+              "scripts/opencode_support.py",
+              "scripts/paperqa_smoke.py",
+              "scripts/semantic_evidence.py",
+              "test/evaluation/README.md",
+              "test/evaluation/report-schema.json",
+              "test/integration/test_paperqa_smoke.py",
+              "test/offline/test_full_regression.py",
+              "test/offline/test_gate_evidence.py",
+              "test/offline/test_gates.py",
+              "test/offline/test_opencode_configuration.py",
+              "test/offline/test_opencode_workflow.py",
+              "test/offline/test_semantic_evidence.py"
+            ],
+            "protected_paths": [
+              ".github/workflows/ci.yml",
+              "opencode.jsonc",
+              "scripts/full_regression.py",
+              "scripts/gate_evidence.py",
+              "scripts/gates.py",
+              "scripts/opencode_support.py",
+              "scripts/semantic_evidence.py",
+              "test/evaluation/report-schema.json",
+              "test/offline/test_gate_evidence.py"
+            ],
+            "reason": "protected-gate-changed"
+          },
+          "gate": "test-approval",
+          "status": "BLOCKED",
+          "summary": "Candidate changes the gate that would judge them"
+        }
+      ],
+      "schema_version": 1,
+      "scope": "full",
+      "status": "BLOCKED",
+      "target": {
+        "base": "e6ab25299a9b962099bd22edeba2dd745428b39d",
+        "head": "WORKTREE",
+        "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"
+      }
+    }
+  },
+  "semantic": {
+    "command": ".venv/bin/python scripts/gates.py --gate semantic --scope full --base e6ab25299a9b962099bd22edeba2dd745428b39d",
+    "process_exit_code": 2,
+    "payload": {
+      "exit_code": 2,
+      "full_course_status": {
+        "ai-log": "NOT_RUN",
+        "regression": "NOT_RUN",
+        "schema": "NOT_RUN",
+        "semantic": "BLOCKED",
+        "static": "NOT_RUN",
+        "test-approval": "NOT_RUN"
+      },
+      "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED",
+      "results": [
+        {
+          "details": {
+            "changed_paths": [
+              "requirements-runtime.in",
+              "requirements-runtime.lock"
+            ]
+          },
+          "gate": "semantic",
+          "status": "BLOCKED",
+          "summary": "A real PR and exact head are required; local PASS files cannot certify quality"
+        }
+      ],
+      "schema_version": 1,
+      "scope": "full",
+      "status": "BLOCKED",
+      "target": {
+        "base": "e6ab25299a9b962099bd22edeba2dd745428b39d",
+        "head": "WORKTREE",
+        "upstream_baseline": "c692d0dfeac4a0296599f7fe21a253a58b7ac12a"
+      }
+    }
+  }
+}

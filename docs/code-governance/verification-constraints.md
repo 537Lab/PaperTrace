@@ -1,19 +1,20 @@
 # 验证约束（D4）
 
-任何“通过”必须绑定代码/测试/需求/配置版本、命令、运行环境、退出码及实际日志。课程Project p6要求三级验证，p10要求六类阻断门禁；本轮仅初始化基础，不能称D4/D7完整达成。
+任何“通过”须绑定同一代码/测试/需求/配置版本、命令、运行环境、退出码与原始日志。课程 Project p6 要求三级验证，p10 要求六类阻断门禁；本文件不声称 D4/D7 已完整达成。
 
 ## 三级验证
-1. **结构**：需求schema、所有必需文件非空、显式模块import/API表面、冻结源码完整性、类型/lint、依赖锁一致性、角色权限及敏感文件排除。依赖版本一致不是漏洞库扫描；权限pattern测试不是OS沙箱。
-2. **回归**：运行本次以及全部既往suite，不得将未执行、skip、缺依赖或旧模型cassette回放当成新的完整PASS。初始化命令：`.venv/bin/python -m pytest -c papertrace.pytest.ini test/offline`；上游`tests/`与`packages/*/tests/`完整历史suite和live测试仍待依赖/授权，详见`docs/ci/gates.md`。
-3. **行为**：固定数据集评估语义支持/相关性及零授权外逃；真实prompt/model变化需新的真实评估。合成fixture与fake transport只验证逻辑，不证明科学质量、模型连接或性能提升。
 
-每条fit criterion至少一条可定位测试或明确待实现用例。每条不变量必须有故意违反的负例，确保会失败；每个功能至少一个负测。测试注明REQ/INV标识，使用自写fixture，非作者批准测试版本后才开始实现；安全代码测试不能由生成实现的同一代理单独自证。
+1. **结构：**需求 schema、模块/import 边界、冻结基线差异、类型/lint、依赖一致性、路径/权限、安全规则与敏感文件检查。静态检查不是 OS 沙箱，配置解析不是工具拦截。
+2. **回归：**初始化环境的 `.venv/bin/python -m pytest -c papertrace.pytest.ini test/offline` 只覆盖 `test/offline/`，不等于 full regression。完整既往回归须分开收集并报告三类来源：①团队 `test/offline/` 全跑；②仓库 `test/` 中 offline 以外的 runtime tests；③固定上游项目配置下的 `tests/` 与 `packages/*/tests/`。上游完整 collection 须与固定基线 node IDs 对照，不能漏项或静默标记；未授权 live 项须逐项列为 BLOCKED，不可冒充 skip-as-pass。只有显式 operator 选择 `--run-live` 且已有独立人审数据/provider/model/预算授权，才可执行 live；默认绝不外网。实际入口/命令以主控同步的 runner 和真实回执为准。
+3. **行为：**固定案例检查来源、人工授权、三集合、新鲜度、失败策略和模型语义。fake 仅证明确定性代码与输入边界；真实 prompt/model 评估须用获批数据和 provider、固定集及真实阈值，未获批/未执行即 BLOCKED。
 
-共享契约验证JSON往返、schema、非法身份/版本/定位、重复记录、越权状态、时间时区、引用集合及拒答。业务开发补齐：空获准集0出站；模型伪造授权；已排除/未发送/未知引用；生成中语料或审核变化；错误模型JSON；超时/限额；上下文压缩后约束重注入；历史导出脱敏；中断恢复和可重放性。合约已能拒绝某些形状，不等于这些业务测试已经实现。
+每项 feature 至少一个正例与一个可定位负测；每条不变量须有故意违反会失败的断言。测试标注真实 `FR-*` / `INV-*`；事前由非作者批准测试版本，测试语义变化后重审。安全代码不可由同一生成代理自证。保留真实 RED/GREEN，不删除失败断言或调阈值求绿。
+
+六类门禁必须全部保留：实现前测试批准、静态/安全/依赖检查、需求 schema、真实语义评估、完整 prior regression、代码/prompt 变化的 AI-use log。任何门禁不可删、降级、用 skip/fake/空 suite 冒充通过；远端 required checks 只有配置回读并用违规/合法对照验证后才算启用。
 
 ## 独立性与记录
-- 保存真实RED与GREEN，不修改测试来迎合实现；修改预期须先回到批准人。
-- 生产阈值先批准/冻结。不得把缺真实评估填0再让阈值过关，不以HTTP 200、空content或reasoning代替有效答案。
-- 每PR在`docs/reviews/`存memo，并在`docs/review-memo.md`索引；结论仅APPROVE/CHANGES REQUIRED/REJECT，只有真实审查者能给人工APPROVE。
-- 显著bug记`docs/bug-diary.md`，技术债记`docs/debt-register.md`。未经真实学生监督的初始化日志不能当D5会话。
-- 远端管理员设置required checks/安全路径人审及ADR后，必须用单一故意违规PR与合法对照核验真实阻断。没有GitHub回读证据，只能称“文件已准备”。
+
+- 每个 PR 用 `docs/review-memo.md` 的真实独立审查；结论仅 `APPROVE` / `CHANGES REQUIRED` / `REJECT`。
+- 显著 bug 记 `docs/bug-diary.md`，技术债记 `docs/debt-register.md`；没有事实不编造条目。
+- 真实学生 OpenCode session /人工干预才是 D5 证据；Hermes 初始化、synthetic fixture 或脚本输出不能代替。
+- 远端保护须授权后配置、读回，并用故意违规 PR 和合法对照验证；未有读回证据标待处理。

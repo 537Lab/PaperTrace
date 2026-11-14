@@ -62,6 +62,7 @@ def repository(tmp_path):
     put(tmp_path, "packages/frozen.txt", "upstream package placeholder\n")
     put(tmp_path, "pyproject.toml", "[project]\nname = 'synthetic-fixture'\n")
     put(tmp_path, "uv.lock", "version = 1\n")
+    put(tmp_path, "LICENSE", "Synthetic baseline license\n")
     git(tmp_path, "add", ".")
     git(tmp_path, "commit", "-qm", "Synthetic test baseline only")
     return tmp_path, git(tmp_path, "rev-parse", "HEAD")
@@ -167,6 +168,19 @@ def test_architecture_and_frozen_tree_faults(repository):
     (root / "src/papertrace/review.py").unlink()
     put(root, "src/papertrace/retrieval/adapter.py", "from paperqa.docs import Docs\n")
     assert module.architecture_check(ctx)["status"] == "PASS"
+    put(root, "LICENSE", "Synthetic unauthorized license replacement\n")
+    assert module.frozen_check(ctx)["status"] == "FAIL"
+
+
+def test_real_build_metadata_does_not_break_frozen_source_integrity(repository):
+    """GOV-02: build artifacts are not upstream source changes; arbitrary files still fail."""
+    root, _ = repository
+    put(root, ".gitignore", "src/paperqa/version.py\n*.egg-info/\n")
+    put(root, "src/paperqa/version.py", '__version__ = "1.0+synthetic-build"\n')
+    put(root, "packages/paper-qa-pypdf/src/paper_qa_pypdf.egg-info/PKG-INFO", "Synthetic metadata\n")
+    assert gates_module().frozen_check(context(repository))["status"] == "PASS"
+    put(root, "packages/paper-qa-pypdf/src/paper_qa_pypdf.egg-info/sneaky.py", "UNAPPROVED = True\n")
+    assert gates_module().frozen_check(context(repository))["status"] == "FAIL"
 
 
 def test_real_lint_type_dependency_and_timeout_faults(repository):
@@ -249,17 +263,22 @@ def test_regression_executes_every_team_offline_test_and_rejects_fail_skip_empty
     assert module.regression_gate(ctx)["status"] == "FAIL"
     other.write_text('import pytest\n@pytest.mark.skip(reason="synthetic")\ndef test_second():\n    assert True\n', encoding="utf-8")
     assert module.regression_gate(ctx)["status"] == "FAIL"
+    other.write_text('import pytest\n@pytest.mark.xfail(reason="synthetic")\ndef test_second():\n    assert True\n', encoding="utf-8")
+    assert module.regression_gate(ctx)["status"] == "FAIL"
     source.unlink()
     other.unlink()
     assert module.regression_gate(ctx)["status"] == "FAIL"
     put(root, "test/offline/test_fixture.py", "def test_first():\n    assert True\n")
-    assert module.regression_gate(context(repository, scope="full"))["status"] == "BLOCKED"
+    # This tiny synthetic repository has no upstream Python tests or live cases.
+    # A full runner must be able to succeed when every actual origin is complete.
+    assert module.regression_gate(context(repository, scope="full"))["status"] == "PASS"
 
 
 def test_static_aggregate_and_cli_fail_closed(repository, monkeypatch):
     """GOV-02: real CLI never turns missing trust or full scope into success."""
     root, base = repository
     module = gates_module()
+    monkeypatch.setattr(module, "permissions_check", lambda ctx: module.result("permissions", "PASS", "synthetic aggregate input; actual configuration tested separately"))
     monkeypatch.setattr(module, "BASELINE", base)
     put(root, "papertrace.ruff.toml", '[lint]\nselect = ["E4", "E7", "E9", "F"]\n')
     put(root, "mypy.ini", "[mypy]\ncheck_untyped_defs = True\n")
@@ -272,7 +291,7 @@ def test_static_aggregate_and_cli_fail_closed(repository, monkeypatch):
     write_log(root, [ai_entry()])
     put(root, "Prompt.md", "Synthetic prompt under test only.\n")
     assert module.static_gate(context(repository))["status"] == "PASS"
-    assert module.static_gate(context(repository, scope="full"))["status"] == "BLOCKED"
+    assert module.static_gate(context(repository, scope="full"))["status"] == "PASS"
     code = module.main(["--root", str(root), "--gate", "all", "--base", base, "--scope", "initialization"])
     assert code == 2
     assert module.main(["--root", str(root), "--gate", "schema", "--base", base]) == 0
@@ -307,6 +326,137 @@ def test_log_new_id_only_is_not_new_semantic_disclosure(repository):
     assert module.ai_log_gate(context((root, base)))["status"] == "FAIL"
 
 
+@pytest.mark.parametrize("name", ["opencode.jsonc", ".opencode/permissions.jsonc", "requirements-runtime.lock", "requirements-upstream-test.lock"])
+def test_explicit_head_cannot_verify_different_executable_configuration(repository, name):
+    """GOV-02: execution inputs, not only Python files, must match selected head."""
+    root, base = repository
+    put(root, name, "synthetic changed execution configuration\n")
+    with pytest.raises(ValueError, match="worktree"):
+        gates_module().source_tree_check(context(repository, head=base))
+
+
+def test_full_regression_gate_can_execute_all_origins_without_a_permanent_block(repository):
+    """GOV-02: complete synthetic origin succeeds; this is not real upstream evidence."""
+    root, _ = repository
+    put(root, "papertrace.pytest.ini", "[pytest]\n")
+    put(root, "test/offline/test_first.py", "def test_first():\n    assert True\n")
+    report = gates_module().regression_gate(context(repository, scope="full"))
+    assert report["status"] == "PASS"
+    assert report["details"]["scope"] == "all-prior-origins"
+    assert report["details"]["full_course_regression"] == "PASS"
+
+
+def test_outdated_branch_is_an_explicit_sync_block_not_malformed_input(repository, monkeypatch, capsys):
+    """GOV-02: branches can develop in parallel; full integration needs current base."""
+    root, fork = repository
+    git(root, "checkout", "-qb", "fixture-feature")
+    put(root, "docs/feature.md", "synthetic feature branch\n")
+    git(root, "add", ".")
+    git(root, "commit", "-qm", "synthetic feature")
+    head = git(root, "rev-parse", "HEAD")
+    git(root, "checkout", "-qb", "fixture-main", fork)
+    put(root, "docs/main.md", "synthetic new main commit\n")
+    git(root, "add", ".")
+    git(root, "commit", "-qm", "synthetic base advanced")
+    advanced_base = git(root, "rev-parse", "HEAD")
+    git(root, "checkout", "-q", "fixture-feature")
+    module = gates_module()
+    monkeypatch.setattr(module, "BASELINE", fork)
+    code = module.main(["--root", str(root), "--gate", "schema", "--base", advanced_base, "--head", head, "--scope", "full"])
+    payload = json.loads(capsys.readouterr().out)
+    assert code == 2
+    assert payload["status"] == "BLOCKED"
+    assert payload["reason"] == "BASE_NOT_IN_TARGET_HISTORY"
+    assert payload["merge_base"] == fork
+
+
+def test_ci_pr_number_environment_reaches_the_live_verifier(repository, monkeypatch, capsys):
+    """GOV-01: metadata CI must not silently lose its real PR context."""
+    target = gates_module()
+    observed = []
+    monkeypatch.setenv("PAPERTRACE_PR_NUMBER", "20")
+    monkeypatch.setattr(target, "schema_gate", lambda ctx: observed.append(ctx.pr_number) or target.result("schema", "PASS", "context wiring only"))
+    code = target.main(["--root", str(repository[0]), "--gate", "schema", "--base", repository[1]])
+    capsys.readouterr()
+    assert code == 0
+    assert observed == [20]
+
+
+def test_metadata_facades_delegate_to_executable_verifiers(repository, monkeypatch):
+    """GOV-01/02: facade must not retain an unconditional BLOCKED placeholder."""
+    from types import SimpleNamespace
+    target = gates_module()
+    called = []
+    def verifier(ctx):
+        called.append(ctx)
+        return target.result("synthetic-unit-input", "PASS", "Facade wiring only; real evidence tested separately")
+    monkeypatch.setattr(target, "support_module", lambda name: SimpleNamespace(verify_test_approval=verifier, verify_semantic=verifier))
+    put(repository[0], "src/papertrace/service.py", "VALUE = 'synthetic facade input'\n")
+    ctx = context(repository)
+    assert target.test_approval_gate(ctx)["status"] == "PASS"
+    assert target.semantic_gate(ctx)["status"] == "PASS"
+    assert called == [ctx, ctx]
+
+
+def test_all_aggregate_can_pass_only_when_every_selected_gate_passes(repository, monkeypatch, capsys):
+    """GOV-02: aggregation cannot permanently block a genuinely complete run."""
+    module = gates_module()
+    root, base = repository
+    monkeypatch.setattr(module, "BASELINE", base)
+    names = {"test_approval_gate": "test-approval", "static_gate": "static", "schema_gate": "schema", "semantic_gate": "semantic", "regression_gate": "regression", "ai_log_gate": "ai-log"}
+    for function, name in names.items():
+        monkeypatch.setattr(module, function, lambda ctx, name=name: module.result(name, "PASS", "synthetic aggregate input, not real course evidence"))
+    assert module.main(["--root", str(root), "--gate", "all", "--base", base, "--scope", "full"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["full_course_status"] == {name: "PASS" for name in names.values()}
+
+
+@pytest.mark.parametrize("name", [".github/workflows/ci.yml", ".opencode/permissions.jsonc", "requirements-runtime.lock", "papertrace.pytest.ini"])
+def test_ci_and_execution_policy_changes_require_fresh_disclosure(repository, name):
+    """GOV-01/03: workflow and permission changes are executable governance, not prose."""
+    root, _ = repository
+    put(root, name, "synthetic execution-policy change\n")
+    assert gates_module().ai_log_gate(context(repository))["status"] == "FAIL"
+
+
+def test_metadata_ci_uses_trusted_base_without_running_target_code_with_token():
+    """GOV-02/SEC-01: approval trust cannot come from the PR's own verifier."""
+    workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    assert "pull_request_review" in workflow["on"]
+    for name in ("test-approval", "semantic-evaluation"):
+        job = workflow["jobs"][name]
+        checkouts = [step["with"] for step in job["steps"] if step.get("uses", "").startswith("actions/checkout@")]
+        assert checkouts[1]["path"] == ".control"
+        assert checkouts[1]["ref"] == "${{ steps.control.outputs.sha }}"
+        selector = next(step for step in job["steps"] if step.get("id") == "control")
+        assert 'BASE="$PAPERTRACE_BASE"' in selector["run"]
+        assert "[0-9a-f]{40}" in selector["run"]
+        assert checkouts[0]["path"] == "target"
+        token_steps = [step for step in job["steps"] if "GITHUB_TOKEN" in step.get("env", {})]
+        assert len(token_steps) == 1
+        command = token_steps[0]["run"]
+        assert ".control/scripts/gates.py" in command
+        assert "--root" in command and "target" in command
+        assert "pytest" not in command
+    assert "--scope full" in workflow["jobs"]["regression"]["steps"][-1]["run"]
+
+
+def test_all_ci_gates_use_the_exact_base_verifier_not_candidate_self_certification():
+    """GOV-02: changing the candidate runner cannot certify its own full result."""
+    workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    assert workflow["jobs"]["semantic-evaluation"]["permissions"].get("actions") == "read"
+    regression = workflow["jobs"]["regression"]
+    assert regression["runs-on"].startswith("macos-")  # Real sandboxed OpenCode tool tests must run, never skip on Linux.
+    assert any("@opencode/cli@2.0.12" in step.get("run", "") for step in regression["steps"])
+    assert regression["env"]["PAPERTRACE_OPENCODE_BINARY"].endswith("/node_modules/.bin/opencode")
+    for job in workflow["jobs"].values():
+        checkouts = [step["with"] for step in job["steps"] if step.get("uses", "").startswith("actions/checkout@")]
+        assert checkouts[1]["path"] == ".control"
+        assert checkouts[1]["ref"] == "${{ steps.control.outputs.sha }}"
+        assert ".control/scripts/gates.py" in job["steps"][-1]["run"]
+        assert "--scope full" in job["steps"][-1]["run"]
+
+
 def test_fixed_evaluation_and_workflow_contracts():
     """GOV-02: data/CI contracts are present without fabricated quality results."""
     dataset = json.loads((ROOT / "test/evaluation/cases.json").read_text(encoding="utf-8"))
@@ -319,7 +469,7 @@ def test_fixed_evaluation_and_workflow_contracts():
         assert "output" not in case
     workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
     assert set(workflow["jobs"]) == {"test-approval", "static-analysis", "schema", "semantic-evaluation", "regression", "ai-use-log"}
-    assert set(workflow["on"]) == {"push", "pull_request"}
+    assert set(workflow["on"]) == {"push", "pull_request", "pull_request_review", "workflow_dispatch"}
     assert workflow["permissions"] == {"contents": "read"}
     for job in workflow["jobs"].values():
         assert "if" not in job and "continue-on-error" not in job

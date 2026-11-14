@@ -1,11 +1,29 @@
-# Gate 1：可信事前测试批准合同（严格参考）
+# Gate 1：事前测试批准（已实现验证器）
 
-> **2026-11-14 更新**：以下「外部审批服务 / 受保护校验器 / 服务器事件 ID」是防恶意供应链的严格合同，作为参考保留。五人学生团队请优先采用 [**minimal-gates.md 的最小路线**](minimal-gates.md)：以 GitHub 原生 PR 的两次提交顺序 + 非作者 `Approve`（GitHub 服务器时间戳与 head SHA 不可由作者伪造）+ 轮值人工作为可信来源，不自建认证系统。**两条路线都不接受自批、事后补批或仓库内 `approved: true`，没有真实批准就保持 BLOCKED。**
+实现：`scripts/gate_evidence.py`，由可信 base 的 `gates.py --gate test-approval` 调用。缺真实证据为 BLOCKED，矛盾/自批/撤销/错 SHA 为 FAIL；本地 `approved:true` 无效。
 
-当前入口`--gate test-approval`对代码/prompt变化返回BLOCKED/2，绝不把本轮初始化授权当成学生业务开发的事前测试批准。
+## 学生实际操作
 
-启用前由仓库管理员部署只读GitHub校验器与不可由PR修改的信任配置。批准者必须是授权学生审核者、独立于实现者，不能让编码代理或PR作者自行批准。批准通过受保护GitHub review/check或外部审批服务取得；记录repository、PR、reviewer identity、批准时服务器事件ID、测试tree/blob SHA、计划SHA、首次实现提交/构建事件及时间。Git提交author/committer时间可被伪造，不能单独证明事前时序。必须由可信服务器事件证明：测试/计划固定→批准→首次实现；测试变动、范围扩大或关键安全变动须重新批准。
+1. 监督学生批准 Plan 和一次模块/离线工具范围；用 OpenCode **仅生成模块测试、合成 fixtures、设计计划**，此时禁止业务源码实现。
+2. 将这些内容推为测试提案 PR；可以保持 open 且 RED，**不要为了审批合并红测试**。计划放 `docs/team/designs/module-X/`，或 PR 正文独立一行 `Plan: <具体计划说明>`。每个 PR 如实追加 AI-use log。
+3. 另一位非实现者检查具体测试并在 GitHub `Approve`，批准必须指向提案当前 head。测试变了就重新批准。
+4. 从测试 head 开实现分支，批准之后才写业务代码并新建实现 PR。实现 PR 描述独立一行：
+   ```text
+   Test approval PR: #123
+   ```
+   用真实编号替换；不要照抄。测试/计划 blobs 保持相同，可以存在其他同学已合入的无关测试。实现 PR 合并后关闭未合并的测试提案，避免再次合并旧分支。
+5. 若测试 PR 本来就是全绿，也支持它先合并、再从更新后的 main 实现；不是强制合并测试 PR。
 
-校验绑定当前PR准确head和批准的测试版本，拒绝审批后改测试再实现、审批记录复制到其他PR、实现者自批、已撤销批准、不在授权集合的审核者、过期事件和缺少时序证据。审批人在学生本人参与后才可进入实现阶段；管理员须保护校验器与其证据读取来源，禁止PR修改校验逻辑后自证。仓库内`approved: true`、本地签名字符串、可改的YAML/JSON或未经验证的时间戳一律不受信任。
+## 机器核查与诚实边界
 
-所需正负验收：授权独立审核者真实事前批准的合法对照；无批准；自批；错误test SHA；实施后补批；审批撤销；PR修改门禁；复制签名。此轮只测本地伪记录仍BLOCKED，没有远端合法PASS、签名或学生审批证据。
+只读 GitHub API 核对同一私有仓库、实际 PR files、作者/commit 参与者、reviewer 的 write/maintain/admin 权限、当前有效 APPROVED、SHA 和撤销事件。GitHub 服务器 approve/PR created/merged 时间确认发布顺序；API commit 时间与本地 Git 对象相同且不早于审批作为附加检查。**Git 日期可伪造，不能单独证明第一次写代码的时间**；独立学生必须审查真实 OpenCode 过程。机器人/作者/共同实现者不能替代学生批准；无需自建账号服务或强制 allowlist。
+
+安全路径还需实现 PR 正文 `Architecture decision: docs/architecture/adr/002-development-readiness.md`（改成实际适用 ADR）和当前 head 的独立人工 APPROVE。普通模块细节不逐项新建 ADR。批准者与最终 reviewer 可以是同一个非实现者。
+
+门禁/工作流自改必须由**未变的 base verifier**核查，候选代码不可自证。首次引入验证器的这份工程修复没有可追溯的学生事前批准，保持 BLOCKED 并交真人采纳；不倒签、不伪造 bootstrap PASS。
+
+本地复核命令（精确 40 位 SHA、真实 PR 号）：
+```sh
+.venv/bin/python scripts/gates.py --gate test-approval --scope full --base <baseSHA> --head <headSHA> --pr-number <实现PR号>
+```
+不含 token 的离线 API fixtures 只是验证器正负测试，不是学生审批。

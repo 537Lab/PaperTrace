@@ -1,8 +1,15 @@
-# Initialization foundation only; trusted enforcement is not deployed.
+# Exact fetched prior/base SHA; missing adopted verifier is explicitly BLOCKED.
+# Tokens only for metadata; native macOS OpenCode tests actually execute.
 name: gates
 'on':
   push: {}
   pull_request: {}
+  pull_request_review:
+    types:
+    - submitted
+    - dismissed
+    - edited
+  workflow_dispatch: {}
 permissions:
   contents: read
 jobs:
@@ -11,185 +18,404 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
-        }}
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
       PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       PIP_CONFIG_FILE: /dev/null
       PYTHONNOUSERSITE: '1'
+      TMPDIR: ${{ github.workspace }}/.local/ci-tmp
+      UV_NO_PROGRESS: '1'
+      PAPERTRACE_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
     steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+    - name: Checkout exact candidate target
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
         persist-credentials: false
+        path: target
+    - name: Select exact prior verifier SHA
+      id: control
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="$PAPERTRACE_BASE"
+        if [[ -z "$BASE" || "$BASE" == "0000000000000000000000000000000000000000" ]]; then
+          BASE="$(git -C target rev-parse "refs/remotes/origin/$PAPERTRACE_DEFAULT_BRANCH")"
+        fi
+        [[ "$BASE" =~ ^[0-9a-f]{40}$ ]] || { printf '%s\n' 'Invalid literal verifier base SHA' >&2; exit 1; }
+        printf 'sha=%s\n' "$BASE" >> "$GITHUB_OUTPUT"
+    - name: Checkout exact prior verifier and dependency lock
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        ref: ${{ steps.control.outputs.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+        path: .control
+    - name: Require adopted executable base verifier (never candidate self-certification)
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ ! -f .control/scripts/gate_evidence.py || ! -f .control/scripts/semantic_evidence.py || ! -f .control/scripts/full_regression.py ]]; then
+          printf '%s\n' '{"status":"BLOCKED","reason":"BASE_VERIFIER_UPGRADE_REQUIRED","instruction":"Independent human adoption is required; candidate changes cannot approve themselves"}'
+          exit 2
+        fi
     - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
         python-version: 3.14.6
-    - name: Install only the initialization lock
-      run: 'python -m venv .venv
-
-        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
-
-        '
-    - name: Run the gate without provider credentials
+    - name: Install pinned verifier environment
       shell: bash
-      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
-        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
-        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
-        \ --gate test-approval --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope\
-        \ full\n"
+      run: |
+        set -euo pipefail
+        mkdir -p "$TMPDIR"
+        python -m venv .venv
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r .control/requirements-init.lock
+    - name: Verify real GitHub evidence using trusted base only
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        PAPERTRACE_PR_NUMBER: ${{ github.event.pull_request.number }}
+        PAPERTRACE_REPOSITORY: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        BASE="${{ steps.control.outputs.sha }}"
+        .venv/bin/python .control/scripts/gates.py --root "$GITHUB_WORKSPACE/target" --gate test-approval --base "$BASE" --head "$PAPERTRACE_HEAD" --scope full
   static-analysis:
     name: static-analysis
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
-        }}
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
       PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       PIP_CONFIG_FILE: /dev/null
       PYTHONNOUSERSITE: '1'
+      TMPDIR: ${{ github.workspace }}/.local/ci-tmp
+      UV_NO_PROGRESS: '1'
+      PAPERTRACE_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+    - name: Checkout exact candidate target
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
         persist-credentials: false
+        path: target
+    - name: Select exact prior verifier SHA
+      id: control
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="$PAPERTRACE_BASE"
+        if [[ -z "$BASE" || "$BASE" == "0000000000000000000000000000000000000000" ]]; then
+          BASE="$(git -C target rev-parse "refs/remotes/origin/$PAPERTRACE_DEFAULT_BRANCH")"
+        fi
+        [[ "$BASE" =~ ^[0-9a-f]{40}$ ]] || { printf '%s\n' 'Invalid literal verifier base SHA' >&2; exit 1; }
+        printf 'sha=%s\n' "$BASE" >> "$GITHUB_OUTPUT"
+    - name: Checkout exact prior verifier and dependency lock
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        ref: ${{ steps.control.outputs.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+        path: .control
+    - name: Require adopted executable base verifier (never candidate self-certification)
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ ! -f .control/scripts/gate_evidence.py || ! -f .control/scripts/semantic_evidence.py || ! -f .control/scripts/full_regression.py ]]; then
+          printf '%s\n' '{"status":"BLOCKED","reason":"BASE_VERIFIER_UPGRADE_REQUIRED","instruction":"Independent human adoption is required; candidate changes cannot approve themselves"}'
+          exit 2
+        fi
     - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
         python-version: 3.14.6
-    - name: Install only the initialization lock
-      run: 'python -m venv .venv
-
-        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
-
-        '
-    - name: Run the gate without provider credentials
+    - name: Install pinned verifier environment
       shell: bash
-      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
-        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
-        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
-        \ --gate static --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope initialization\n"
+      run: |
+        set -euo pipefail
+        mkdir -p "$TMPDIR"
+        python -m venv .venv
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r .control/requirements-init.lock
+    - name: Execute gate without provider credentials
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="${{ steps.control.outputs.sha }}"
+        .venv/bin/python .control/scripts/gates.py --root "$GITHUB_WORKSPACE/target" --gate static --base "$BASE" --head "$PAPERTRACE_HEAD" --scope full
   schema:
     name: schema
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
-        }}
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
       PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       PIP_CONFIG_FILE: /dev/null
       PYTHONNOUSERSITE: '1'
+      TMPDIR: ${{ github.workspace }}/.local/ci-tmp
+      UV_NO_PROGRESS: '1'
+      PAPERTRACE_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+    - name: Checkout exact candidate target
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
         persist-credentials: false
+        path: target
+    - name: Select exact prior verifier SHA
+      id: control
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="$PAPERTRACE_BASE"
+        if [[ -z "$BASE" || "$BASE" == "0000000000000000000000000000000000000000" ]]; then
+          BASE="$(git -C target rev-parse "refs/remotes/origin/$PAPERTRACE_DEFAULT_BRANCH")"
+        fi
+        [[ "$BASE" =~ ^[0-9a-f]{40}$ ]] || { printf '%s\n' 'Invalid literal verifier base SHA' >&2; exit 1; }
+        printf 'sha=%s\n' "$BASE" >> "$GITHUB_OUTPUT"
+    - name: Checkout exact prior verifier and dependency lock
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        ref: ${{ steps.control.outputs.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+        path: .control
+    - name: Require adopted executable base verifier (never candidate self-certification)
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ ! -f .control/scripts/gate_evidence.py || ! -f .control/scripts/semantic_evidence.py || ! -f .control/scripts/full_regression.py ]]; then
+          printf '%s\n' '{"status":"BLOCKED","reason":"BASE_VERIFIER_UPGRADE_REQUIRED","instruction":"Independent human adoption is required; candidate changes cannot approve themselves"}'
+          exit 2
+        fi
     - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
         python-version: 3.14.6
-    - name: Install only the initialization lock
-      run: 'python -m venv .venv
-
-        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
-
-        '
-    - name: Run the gate without provider credentials
+    - name: Install pinned verifier environment
       shell: bash
-      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
-        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
-        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
-        \ --gate schema --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope initialization\n"
+      run: |
+        set -euo pipefail
+        mkdir -p "$TMPDIR"
+        python -m venv .venv
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r .control/requirements-init.lock
+    - name: Execute gate without provider credentials
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="${{ steps.control.outputs.sha }}"
+        .venv/bin/python .control/scripts/gates.py --root "$GITHUB_WORKSPACE/target" --gate schema --base "$BASE" --head "$PAPERTRACE_HEAD" --scope full
   semantic-evaluation:
     name: semantic-evaluation
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
-        }}
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
       PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       PIP_CONFIG_FILE: /dev/null
       PYTHONNOUSERSITE: '1'
+      TMPDIR: ${{ github.workspace }}/.local/ci-tmp
+      UV_NO_PROGRESS: '1'
+      PAPERTRACE_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
     steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+    - name: Checkout exact candidate target
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
         persist-credentials: false
+        path: target
+    - name: Select exact prior verifier SHA
+      id: control
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="$PAPERTRACE_BASE"
+        if [[ -z "$BASE" || "$BASE" == "0000000000000000000000000000000000000000" ]]; then
+          BASE="$(git -C target rev-parse "refs/remotes/origin/$PAPERTRACE_DEFAULT_BRANCH")"
+        fi
+        [[ "$BASE" =~ ^[0-9a-f]{40}$ ]] || { printf '%s\n' 'Invalid literal verifier base SHA' >&2; exit 1; }
+        printf 'sha=%s\n' "$BASE" >> "$GITHUB_OUTPUT"
+    - name: Checkout exact prior verifier and dependency lock
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        ref: ${{ steps.control.outputs.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+        path: .control
+    - name: Require adopted executable base verifier (never candidate self-certification)
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ ! -f .control/scripts/gate_evidence.py || ! -f .control/scripts/semantic_evidence.py || ! -f .control/scripts/full_regression.py ]]; then
+          printf '%s\n' '{"status":"BLOCKED","reason":"BASE_VERIFIER_UPGRADE_REQUIRED","instruction":"Independent human adoption is required; candidate changes cannot approve themselves"}'
+          exit 2
+        fi
     - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
         python-version: 3.14.6
-    - name: Install only the initialization lock
-      run: 'python -m venv .venv
-
-        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
-
-        '
-    - name: Run the gate without provider credentials
+    - name: Install pinned verifier environment
       shell: bash
-      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
-        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
-        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
-        \ --gate semantic --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope full\n"
+      run: |
+        set -euo pipefail
+        mkdir -p "$TMPDIR"
+        python -m venv .venv
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r .control/requirements-init.lock
+    - name: Verify real GitHub evidence using trusted base only
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        PAPERTRACE_PR_NUMBER: ${{ github.event.pull_request.number }}
+        PAPERTRACE_REPOSITORY: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        BASE="${{ steps.control.outputs.sha }}"
+        .venv/bin/python .control/scripts/gates.py --root "$GITHUB_WORKSPACE/target" --gate semantic --base "$BASE" --head "$PAPERTRACE_HEAD" --scope full
   regression:
     name: regression
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: macos-latest
+    timeout-minutes: 60
     env:
-      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
-        }}
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
       PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       PIP_CONFIG_FILE: /dev/null
       PYTHONNOUSERSITE: '1'
+      TMPDIR: ${{ github.workspace }}/.local/ci-tmp
+      UV_NO_PROGRESS: '1'
+      PAPERTRACE_OPENCODE_BINARY: ${{ github.workspace }}/.local/opencode-cli/node_modules/.bin/opencode
+      PAPERTRACE_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+    - name: Checkout exact candidate target
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
         persist-credentials: false
+        path: target
+    - name: Select exact prior verifier SHA
+      id: control
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="$PAPERTRACE_BASE"
+        if [[ -z "$BASE" || "$BASE" == "0000000000000000000000000000000000000000" ]]; then
+          BASE="$(git -C target rev-parse "refs/remotes/origin/$PAPERTRACE_DEFAULT_BRANCH")"
+        fi
+        [[ "$BASE" =~ ^[0-9a-f]{40}$ ]] || { printf '%s\n' 'Invalid literal verifier base SHA' >&2; exit 1; }
+        printf 'sha=%s\n' "$BASE" >> "$GITHUB_OUTPUT"
+    - name: Checkout exact prior verifier and dependency lock
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        ref: ${{ steps.control.outputs.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+        path: .control
+    - name: Require adopted executable base verifier (never candidate self-certification)
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ ! -f .control/scripts/gate_evidence.py || ! -f .control/scripts/semantic_evidence.py || ! -f .control/scripts/full_regression.py ]]; then
+          printf '%s\n' '{"status":"BLOCKED","reason":"BASE_VERIFIER_UPGRADE_REQUIRED","instruction":"Independent human adoption is required; candidate changes cannot approve themselves"}'
+          exit 2
+        fi
     - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
         python-version: 3.14.6
-    - name: Install only the initialization lock
-      run: 'python -m venv .venv
-
-        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
-
-        '
-    - name: Run the gate without provider credentials
+    - name: Install pinned verifier environment
       shell: bash
-      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
-        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
-        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
-        \ --gate regression --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope full\n"
+      run: |
+        set -euo pipefail
+        mkdir -p "$TMPDIR"
+        python -m venv .venv
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r .control/requirements-init.lock
+    - name: Install exact OpenCode v2 tool-loop prerequisite (no model credentials)
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p "$TMPDIR"
+        npm install --prefix .local/opencode-cli --no-audit --no-fund @opencode/cli@2.0.12
+        "$PAPERTRACE_OPENCODE_BINARY" --version
+    - name: Install real runtime and frozen upstream test environments (no provider calls)
+      shell: bash
+      run: |
+        set -euo pipefail
+        "$GITHUB_WORKSPACE/.venv/bin/python" -m pip install --disable-pip-version-check 'uv==0.12.9'
+        "$GITHUB_WORKSPACE/.venv/bin/uv" venv .venv-runtime --python python3
+        "$GITHUB_WORKSPACE/.venv/bin/uv" pip sync --python .venv-runtime/bin/python requirements-runtime.lock
+        UV_PROJECT_ENVIRONMENT=.venv-upstream "$GITHUB_WORKSPACE/.venv/bin/uv" sync --frozen
+        "$GITHUB_WORKSPACE/.venv/bin/uv" pip install --python .venv-upstream/bin/python --no-deps --require-hashes -r requirements-upstream-test.lock
+      working-directory: target
+    - name: Execute gate without provider credentials
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="${{ steps.control.outputs.sha }}"
+        .venv/bin/python .control/scripts/gates.py --root "$GITHUB_WORKSPACE/target" --gate regression --base "$BASE" --head "$PAPERTRACE_HEAD" --scope full --timeout 1200 --runtime-python "$GITHUB_WORKSPACE/target/.venv-runtime/bin/python" --upstream-python "$GITHUB_WORKSPACE/target/.venv-upstream/bin/python"
   ai-use-log:
     name: ai-use-log
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before
-        }}
+      PAPERTRACE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
       PAPERTRACE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       PIP_CONFIG_FILE: /dev/null
       PYTHONNOUSERSITE: '1'
+      TMPDIR: ${{ github.workspace }}/.local/ci-tmp
+      UV_NO_PROGRESS: '1'
+      PAPERTRACE_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+    - name: Checkout exact candidate target
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
         persist-credentials: false
+        path: target
+    - name: Select exact prior verifier SHA
+      id: control
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="$PAPERTRACE_BASE"
+        if [[ -z "$BASE" || "$BASE" == "0000000000000000000000000000000000000000" ]]; then
+          BASE="$(git -C target rev-parse "refs/remotes/origin/$PAPERTRACE_DEFAULT_BRANCH")"
+        fi
+        [[ "$BASE" =~ ^[0-9a-f]{40}$ ]] || { printf '%s\n' 'Invalid literal verifier base SHA' >&2; exit 1; }
+        printf 'sha=%s\n' "$BASE" >> "$GITHUB_OUTPUT"
+    - name: Checkout exact prior verifier and dependency lock
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        ref: ${{ steps.control.outputs.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+        path: .control
+    - name: Require adopted executable base verifier (never candidate self-certification)
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ ! -f .control/scripts/gate_evidence.py || ! -f .control/scripts/semantic_evidence.py || ! -f .control/scripts/full_regression.py ]]; then
+          printf '%s\n' '{"status":"BLOCKED","reason":"BASE_VERIFIER_UPGRADE_REQUIRED","instruction":"Independent human adoption is required; candidate changes cannot approve themselves"}'
+          exit 2
+        fi
     - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
         python-version: 3.14.6
-    - name: Install only the initialization lock
-      run: 'python -m venv .venv
-
-        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r requirements-init.lock
-
-        '
-    - name: Run the gate without provider credentials
+    - name: Install pinned verifier environment
       shell: bash
-      run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nif [[ -z \"$BASE\" || \"\
-        $BASE\" == \"0000000000000000000000000000000000000000\" ]]; then\n  BASE=\"\
-        c692d0dfeac4a0296599f7fe21a253a58b7ac12a\"\nfi\n.venv/bin/python scripts/gates.py\
-        \ --gate ai-log --base \"$BASE\" --head \"$PAPERTRACE_HEAD\" --scope initialization\n"
+      run: |
+        set -euo pipefail
+        mkdir -p "$TMPDIR"
+        python -m venv .venv
+        .venv/bin/python -m pip install --disable-pip-version-check --no-deps -r .control/requirements-init.lock
+    - name: Execute gate without provider credentials
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="${{ steps.control.outputs.sha }}"
+        .venv/bin/python .control/scripts/gates.py --root "$GITHUB_WORKSPACE/target" --gate ai-log --base "$BASE" --head "$PAPERTRACE_HEAD" --scope full

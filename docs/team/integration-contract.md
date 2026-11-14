@@ -2,9 +2,9 @@
 
 ## 0. 本文件的效力与当前阶段
 
-先按 [新人启动流程](startup.md) 接通私有仓库与初始化环境（被邀请 → clone → 170 项离线测试）；六类门禁的最小落地方案见 [../ci/minimal-gates.md](../ci/minimal-gates.md)。
+本文件是五模块共同遵守的**语义交接合同**，用于需求/测试审批和后续实现。本轮只建立共享契约、合成 fixtures 和离线 gate，**业务调用与编排尚未实现**；本文件不另造共享模型，也不把设计 port 写成已可调用。
 
-这是五模块共同遵守的**语义交接合同**，用于现在的需求/测试批准和后续实现。本轮只建立共享契约、合成 fixtures 和离线 gate，**下面的业务调用与编排尚未实现**。本文件不制造一套新的 Pydantic 模型或假装端口已可调用。
+门禁定义与实际运行状态见 [`../ci/gates.md`](../ci/gates.md)；任务书的测试案例和本文件的交互表均是实现合同，不代表已运行或通过。
 
 - 类型、字段、枚举、序列化与身份算法的事实源：`src/papertrace/contracts.py` 及其共享测试/规范 fixtures。
 - 需求与不变量的事实源：`docs/req/requirements.yaml`、`docs/architecture/invariants.md`；架构/权限以 `architecture-blueprint.md`、ADR、permission-model 为准。
@@ -21,7 +21,7 @@
 | D `answer` | 获准集/发送集/引用集；调用授权、上下文策略与确定性发布门 | AnswerDraft、ReleaseDecision 及核查原因 | 直接导入 `paperqa`；取回未审核证据；用模型自评代替门禁 |
 | E `reports` | 研究历史、追溯存储与导出 | 绑定原快照/ledger/draft/release 的研究记录与导出件 | 重新生成答案；将 blocked 草稿升级为 released；回写审核 |
 
-**只有 B 可以在团队新增源码中 import `paperqa`。**固定上游核心自己的 import 不受这条新增代码限制；不能为了结构检查去修改上游。D 是回答功能 owner，B 只是第三方机械适配者：D 决定获准输入、预算、提示词和发布，B 不获得批准/放行权。
+**只有 B 可以在团队新增源码中 import `paperqa`。**固定上游源码自己的 import 不受这条新增代码限制；不能为了结构检查去修改上游。D 是回答功能 owner，B 维护第三方适配/调用：D 决定获准输入、预算、提示词和发布，B 不获得批准/放行权。B-only 是代码依赖边界，不是禁止 A/D 阅读上游源码；A/D 可在本轮 Plan 明列且获准的精确只读路径内核实行为，但不得直接 import/调用上游。
 
 各模块不通过 import 邻居的私有实现调用。后续应用 orchestration 以依赖注入/中立端口传递共享模型，负责安排顺序与一致性读取；端口由相应业务 owner 提案并在 Plan 获批，**不是本轮预先实现一个跨模块大服务**。例如 D 的离线测试可注入 fake 生成端口，不依赖 B 完工。
 
@@ -114,7 +114,7 @@ B 的解析/索引准备与检索可能有独立错误或费用；A 的“导入
 
 ## 7. 共享 fixtures 与集成验收
 
-先使用 `test/fixtures/contracts/` 的规范 fixtures；其 wrapper 的 `data` 才是共享模型输入，synthetic 元信息不能传入 `extra="forbid"` 模型。模块测试拟放 `test/offline/test_library.py`、`test_retrieval.py`、`test_review.py`、`test_answer.py`、`test_reports.py`（后四项同目录），模块专属合成材料拟放 `test/fixtures/<module>/`；须在 Plan 列出精确文件并经权限批准，不因本页示例就自动可写。不要修改共享 fixture 的预期迁就实现；身份由真实模型/共享算法算，不能手填看似合法的随机 hash。
+先使用 `test/fixtures/contracts/` 的规范 fixtures；其 wrapper 的 `data` 才是共享模型输入，synthetic 元信息不能传入 `extra="forbid"` 模型。模块测试拟放 `test/offline/test_library.py`、`test_retrieval.py`、`test_review.py`、`test_answer.py`、`test_reports.py`（后四项同目录），模块专属合成材料拟放 `test/fixtures/<module>/`；在 Plan 一次确认对应模块范围；范围内正常创建测试/fixtures 不逐文件重复审批，共享 fixtures 改动仍需受影响 owner 审查。不要修改共享 fixture 的预期迁就实现；身份由真实模型/共享算法算，不能手填看似合法的随机 hash。
 
 最低跨模块场景：
 
@@ -139,5 +139,9 @@ B 的解析/索引准备与检索可能有独立错误或费用；A 的“导入
 4. **独立共享契约 PR：**最小修改 contracts、schema/fixtures/测试、受影响 requirements、ADR、invariants、trace matrix、运行策略及本页；显式写新版本和旧记录处理，不混入大批业务功能。
 5. **按依赖同步：**契约先合并，再由 A–E 各自同步映射/测试；安全不兼容旧结果默认 blocked，不自动转换 accepted/released。共享文件指定一位临时编辑者，其他 owner 给补丁，避免互相覆盖。
 6. **复验并解除冻结：**完整离线回归和门禁；prompt/model 受影响时追加经授权 live 固定集评估。读回真实接口与记录，非作者审查批准后才解除对应集成冻结。记录谁批准什么版本及证据，不用“大家默认同意”。
+
+### 上游兼容修复与固定基线
+
+普通模块 PR 保持固定 PaperQA2 基线，由现有 `frozen_check` 按当前 fitness rule/比较口径保护。必要兼容修复须另开 ADR + 人工 PR，明确更新该 rule/比较口径、说明受影响源码/所有者并运行负测及受影响回归；仅口头批准不能让当前 CI 通过。不得在业务 PR 裸改或绕过 gate，也不新增旁路授权平台。A/D 对上游的精确只读检查按各自获批 Plan 提出；B-only 仍只约束新增源码的 import/adapter 实现位置。
 
 契约变更不会转移长期功能 ownership；支持角色轮换也不会允许集成人未经作者/审批修改别人的业务边界。

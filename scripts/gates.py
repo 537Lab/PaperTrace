@@ -6,13 +6,12 @@ No credentials, provider requests, shell interpolation, or mutable approval trus
 
 import argparse
 import ast
+import importlib.util
 import json
 import os
 import re
 import subprocess
 import sys
-import tempfile
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha256
@@ -55,6 +54,17 @@ def result(gate, status, summary, **details):
     return {"gate": gate, "status": status, "summary": summary, "details": details}
 
 
+def support_module(name):
+    """GOV-02: load helpers beside this verifier, never from the target PR tree."""
+    spec = importlib.util.spec_from_file_location("papertrace_gate_support_" + name, Path(__file__).with_name(name + ".py"))
+    if spec is None or spec.loader is None:
+        raise ValueError("Verifier support module unavailable")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 @dataclass(frozen=True)
 class GateContext:
     """GOV-02: explicit target; absent head means the current working tree."""
@@ -65,6 +75,11 @@ class GateContext:
     scope: str = "initialization"
     baseline: str = BASELINE
     timeout: float = 120
+    runtime_python: str | None = None
+    upstream_python: str | None = None
+    run_live: bool = False
+    repository: str = "537Lab/PaperTrace"
+    pr_number: int | None = None
 
     def path(self, relative):
         """INV-06: refuse traversal and links outside the repository."""
@@ -112,8 +127,9 @@ def code_or_prompt(path):
     """p10 gate6: tests and agent instructions count as code/prompt changes."""
     value = path.lower()
     return (
-        value.startswith(("src/", "packages/", "scripts/", "test/", "tests/", "prompts/"))
-        or value in {"prompt.md", "agents.md", "opencode.jsonc", ".agent/rules.md", ".opencode/rules.md"}
+        value.startswith(("src/", "packages/", "scripts/", "test/", "tests/", "prompts/", ".github/workflows/", ".github/actions/", ".opencode/"))
+        or value in {"prompt.md", "agents.md", "opencode.jsonc", ".agent/rules.md", "pyproject.toml", "uv.lock", "papertrace.pytest.ini", "papertrace.ruff.toml", "mypy.ini", ".python-version"}
+        or (value.startswith("requirements") and value.endswith((".lock", ".in")))
         or value.endswith((".py", ".js", ".ts", ".tsx", ".sh"))
     )
 
@@ -185,8 +201,22 @@ def ai_log_gate(ctx):
         return result("ai-log", "FAIL", "Missing, invalid or inaccessible AI-use log/diff", error_type=type(error).__name__)
 
 
-FROZEN = ("src/paperqa", "packages", "tests", "pyproject.toml", "uv.lock")
+FROZEN = ("src/paperqa", "packages", "tests", "pyproject.toml", "uv.lock", "LICENSE")
 B_IMPORT_PATH = "src/papertrace/retrieval/"
+
+
+def build_metadata_path(ctx, relative):
+    """GOV-02: narrowly recognize ignored SCM/egg-info output, never source changes."""
+    path = ctx.path(relative)
+    if path.is_symlink():
+        return False
+    scm = bool(re.fullmatch(r"src/paperqa/version\.py|packages/paper-qa-[^/]+/src/paperqa_[^/]+/version\.py", relative))
+    metadata = Path(relative).name in {"PKG-INFO", "SOURCES.txt", "dependency_links.txt", "requires.txt", "top_level.txt", "entry_points.txt", "scm_file_list.json", "scm_version.json"} and any(part.endswith(".egg-info") for part in Path(relative).parts)
+    if not (scm or metadata):
+        return False
+    # check-ignore's nonzero means not ignored: do not exempt an arbitrary input.
+    process = subprocess.run(["git", "-C", str(ctx.root), "check-ignore", "-q", "--", relative], capture_output=True, check=False)
+    return process.returncode == 0
 
 
 def frozen_check(ctx):
@@ -202,7 +232,7 @@ def frozen_check(ctx):
                     relative = path.relative_to(ctx.root).as_posix()
                     if any(part in {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"} for part in path.parts):
                         continue
-                    if path.is_file() and relative not in baseline_paths:
+                    if path.is_file() and relative not in baseline_paths and not build_metadata_path(ctx, relative):
                         changed.append(relative)
         return result("frozen-baseline", "FAIL" if changed else "PASS", "Upstream baseline byte integrity", changed_paths=sorted(set(changed)), baseline=ctx.baseline)
     except (OSError, ValueError) as error:
@@ -452,75 +482,59 @@ def exit_code(reports):
     return 0
 
 
+def permissions_check(ctx):
+    """ADR-002 / INV-06: validate target permission config without a model/binary."""
+    report = run_command(ctx, [sys.executable, str(Path(__file__).with_name("opencode_support.py")), "--root", str(ctx.root)])
+    report["gate"] = "permissions"
+    report["details"]["limitation"] = "Portable configuration check; not OS isolation or model-driven runtime enforcement"
+    return report
+
+
 def static_gate(ctx):
-    """p10 gate2: executable initialization foundation, explicitly scoped."""
+    """p10 gate2: executable static checks, not a permanent scope placeholder."""
     reports = [tool_check(ctx, "lint"), tool_check(ctx, "types"), dependencies_check(ctx),
-               frozen_check(ctx), architecture_check(ctx), contract_check(ctx), secret_check(ctx)]
+               frozen_check(ctx), architecture_check(ctx), contract_check(ctx), secret_check(ctx), permissions_check(ctx)]
     status = {0: "PASS", 1: "FAIL", 2: "BLOCKED"}[exit_code(reports)]
-    if status == "PASS" and ctx.scope == "full":
-        status = "BLOCKED"
-    return result("static", status, "Initialization static checks; not a full security/integration audit", checks=reports,
-                  full_course_static="BLOCKED", pending=["complete vulnerability/provenance audit", "real adapter API/integration safety", "effective runtime permissions and independent human review"])
+    return result("static", status, "Lint/type/dependency/contract/security/API/permission fitness checks", checks=reports,
+                  limitation="Static fitness and exact initialization pins; not a vulnerability certification or proof of live AI behavior")
 
 
 def test_approval_gate(ctx):
-    """p10 gate1: only an independently administered prior-approval channel counts."""
-    changes = [path for path in ctx.changes() if code_or_prompt(path)]
-    if not changes:
-        return result("test-approval", "NOT_REQUIRED", "No code or prompt changes", changed_paths=[])
-    return result("test-approval", "BLOCKED", "Trusted prior test-approval verification is not deployed", changed_paths=changes,
-                  required_evidence=["independent authorized reviewer", "approved test tree SHA", "approval before first implementation event", "trusted-base workflow and GitHub API verification"],
-                  rejected_evidence="PR-owned approved:true, local signatures or mutable timestamps are never accepted")
+    """p10 gate1: real API reviews and immutable tests; no local approval booleans."""
+    return support_module("gate_evidence").verify_test_approval(ctx)
 
 
 def semantic_gate(ctx):
-    """p10 gate4: conservative prompt/model change detection, no synthetic success."""
-    changes = ctx.changes()
-    triggered = [path for path in changes if (
-        path.startswith(("prompts/", "src/", "packages/"))
-        or path.lower() in {"prompt.md", "agents.md", "opencode.jsonc", ".agent/rules.md", ".opencode/rules.md"}
-        or re.search(r"(?:^|[/_.-])(?:model|llm)(?:[/_.-]|$)", path.lower())
-    )]
-    if not triggered:
-        return result("semantic", "NOT_REQUIRED", "No prompt/model/source change detected", changed_paths=[])
-    return result("semantic", "BLOCKED", "No trusted real-model evaluation pipeline/report verifier is deployed", changed_paths=triggered,
-                  contract="test/evaluation/README.md", fixed_set="test/evaluation/cases.json",
-                  pending=["business adapter (not part of initialization)", "provider/model/data/call/cost approval", "trusted CI provenance and report verification"],
-                  rejected_evidence="local PASS JSON, fixed mock replies, skipped calls or PR-owned approvals")
+    """p10 gate4: actual fixed-set evidence, or NOT_REQUIRED for non-AI changes."""
+    return support_module("semantic_evidence").verify_semantic(ctx)
 
 
 def regression_gate(ctx):
     """p10 gate5: actually run all team offline tests; never rename it full prior."""
-    temporary = Path(clean_environment(ctx)["TMPDIR"])
-    with tempfile.TemporaryDirectory(prefix="regression-", dir=temporary) as folder:
-        junit = Path(folder) / "junit.xml"
-        command = [sys.executable, "-m", "pytest", "-c", "papertrace.pytest.ini", "-p", "pytest_socket", "--disable-socket", "--strict-markers", "-q", f"--junitxml={junit}", "test/offline"]
-        execution = run_command(ctx, command)
-        details = {"execution": execution, "scope": "all-team-offline", "full_course_regression": "BLOCKED",
-                   "pending_suites": ["upstream tests/ (all prior rounds)", "upstream packages/*/tests", "team test/live/ and all prior team suites"],
-                   "limitation": "Initialization suite only; upstream/full/live environment and authorizations are not established"}
-        if execution["status"] != "PASS":
-            return result("regression", execution["status"], "Offline suite command did not succeed", **details)
-        try:
-            raw = junit.read_bytes()
-            if len(raw) > 2_000_000 or b"<!doctype" in raw.lower() or b"<!entity" in raw.lower():
-                raise ValueError("JUnit report exceeds bounded DTD-free format")
-            # Fresh, bounded local pytest report; DTDs/entities explicitly rejected.
-            suites = list(ET.fromstring(raw).iter("testsuite"))  # noqa: S314
-            counts = {key: sum(int(suite.get(key, "0")) for suite in suites) for key in ("tests", "failures", "errors", "skipped")}
-        except (OSError, ValueError, ET.ParseError):
-            return result("regression", "FAIL", "JUnit results missing or invalid", **details)
-        details.update(counts)
-        if counts["tests"] < 1 or any(counts[key] for key in ("failures", "errors", "skipped")):
-            return result("regression", "FAIL", "Empty, failed, errored or skipped tests cannot certify regression", **details)
-        return result("regression", "BLOCKED" if ctx.scope == "full" else "PASS", "All team offline tests executed; full prior regression is still blocked", **details)
+    if ctx.scope == "full":
+        report = support_module("full_regression").run_full(
+            ctx.root, ctx.base, ctx.path(".local/full-regression"), timeout=ctx.timeout,
+            runtime_python=ctx.runtime_python, upstream_python=ctx.upstream_python, run_live=ctx.run_live,
+        )
+        return result("regression", report["status"], "Full prior-origin execution with baseline node inventory",
+                      scope="all-prior-origins", full_course_regression=report["status"], **{key: value for key, value in report.items() if key != "status"})
+    runner = support_module("full_regression")
+    suite = runner.Suite("team-offline", ("test/offline",), sys.executable, "papertrace.pytest.ini")
+    execution = runner.run_suite(ctx.root, suite, ctx.path(".local/initialization-regression"), timeout=ctx.timeout)
+    outcomes = execution["outcomes"]
+    return result("regression", execution["status"], "All team offline tests; no full prior-suite claim",
+                  scope="all-team-offline", full_course_regression="BLOCKED", tests=len(execution["collected"]),
+                  failures=outcomes.get("failed", 0), skipped=outcomes.get("skipped", 0),
+                  xfailed=outcomes.get("xfailed", 0), xpassed=outcomes.get("xpassed", 0), execution=execution,
+                  pending_suites=["team runtime/live", "upstream tests/ and packages/"],
+                  limitation="Initialization is never substituted for the full-origin gate")
 
 
 def source_tree_check(ctx):
     """GOV-02: tools must execute exactly the requested head's inputs."""
     if not ctx.head:
         return
-    inputs = ["src", "test", "tests", "packages", "scripts", "papertrace.pytest.ini", "papertrace.ruff.toml", "mypy.ini", "requirements-init.lock", "pyproject.toml", "uv.lock"]
+    inputs = ["src", "test", "tests", "packages", "scripts", "papertrace.pytest.ini", "papertrace.ruff.toml", "mypy.ini", "requirements*.lock", "requirements*.in", "pyproject.toml", "uv.lock", "AGENTS.md", "Prompt.md", "opencode.jsonc", ".opencode", ".agent", "prompts"]
     dirty = ctx.git("diff", "--name-only", ctx.head, "--", *inputs)
     extra = ctx.git("ls-files", "--others", "--exclude-standard", "--", *inputs)
     if dirty.strip() or extra.strip():
@@ -536,14 +550,28 @@ def main(argv=None):
     parser.add_argument("--scope", choices=["initialization", "full"], default="initialization")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--timeout", type=float, default=120)
+    parser.add_argument("--runtime-python", default=None)
+    parser.add_argument("--upstream-python", default=None)
+    parser.add_argument("--run-live", action="store_true", help="Only after explicit human data/provider/budget approval; never enabled by default CI")
+    parser.add_argument("--repository", default=os.environ.get("PAPERTRACE_REPOSITORY", "537Lab/PaperTrace"))
+    parser.add_argument("--pr-number", type=int, default=os.environ.get("PAPERTRACE_PR_NUMBER") or None)
     args = parser.parse_args(argv)
     reports = []
     try:
         if not 0 < args.timeout <= 1800:
             raise ValueError("timeout must be positive and bounded")
-        ctx = GateContext(root=args.root.resolve(), base=args.base, head=args.head, scope=args.scope, baseline=BASELINE, timeout=args.timeout)
+        ctx = GateContext(root=args.root.resolve(), base=args.base, head=args.head, scope=args.scope, baseline=BASELINE, timeout=args.timeout,
+                          runtime_python=args.runtime_python, upstream_python=args.upstream_python, run_live=args.run_live,
+                          repository=args.repository, pr_number=args.pr_number)
         ctx.changes()  # Validate literal SHAs and Git lookup before any gate executes.
-        ctx.git("merge-base", "--is-ancestor", ctx.base, ctx.head or "HEAD")
+        merge_base = ctx.git("merge-base", ctx.base, ctx.head or "HEAD").decode("utf-8").strip()
+        if merge_base != ctx.base:
+            print(json.dumps({"schema_version": 1, "scope": args.scope, "status": "BLOCKED", "exit_code": 2,
+                              "reason": "BASE_NOT_IN_TARGET_HISTORY", "merge_base": merge_base,
+                              "target": {"base": ctx.base, "head": ctx.head or "WORKTREE", "upstream_baseline": ctx.baseline},
+                              "results": [], "summary": "Base advanced: synchronize the feature branch before full integration; local module development may continue",
+                              "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED"}, sort_keys=True))
+            return 2
         if args.gate in {"static", "regression", "all"}:
             source_tree_check(ctx)
         gates = {"test-approval": test_approval_gate, "static": static_gate, "schema": schema_gate,
@@ -552,14 +580,11 @@ def main(argv=None):
         for name in selected:
             reports.append(gates[name](ctx))
         code = exit_code(reports)
-        if args.gate == "all" and code == 0:
-            code = 2  # Partial local evidence cannot certify the full six course gates.
         payload = {
             "schema_version": 1, "scope": args.scope,
             "target": {"base": ctx.base, "head": ctx.head or "WORKTREE", "upstream_baseline": ctx.baseline},
             "status": {0: "PASS", 1: "FAIL", 2: "BLOCKED"}[code], "exit_code": code, "results": reports,
-            "full_course_status": {"test-approval": "BLOCKED", "static": "BLOCKED", "schema": next((r["status"] for r in reports if r["gate"] == "schema"), "NOT_RUN"),
-                                   "semantic": "BLOCKED", "regression": "BLOCKED", "ai-log": next((r["status"] for r in reports if r["gate"] == "ai-log"), "NOT_RUN")},
+            "full_course_status": {name: next((r["details"].get("full_course_regression", r["status"]) if name == "regression" else r["status"] for r in reports if r["gate"] == name), "NOT_RUN") for name in gates},
             "remote_enforcement": "NOT_DEPLOYED_OR_VERIFIED",
         }
     except Exception as error:  # Fail closed; never print exception values containing user data.

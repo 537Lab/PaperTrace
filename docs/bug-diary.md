@@ -17,4 +17,10 @@
 - 暴露不变量：INV-01/03不能为了序列化虚构人工审核事件。新增独立负测及合法对照，真实RED与GREEN保存在artifacts/verification；同步两份Schema及C/D任务书。
 - 状态：170项离线测试通过；账本和发布运行时业务尚未开发。
 
-后续显著bug的记录必须包含症状、最小复现、分类、根因证据、修复diff、暴露的INV缺口和防回归测试。禁止把假设写成已复现。
+## UNBLOCK-001：开发/门禁死结（工程问题，不是学生业务）
+实测修复全provider拒绝、测试未批不能生成测试、永久BLOCKED入口及full漏项/超时/标记绕过；每类负例先RED后GREEN。真实OpenCode测试准备曾写到非自有测试路径被正确拒绝，改为test_library；嵌套fixture显式pytest.ini防继承上游配置。SCM/egg-info真实构建元数据仅窄豁免，新增上游源码仍FAIL。
+
+## UNBLOCK-002：上游完整回归仍未通过
+实际安装固定uv.lock；377个base/current节点一致，首个索引测试在默认禁网下尝试API被socket拒绝，完整执行有真实失败/限时，9个live待授权。保留FAIL、原测试和清单，不解封网络、不用私人key或假结果。250团队离线和1runtime通过不代表full。
+
+后续显著bug必须留症状、最小复现、根因证据、修复diff和防回归测试，禁止把假设写成复现。

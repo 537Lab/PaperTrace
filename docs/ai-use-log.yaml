@@ -37,3 +37,24 @@ entries:
   - AI文档审查不是学生事前测试批准、PR人工APPROVE或D5会话
   - 仅指定文档范围；未进行PaperQA2真实模型评估、GitHub写入或完整上游回归
   - 编码/审查助手推理消耗其渠道额度；COST-01零调用仅指产品初始化验证和离线测试
+- entry_id: UNBLOCK-20261114-01
+  timestamp: '2026-11-14T10:40:02.555991+00:00'
+  tool: Hermes Agent Desktop with parallel implementation and independent AI verification
+  model: gpt-6.1-sol (parent runtime-reported); delegated model identities not independently verified
+  purpose: 修复开发权限、实现GitHub证据和完整回归校验、验证固定PaperQA2离线接口、简化团队入口
+  scope:
+  - development-governance-and-OpenCode-configuration
+  - executable-CI-evidence-verifiers-and-regression-runner
+  - offline-PaperQA2-technical-smoke-not-business-implementation
+  - team-onboarding-and-module-taskbooks
+  status: engineering-repair-not-student-approval
+  approvals:
+  - 用户授权PaperTrace项目范围修复、依赖安装、专用分支提交及PR；不是课程学生事前测试批准
+  verification:
+  - 原始170项初始化离线测试复跑通过；原上游核心、包、测试、pyproject和uv.lock无diff
+  - 门禁与完整回归执行器定向正负测试真实运行，结果以本轮artifacts及最终验收为准
+  - 具体OpenCode模拟、PaperQA2真实对象离线链路、GitHub检查与未完成条件分别记录，不混称
+  limitations:
+  - 不替学生开发A–E正式业务、不签署学生测试或计划批准、不冒充D5正式OpenCode贡献
+  - 不读取私人模型凭据、不进行未获准收费或私人数据调用；mock输出不是真实语义质量评估
+  - CI可见状态不等于分支保护强制生效；私有仓库保护API仍返回套餐限制403

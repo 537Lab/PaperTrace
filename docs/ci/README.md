@@ -1,38 +1,29 @@
-# 六类门禁：初始化运行合同
+# 六类门禁：执行入口与真实边界
 
-来源：`docs/sources/materials-manifest.json` 所列本学期 Project Requirement Sheet 第10页（六类及分支保护）；第6页D4要求每轮完整既往套件。本地脚本不等于GitHub已部署。
+依据：本学期 Project Requirement Sheet p10；p6 D4 要求完整既往测试。实现是 `scripts/gates.py`，细节分别见 [事前批准](test-approval.md)、[真实语义评估](../../test/evaluation/README.md)、[完整回归](full-regression.md)。
 
-## 现在能运行什么
-
-在仓库根目录、独立初始化虚拟环境中运行：
+| 门禁 | 可执行逻辑 | 不得误读 |
+|---|---|---|
+| test-approval | 原生 GitHub 测试提案/实现 PR、独立 review、SHA/blobs、服务器时序、安全 ADR/人审 | 没有真实学生批准仍 BLOCKED |
+| static | Ruff/mypy、依赖锁闭包、固定上游、AST/API 契约、敏感启发式、实际 OpenCode 配置 | 静态 PASS 不是安全认证或运行时沙箱 |
+| schema | 实际 JSON Schema、唯一 ID、invariant ==0、来源可定位、禁止外部 refs | 不证明业务 fit criterion 已实现 |
+| semantic | 产品 AI 差异触发、GitHub artifact 与真实授权/逐项评分/原阈值 | 不适用差异 NOT_REQUIRED；mock 不证明质量 |
+| regression | 三来源全收集/执行、base node 清单、live 授权、skip/xfail/xpass 拒绝 | initialization 永远不是 full |
+| ai-log | base 后真实新增语义披露；禁止只换 ID/删旧记录 | 内容真实性仍需人审 |
 
 ```sh
-.venv/bin/python scripts/gates.py --gate schema --base c692d0dfeac4a0296599f7fe21a253a58b7ac12a
-.venv/bin/python scripts/gates.py --gate static --scope initialization --base c692d0dfeac4a0296599f7fe21a253a58b7ac12a
-.venv/bin/python scripts/gates.py --gate ai-log --base c692d0dfeac4a0296599f7fe21a253a58b7ac12a
-.venv/bin/python scripts/gates.py --gate regression --scope initialization --base c692d0dfeac4a0296599f7fe21a253a58b7ac12a
-.venv/bin/python scripts/gates.py --gate all --scope initialization --base c692d0dfeac4a0296599f7fe21a253a58b7ac12a
+.venv/bin/python scripts/gates.py --gate schema --base <上一轮完整40位SHA>
+.venv/bin/python scripts/gates.py --gate static --scope full --base <baseSHA>
+.venv/bin/python scripts/gates.py --gate all --scope full --base <baseSHA> --head <headSHA> --pr-number <PR号> --runtime-python <runtime解释器> --upstream-python <上游解释器>
 ```
+占位符必须替换。`--head` 省略时检查实际 worktree；提供时执行输入须与该 head 相同。base 不是祖先时明确 BLOCKED 提示同步分支，模块本地开发不必因此停下。退出码 0=选定范围全部 PASS/确不适用；1=FAIL；2=证据/授权/环境 BLOCKED。`all` 不再硬编码永远失败，也不抹掉任一未满足项。
 
-省略`--head`检查当前工作树（包括已暂存、未暂存、删除和未跟踪文件）。提交后使用`--head`加完整40位小写SHA；base须是head的祖先，不能用缩写、分支名或悄悄修复大小写。静态/回归执行前要求工作树输入与head一致。固定上游完整性比较始终对上述课程审计基线，不随PR base滚动。
+## CI 信任与首次采纳
 
-所有输出为单个JSON：`schema_version/scope/target/status/exit_code/results/full_course_status/remote_enforcement`。退出码0=选定本地范围通过或确无触发变化，1=已发现失败，2=被缺少可信证据/授权/环境阻断。NOT_REQUIRED仅用于差异证明没有适用变化，不代表运行过评估。`all`即使局部离线通过，也不能返回0掩盖未部署的课程门禁。
+六个稳定 job 均从精确 base checkout `.control` 执行验证器，candidate 放 `target`。GitHub 只读 token 只进入元数据核对步骤，不带 token 跑目标测试；不使用 pull_request_target。PR/review/push 会触发检查。回归在 macOS runner 执行真实 OpenCode sandbox 测试，使用核实存在的 `@opencode/cli@2.0.12`，会消耗现有 Actions 配额，不开启新套餐/自动购买额度。目标测试的 socket guard 不是 OS 隔离。
 
-|课程门禁|本地实现及真实范围|完整课程状态|
-|---|---|---|
-|1 test approval|差异识别；拒绝PR自写批准|BLOCKED：可信事前批准渠道未部署|
-|2 static|ruff团队路径、mypy团队包、25项初始化依赖版本/闭包、AST导入边界、五契约API存在、受控新增文件秘密启发式、原版源码/包/测试/锁字节完整性|初始化检查可PASS；完整漏洞/运行时权限/API集成审计仍BLOCKED|
-|3 schema|实际JSON Schema；唯一ID；不变量严格`== 0`；上游来源路径/行范围可定位|本地可PASS；远端未验证|
-|4 semantic|prompt/model/source变化保守触发；不接收仓库内自写PASS|BLOCKED：真实adapter、费用授权与可信评估供应链未部署|
-|5 regression|initialization实际运行整个`test/offline`，无过滤；失败/报错/skip/空集合均不认证|full永远不能用此结果替代上游`tests`、`packages`、live和全部既往团队套件|
-|6 AI log|相对base新增语义日志项；已有项保留；只重排/只存在文件不通过|本地可PASS；不证明披露真实性或学生贡献|
+工作流本身仍可能被 PR 修改，不能把 base 脚本读回说成不可绕过保护。私有仓库分支保护当前 API 403，Actions 可见红绿不等于 required checks 生效。最简路线是人工独立 PR review；学生/教师自行核实 Education 的 Pro/Team 权益后再启用、读回并做真实违规/合法对照。
 
-静态命令只检查团队新增路径，不重写原版的静态配置、测试或依赖。子进程有超时，使用无提供商变量、隔离HOME的白名单环境，pytest禁用socket；这不是对恶意Python/OS进程的安全沙箱。秘密扫描不读私人目录或凭据文件，不输出命中值；仅启发式，不能认证秘密不存在。工具失败返回码及输出摘要保留在JSON，避免把含秘密的源码行复制到CI日志；需要诊断时在受控本地直接运行对应工具。
+首次修复 PR 的 base 尚是旧验证器，不能由新代码自发批准自己；真实缺失的事前批准/模型证据/完整上游结果都保留。须真人审查采纳后，未来 PR 才由这版 base verifier 验证。不伪造追溯批准，不合并 main。
 
-## GitHub工作流与远端真实边界
-
-`.github/workflows/ci.yml`提供六个稳定job：`test-approval`、`static-analysis`、`schema`、`semantic-evaluation`、`regression`、`ai-use-log`，workflow名为`gates`。push（每次提交）与pull_request均运行；无路径skip/continue-on-error，无pull_request_target，不传提供商密钥，不触发收费评估。actions版本固定为官方tag查询得到的commit SHA，checkout不保留凭据，顶层权限仅contents:read。安装初始化锁需要包下载；这不是离线安装或软件供应链审计。
-
-远端 https://github.com/537Lab/PaperTrace 已建立并真实运行六个 job（[首跑](https://github.com/537Lab/PaperTrace/actions/runs/43434164875)：static/schema/ai-log success；test-approval/semantic-evaluation/regression BLOCKED exit 2）。**分支保护、required checks、CODEOWNERS/独立审批规则、失败 PR 演示均未生效/未做**：经典保护 API 与 Rulesets API 均返回 403（免费套餐私有仓库限制）。管理员部署后必须回读规则，并创建真实失败PR核对阻断；不能仅凭本文件宣称生效。PR可修改工作流和门禁脚本，因此现有PR-head工作流**不具抗绕过保证**。正式部署需组织规则/受信任base或外部固定workflow、不可由被审PR替换的验证程序、独立受保护审批来源和禁止自行批准的权限；所有安全路径需ADR及人审。action SHA固定不等于工作流本身不可被PR替换。
-
-**学生团队最小落地方案见 [minimal-gates.md](minimal-gates.md)**（用 GitHub PR 事件与轮值人工复核替代企业级认证系统）；严格参考合同见[事前批准](test-approval.md)、[完整回归](full-regression.md)与[语义运行](../../test/evaluation/README.md)。
+当前结果只在 [INITIALIZATION_STATUS.md](../../INITIALIZATION_STATUS.md) 维护；历史日志在 artifacts 保留，不冒充本次结果。

@@ -3,12 +3,9 @@
 本项目在固定 PaperQA2 基线上扩展，不替换原实现。先读本文，再读 `Prompt.md`，先交计划，等学生真实批准测试及计划，才能开发该次授权范围。文件中的“必须”是约束，不是已经满足的证据。
 
 ## 阅读顺序
-1. `docs/sources/course-compliance.md`：课程原文口径、工具及学生本人环节。
-2. `architecture-blueprint.md`、`docs/architecture/adr/001-architecture.md`。
-3. `docs/architecture/invariants.md`、`permission-model.md`、`memory-design.md`、`runtime-policy-catalog.md`（后四者均在 `docs/architecture/`）。
-4. `docs/req/prd.yaml`、`docs/req/requirements.yaml`、`docs/contracts/schema.md`。
-5. `docs/code-governance/structural-constraints.md`、`verification-constraints.md`、`mcp-tool-manifest.md`。
-6. `.opencode/rules.md`（仅限人工修改）、`.agent/rules.md`、`docs/team/integration-contract.md`，再读对应 `docs/team/module-A.md` 至 `module-E.md`。
+1. `Prompt.md`、`architecture-blueprint.md`、`.opencode/rules.md`（仅限人工维护）与 `.agent/rules.md`。
+2. 本人 `docs/team/module-A.md` 至 `module-E.md` 中的一份、相关 `docs/req/requirements.yaml` 条目、`src/papertrace/contracts.py` 与集成合同相关部分。
+3. 涉及的 ADR、不变量、权限、状态、验证和课程原文按需读取，不为一个小变更通读整个治理目录；课程依据见 `docs/sources/course-compliance.md`。
 
 ## 基线、目录与权威
 - 基线：`c692d0dfeac4a0296599f7fe21a253a58b7ac12a`，tag `papertrace-upstream-baseline`。
@@ -25,7 +22,7 @@
 .venv/bin/python -m mypy --config-file mypy.ini src/papertrace
 .venv/bin/python scripts/gates.py --gate schema
 ```
-这些命令不授权代理获得shell权限；由学生批准具体运行。模型/完整回归/远端人审的未完成状态见 `docs/ci/gates.md` 和 `INITIALIZATION_STATUS.md`。
+学生一次确认本轮模块范围与常用离线工具后，范围内日常编辑、新文件及配置中的精确离线命令不逐次审批；其他 shell 默认 ask，高影响操作仍须单独确认。模型/完整回归/远端人审的真实状态见 `docs/ci/gates.md` 和 `INITIALIZATION_STATUS.md`。
 
 ## 人工检查点
-需求分类与测试方案 → **非实现者批准测试，学生批准计划** → OpenCode受限构建 → 三级验证 → 独立人工PR审查。每一阶段保留实际输入/输出/干预，不能补造审批或将本轮Hermes初始化称为学生OpenCode开发。安全路径与共享契约修改须ADR及受影响模块的人工同意；本轮ADR仍是待批准提案。
+需求分类/计划 → **监督学生批准计划** → 仅生成本模块测试/合成fixtures/计划记录（禁止业务实现）→ **非实现者事前批准具体测试版本** → OpenCode受限实现 → 三级验证 → 独立人工PR审查。测试准备可使用对应模块角色，但没有源码实现授权；审批是学生真实行为，角色选择本身不证明批准。每阶段保留真实记录，不补造审批，不将本轮Hermes工程修复称为学生OpenCode贡献。安全路径与共享契约修改须ADR及受影响owner人审；普通模块细节不逐项新增ADR。原基线例外流程见ADR-002，当前仍由frozen_check保护。
