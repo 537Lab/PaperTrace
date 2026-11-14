@@ -1,43 +1,59 @@
-# PaperTrace｜全组从这里开始
+# PaperTrace｜团队唯一启动入口
 
-**我们做什么：**在现有 PaperQA2 上增加“导入论文 → 检索证据 → 人工审核 → 仅用获准证据回答 → 留存与导出”的本地工作台。不是重写 PaperQA2，也不是自动判定论文真伪。
+本文件是新成员、模块作者和协作者的唯一入口。其他文档只解释单项命令、设计或交付规则，不要求按一条无限阅读链通读整个仓库。
 
-## 先认领一个完整功能
+PaperTrace 是本地科研证据审核台：**A 文库 → B 检索 → C 人审 → D 受控回答/发布 → E 历史/导出**。业务功能尚待学生分别开发，不要把初始化契约或假数据当成正式应用。
 
-| 成员代号 | 长期负责的功能（包括需求、设计、监督 OpenCode、测试、PR 和本模块界面） | 任务书 |
+## 0. 当前可做与唯一一次采纳
+
+PR [#1](https://github.com/537Lab/PaperTrace/pull/1) 是待真人审核的共享工程起点，**尚未合并，不是完整产品**。需要维护者与另一位真人按[一次性首次采纳步骤](docs/ci/minimal-gates.md#pr-1-的一次性首次采纳bootstrap)审核最新head和课程接受边界；代理不自批或代合并。远端初次base缺验证器、完整上游FAIL及真实学生/模型证据缺口均保留，不把红灯说成通过。
+
+收到邀请后可以立即认领、阅读任务书、做Plan和测试准备；正式源码实现仍等真实计划/测试批准。采纳前若必须提前建准备分支，从已审核的PR #1 head建 `plan/<模块>-<姓名>`，不要误从旧main开始；采纳后统一同步最新main，再建 `test/<模块>-<姓名>` 与 `feat/<模块>-<姓名>`。不需要再次初始化、等别的模块实现或搭新的审批工具。
+
+## 1. 加入并验证初始化环境
+
+团队仓库为私有：先请所有者邀请你的 GitHub 账号。克隆、Python/uv 环境及可直接运行的初始化测试命令见[启动命令页](docs/team/startup.md)。初始化依赖不等于 PaperQA2 或 Streamlit 业务环境；安装和 live 调用须另行批准。
+
+## 2. 认领一个完整功能
+
+| 成员 | 长期功能 ownership | 任务书 |
 |---|---|---|
-| A | 文献库、导入状态、文献版本；首个界面装配 PR | [模块 A](docs/team/module-A.md) |
-| B | 检索及 PaperQA2 薄适配；团队代码中唯一允许导入 `paperqa` 的模块 | [模块 B](docs/team/module-B.md) |
-| C | 原文比较、人工接受/排除、审核账本 | [模块 C](docs/team/module-C.md) |
-| D | 获准集生成、引用核查、确定性发布门 | [模块 D](docs/team/module-D.md) |
-| E | 研究历史、可追溯报告、导出 | [模块 E](docs/team/module-E.md) |
+| A | 文献库、逐项导入状态、内容版本和不可变快照 | [模块 A](docs/team/module-A.md) |
+| B | 候选检索、PaperQA2 唯一适配边界与受控调用端口 | [模块 B](docs/team/module-B.md) |
+| C | 原文/摘要比较、人工决定、可重放审核账本 | [模块 C](docs/team/module-C.md) |
+| D | 获准/发送/引用集合、预算与确定性发布门 | [模块 D](docs/team/module-D.md) |
+| E | 不可变研究历史、来源追溯与 JSON/Markdown 导出 | [模块 E](docs/team/module-E.md) |
 
-没有“只写文档”或“只管 CI”的成员。测试批准、独立审查和集成职责按 PR 轮换，不能批准自己的实现；具体安排见[工作计划](TEAM_WORK_PLAN.md)。
+任务书是功能验收与无阻塞 fake 路径，不是实现授权。五人工作安排、角色轮换和课程交付见[工作计划](TEAM_WORK_PLAN.md)；共享对象及边界见[集成合同](docs/team/integration-contract.md)。
 
-## 拿到仓库后的启动顺序
+## 3. 做最小必要阅读，然后停在 Plan
 
-0. **先按[新人启动流程](docs/team/startup.md)接通仓库与环境**：被邀请 → 克隆 → 建 Python 3.14 初始化环境 → 实跑 170 项离线测试。任何人这一步都可以立即做，不需要模型或凭据。
-1. 阅读已有 `AGENTS.md`、`Prompt.md`，按其中顺序读架构与治理文件；再读[接口约定](docs/team/integration-contract.md)和自己的任务书。
-2. 核对本模块需求及测试，先用合成 fixtures。启动 OpenCode **Plan**，要求输出改动路径、接口、正负测试和步骤，**停下等待人工批准**。
-3. 非作者批准测试和计划，且确认本次 Build 的写权限后，才进入 **Build → Verify → 独立 PR 审查**。一次启动不等于获准无人监督开发。
-4. 交付前逐项完成[交接清单](docs/team/handover-checklist.md)，保留真实 transcript 和人工干预理由。
+开始模块 Plan 前只读：
 
-新克隆先用 Python 3.14 建环境（已有 `.venv` 不重复创建），再同步/测试。初始化锁**不代表 PaperQA2 或 Streamlit 已安装**：
+1. 根目录 `AGENTS.md` 与 `Prompt.md`（按其中入口执行；不得改写或绕过）。
+2. 自己的 `docs/team/module-X.md`、本模块相关的 `docs/req/requirements.yaml` 条目与 `src/papertrace/contracts.py`。
+3. `docs/team/integration-contract.md` 中与该模块接口/安全边界相关的部分。
 
-```sh
-uv venv .venv --python 3.14
-uv pip sync --python .venv/bin/python requirements-init.lock
-.venv/bin/python -m pytest -c papertrace.pytest.ini test/offline
-```
+只在问题涉及某条架构决策、权限或验证时，读对应 ADR / `permission-model.md` / `verification-constraints.md`。无需为了启动而通读所有文档、上游测试或个人目录。冲突时记录问题并停下，不自行选宽松解释。
 
-首次同步须按网络/安装权限执行；其他门禁、live 的授权条件与真实结果以 [docs/ci/gates.md](docs/ci/gates.md) 为准。不自行运行上游整个 `tests/`，不读取 `.env` 或调用真实模型。
+用课程要求的 **OpenCode** 从根 `Prompt.md` 启动 Plan。Plan 必须列需求 ID、数据流/失败策略、正负测试、精确读写路径、工具/依赖/网络需求及 fake 验证方式，然后停止。**监督学生批准计划与一次模块/离线工具范围 → OpenCode 仅准备本模块测试（此时严禁业务实现）→ 非实现者在 GitHub 批准具体测试 commit → 受限业务 Build → Verify。测试提案 PR 可以保持 open/RED；不得合入红测试，也不逐文件反复审批。**
 
-## 当前边界与待确认事项
+## 4. 独立开发、监督与验证
 
-- **本轮范围：**基线、共享契约、合成测试和离线门禁；业务待成员开发，需求/架构/计划待学生审核，不是已实现或已获批准。
-- **禁止随意改：**`src/paperqa/`、`packages/`、上游 `tests/`、`pyproject.toml`、`uv.lock`。跨模块通过应用编排合同连接；各人的 view 留在自己模块，不争改同一个 app 入口。
-- **安全底线：**没有人工决定即 pending；没有获准证据不调模型；回答必须满足 `cited ⊆ sent ⊆ approved`，且生成前后文库快照、审核版本一致。界面不能另建授权逻辑。
-- **GitHub 团队仓库已建立（私有）：https://github.com/537Lab/PaperTrace**，分支 `main`，完整上游历史与基线 `c692d0d` 保留，仅 3 个 `papertrace-*` 标签。私有仓库须先把自己的 GitHub 用户名发给所有者获得邀请才能打开；详细接入与安装见[新人启动流程](docs/team/startup.md)。`upstream` 仍是只读上游，不是团队 origin。
-- **CI 已真实运行两次**：`static-analysis`/`schema`/`ai-use-log` 通过；含代码/prompt 的初始化提交上 `test-approval`/`semantic-evaluation`/`regression` 为 BLOCKED，纯文档提交上前两项显示 `NOT_REQUIRED`（**无适用变更，不等于通过**），`regression` 始终 BLOCKED（fail-closed，非故障，未伪造通过）。**分支保护与 required checks 仍未生效**（免费套餐私有仓库 403，需 Pro/Team/Enterprise），所以 CI 检查目前不强制拦截合并；最小落地方案见 [docs/ci/minimal-gates.md](docs/ci/minimal-gates.md)。六类门禁全部保留，不能虚构链接、审批或通过记录。
-- **学生确认：**课程材料对工具、D5 transcript 口径与复用既有代码的边界须核实；初始化由 Hermes 协助，不能冒充任何成员的 OpenCode 开发贡献。正式成果由学生监督 OpenCode 形成真实记录。
-- S0–S4 是相对检查点，不是教师截止日。介绍课只给出暂定 Week 13；确切时间与最终提交方式须学生核对。团队页匿名；最终 D6 要求的真实身份由学生本人填写。
+- 每个模块都有自己的合成合同对象和 fake 适配路径；可先完成服务、视图、边界测试，不等其他模块，也不需要模型。fake 只能证明接口、授权和输入观察，不证明真实模型质量。
+- B 独占新增团队代码中的 `import paperqa`，维护上游调用和中立端口；这不是禁止 A/D 在获批 Plan 明列的精确只读路径内审阅上游源码。D 用记录最终 payload 的 fake 端口并行开发自身授权、预算、引用与发布逻辑，不必等待 B 完工，也不能直接导入/调用 PaperQA2。
+- 有业务依赖、外呼、prompt、安全语义或共享合同变化时，按任务书/集成合同单独提案审批。安全关键变更须 ADR、至少一个会失败的负测和学生本人审核。
+- Build 必须由学生监督 OpenCode，保留真实完整会话和人工干预理由；Hermes 本轮初始化不是学生 OpenCode 贡献或 D5 会话。
+- Verify 按真实适用范围运行离线回归和全部六类课程门禁；不能删门、降级、以 `skip` / `NOT_REQUIRED` / fake / 文档存在冒充通过。实时结果见 [`docs/ci/gates.md`](docs/ci/gates.md)。
+- 独立审查者不能是作者或共同实现者；PR 与 D1–D9 证据按[交接清单](docs/team/handover-checklist.md)核对。
+
+## 5. 不可妥协的确定性边界
+
+1. 文献逻辑身份、SHA256 内容版本、快照与证据来源身份不可混用；历史不以同名新文件替换。
+2. 没有有效 human `ReviewDecision` 即 pending；模型建议、UI 缓存或 `actor_kind="human"` 字段本身不构成真实审批。
+3. 无获准证据时，在模型工厂/SDK/HTTP 之前拒绝；不得为生成拒答理由调用模型或让 B 自动补证。
+4. 回答的 `cited ⊆ sent ⊆ approved`，且发布前后核对 snapshot 与 review revision/digest；任何变化都阻断旧草稿。
+5. 第三方索引、凭据、`.env`、个人目录、未许可论文内容和未经批准网络/模型调用均不进入开发流程。
+6. 上游核心由现有 `frozen_check` 固定基线保护，普通模块 PR 不改。确需兼容修复时，须独立 ADR + 人工 PR，明确更新 `frozen_check` fitness rule/比较口径并跑受影响回归；仅口头批准不能让当前 CI 通过。不新增旁路授权平台。
+
+课程尚待学生核实的事项包括 D5“五份 annotated”与“一份完整 raw/from-scratch”口径、基线复用边界、确切截止时间及最终交付格式。D6 身份、相对贡献（平均 1.0）和真实反思由学生本人填写；10 分钟 demo 与 ZIP 分开。不要替学生补写或宣称课程已完成。

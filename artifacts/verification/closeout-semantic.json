@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "kind": "engineering_closeout_validation_not_model_quality",
+  "status": "PASS",
+  "scope": "offline_engineering_repair_only",
+  "captured_at": "2026-11-14T13:24:18.009880+00:00",
+  "base_commit": "931cea6a8642adb34e6f844a82d532a96f73631f",
+  "branch": "fix/development-unblock",
+  "source_sha256": {
+    "scripts/semantic_evidence.py": "a43f71e9e35bba4c63a580a5559a93c975b80b3c95daf25388568bbd2bfdfab6",
+    "scripts/semantic_changes.py": "8c7694356dbfb3dc886b1b34c8ada3474557d552d0c6818762f30bae5c016acd",
+    "test/evaluation/report-schema.json": "b4be565a62124117e21bf842411818bac159f7ab3365915bbb4e8e64bee0aff0",
+    "test/offline/test_semantic_evidence.py": "06a7f29ef74b23663cf08865b8ec276153bb648f1ce2c5e8d885353088101dae",
+    "test/offline/test_semantic_changes.py": "37a40249193bda57261a18515cd075025b4a039cd172957f932d1c73ccfe8b2a"
+  },
+  "fixes": [
+    "Exact fixed-case question, approved evidence text/order, sent_ids and committed system prompt matching; rehashing does not authorize replaced requests",
+    "Runtime .in/.lock in model configuration binding plus exact lock digest and actual evaluator Python/distribution metadata matching",
+    "Content-aware static tooling exemptions and production dependency/source/hash/marker/extras closure; unknown inputs fail closed; B/D UI and upstream model source remain covered"
+  ],
+  "unchanged": [
+    "fixed dataset and original thresholds",
+    "six blocking gates and genuine human approval",
+    "five functional owners A-E",
+    "tracked upstream baseline/core/packages/tests/pyproject/uv.lock/LICENSE",
+    "historical unblock verification artifacts"
+  ],
+  "tests": [
+    {
+      "command": ".venv/bin/python -m pytest -c papertrace.pytest.ini test/offline --basetemp=.local/closeout/all-offline-confirmed-pytest -q",
+      "exit_code": 0,
+      "passed": 299,
+      "skipped": 0,
+      "seconds": 25.25,
+      "scope": "all_team_offline_including_native_OpenCode_loopback_permissions_and_five_contracts"
+    },
+    {
+      "command": ".local/unblock/runtime/.venv/bin/python -m pytest -c papertrace.pytest.ini test/integration/test_paperqa_smoke.py --basetemp=.local/closeout/runtime-final-pytest -q",
+      "exit_code": 0,
+      "passed": 1,
+      "seconds": 1.64,
+      "scope": "actual_PaperQA_objects_with_fake_embedding_summary_answer"
+    },
+    {
+      "command": ".venv/bin/python -m ruff check --config papertrace.ruff.toml scripts test src/papertrace",
+      "exit_code": 0,
+      "stdout": "All checks passed!"
+    },
+    {
+      "command": ".venv/bin/python -m mypy --config-file mypy.ini src/papertrace",
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 2 source files"
+    }
+  ],
+  "original_team_passed": 250,
+  "added_team_checks": 49,
+  "incremental_gates": {
+    "base": "931cea6a8642adb34e6f844a82d532a96f73631f",
+    "static": "PASS",
+    "schema": "PASS",
+    "ai-log": "PASS",
+    "semantic": "NOT_REQUIRED",
+    "note": "Verifier-only delta; not a decision about the entire main-to-feature PR or model quality."
+  },
+  "actual_isolated_runtime_check": {
+    "installed_packages": 83,
+    "python_version": "3.14.6",
+    "runtime_lock_sha256": "b67750c7749d438affeec1f77b5e72992bb51d2fe8465d485392030255c8fc2f",
+    "scope": "actual isolated runtime version/lock consistency, no model",
+    "status": "PASS"
+  },
+  "independent_ai_review": {
+    "delegation_id": "deleg_7f79f4ee",
+    "reviewed_inputs_match": true,
+    "passed_tests": 69,
+    "initial_attempt": "One assertion reason-string mismatch while the parent was updating the test; retained as initial failure, final tree rerun passed.",
+    "conclusion": "No concrete false pass or permanent Gate4 block reproduced within bounded review.",
+    "probes": [
+      "mixed extra OR marker retains production edge",
+      "missing lock dependency fails closed",
+      "approved material subset accepted; altered evidence body rejected"
+    ],
+    "human_approval": false,
+    "absolute_safety_guarantee": false
+  },
+  "red_green_reproductions": {
+    "request": [
+      "question substitution",
+      "unknown evidence",
+      "rewritten approved text",
+      "sent_ids/payload mismatch",
+      "extra prior-session message",
+      "system prompt substitution"
+    ],
+    "runtime": [
+      "runtime lock changed and head rebound without fresh evidence",
+      "wrong/missing/duplicate installed package",
+      "wrong Python version",
+      "rehashed new lock with old environment; matching fresh environment positive control"
+    ],
+    "trigger": [
+      "pure Ruff/pytest false BLOCKED -> NOT_REQUIRED",
+      "production/dependency/extra/source/hash/marker changes still trigger",
+      "dev-only resolver metadata false-positive corrected",
+      "mixed OR marker false-negative corrected",
+      "upstream model code not triggered/not bound corrected"
+    ]
+  },
+  "external_requirements": {
+    "full_upstream_regression": "Previously executed FAIL/time-limited under socket guard; not rerun or relabeled",
+    "upstream_nodes": 377,
+    "live_tests_without_authorization": 9,
+    "real_student_preimplementation_approval": "MISSING; not retrospectively fabricated",
+    "real_model_evaluation": "NOT_RUN; budget/data/provider authorization and independent scoring required",
+    "base_verifier_bootstrap": "Requires genuine human adoption; candidate cannot self-certify",
+    "branch_protection": "Previously API 403 on private repository; visible CI is not enforced protection"
+  },
+  "limitations": [
+    "No real product provider/paid model/private credential used",
+    "Synthetic validator fixtures and fake OpenCode provider do not prove model quality, student D5 contribution or genuine approval",
+    "Package manifest is trusted evaluator provenance plus independent review, not cryptographic runtime attestation",
+    "No business modules or main merge implemented"
+  ]
+}

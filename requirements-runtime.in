@@ -1,0 +1,30 @@
+# Minimal PaperQA2 runtime/test smoke requirements for the fixed upstream tree.
+# Package roots mirror pyproject.toml [project].dependencies; PyPDF mirrors
+# packages/paper-qa-pypdf/pyproject.toml. The checkout itself is imported via
+# PYTHONPATH (never installed editable, to avoid setuptools_scm changing version.py).
+# Keep pytest support to the offline smoke and lightweight upstream collection;
+# do not install broad dev extras or model weights in this runtime.
+anyio
+fhaviary[llm]>=0.34
+fhlmi>=1.10.0
+html2text
+httpx
+httpx-aiohttp
+litellm>=1.83.9,!=1.107.0
+numpy
+PyPDF>=3
+pybtex
+pydantic-settings
+pydantic~=2.0,>=2.10.1
+rich
+setuptools
+tantivy
+tenacity
+tiktoken>=0.4.0
+pytest>=9
+pytest-asyncio
+pytest-recording
+pytest-socket
+pytest-subtests
+pytest-timeout
+typeguard

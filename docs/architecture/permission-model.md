@@ -29,10 +29,12 @@
 
 公共只读集 **R-common**（所有获批角色可读，不可随意写）：
 
-- `AGENTS.md`、`Prompt.md`、`architecture-blueprint.md`。
+- `TEAM_START_HERE.md`、`TEAM_WORK_PLAN.md`、`docs/team/startup.md`、`AGENTS.md`、`Prompt.md`、`architecture-blueprint.md`。
+- `docs/team/integration-contract.md`。
 - `docs/req/prd.yaml`、`docs/req/requirements.yaml`、`docs/req/req-schema.json`。
 - `docs/architecture/architecture-blueprint.md`、`adr/001-architecture.md`、`invariants.md`、`trace-matrix.md`、`memory-design.md`、`permission-model.md`、`runtime-policy-catalog.md`、`evaluation-table.md`、`evaluation-logbook.md`、`risk-list.md`、`option-ledger.md`、`source-register.md`（`adr/` 路径相对架构目录）。
 - `src/papertrace/contracts.py`、`src/papertrace/__init__.py`、`docs/contracts/schema.md`。
+- `docs/ci/gates.md`、`docs/ci/full-regression.md`、`docs/tooling/opencode-setup.md`、`docs/licenses/license-review.md`、`test/live/README.md`、`requirements-runtime.in`、`requirements-runtime.lock`。
 - `docs/code-governance/structural-constraints.md`、`verification-constraints.md`、`mcp-tool-manifest.md`（后两者同处 code-governance）。
 - `.opencode/permissions.jsonc`、`.opencode/rules.md`、`.agent/rules.md`、`opencode.jsonc`：仅在已确认不含秘密的项目版本中只读，禁止读取 home 全局配置。
 
@@ -45,11 +47,11 @@ R=只读；P=可起草提案但不能批准；W=只在批准计划的精确文�
 | 逻辑角色 | 增加的可读文件 | 可写文件（经单次获批计划） | 永远不能由该角色自授的动作 |
 |---|---|---|---|
 | Plan / 需求分析 | R-common、当前 `docs/team/module-X.md`、公开 baseline 定位摘要、当前变更 diff | P：`docs/plans/module-X-plan.md`、`docs/plans/module-X-test-plan.md` | 修改实现、批准自己的计划/测试、编辑 human-only 规则 |
-| A Build | R-common、`docs/team/module-A.md`、`docs/team/integration-contract.md` | W：`src/papertrace/library/__init__.py`、`src/papertrace/library/service.py`、`test/offline/test_library.py`、`test/live/test_library.py` | 改 B–E、直接导入 paperqa、读取真实 home 文献/凭据 |
-| B Build | R-common、module-B、integration-contract；下面列的冻结源码只读 | W：`src/papertrace/retrieval/__init__.py`、`src/papertrace/retrieval/service.py`、`src/papertrace/retrieval/gateway.py`、`test/offline/test_retrieval.py`、`test/live/test_retrieval.py` | 修改上游、导入第三方 pickle、未批模型/metadata 外呼、写审核账本 |
-| C Build | R-common、module-C、integration-contract | W：`src/papertrace/review/__init__.py`、`src/papertrace/review/service.py`、`test/offline/test_review.py`、`test/live/test_review.py` | 自己伪造 human 操作、写已接受业务数据、直接修改历史事件 |
-| D Build | R-common、module-D、integration-contract、B 公开接口文件（获批版本） | W：`src/papertrace/answer/__init__.py`、`src/papertrace/answer/service.py`、`test/offline/test_answer.py`、`test/live/test_answer.py` | 直接 import paperqa、放宽 accepted、改来源/人审、开启自动补证 |
-| E Build | R-common、module-E、integration-contract | W：`src/papertrace/reports/__init__.py`、`src/papertrace/reports/service.py`、`test/offline/test_reports.py`、`test/live/test_reports.py` | 覆写旧报告、删除审核/来源、伪造 released 或成员信息 |
+| A Build | R-common、`docs/team/module-A.md`、`docs/team/integration-contract.md` | W：`src/papertrace/library/__init__.py`、`src/papertrace/library/service.py`、`src/papertrace/library/view.py`、`test/offline/test_library.py`；`test/fixtures/library/` 下仅限本轮 Plan 列明的合成文件 | 改 B–E、直接导入 `paperqa`、读取真实 home 文献/凭据 |
+| B Build | R-common、module-B、integration-contract；下列上游源码按精确只读清单 | W：`src/papertrace/retrieval/__init__.py`、`src/papertrace/retrieval/service.py`、`src/papertrace/retrieval/gateway.py`、`src/papertrace/retrieval/view.py`、`test/offline/test_retrieval.py`；`test/fixtures/retrieval/` 下仅限本轮 Plan 列明的合成文件 | 普通功能 PR 改上游、导入第三方 pickle、未批模型/metadata 外呼、写审核账本 |
+| C Build | R-common、module-C、integration-contract | W：`src/papertrace/review/__init__.py`、`src/papertrace/review/service.py`、`src/papertrace/review/view.py`、`test/offline/test_review.py`；`test/fixtures/review/` 下仅限本轮 Plan 列明的合成文件 | 自己伪造 human 操作、写已接受业务数据、直接修改旧历史事件 |
+| D Build | R-common、module-D、integration-contract、B 公开接口文件（获批版本）；可在 Plan 中申请精确只读上游文件 | W：`src/papertrace/answer/__init__.py`、`src/papertrace/answer/service.py`、`src/papertrace/answer/view.py`、`test/offline/test_answer.py`；`test/fixtures/answer/` 下仅限本轮 Plan 列明的合成文件；模块 prompt 另批 | 直接 import `paperqa`、放宽 accepted、改来源/人审、开启自动补证 |
+| E Build | R-common、module-E、integration-contract | W：`src/papertrace/reports/__init__.py`、`src/papertrace/reports/service.py`、`src/papertrace/reports/view.py`、`test/offline/test_reports.py`；`test/fixtures/reports/` 下仅限本轮 Plan 列明的合成文件 | 覆写旧报告、删除审核/来源、伪造 released 或成员信息 |
 | 契约维护 / 集成 | R-common、所有模块获批公开接口、`test/offline/test_contracts.py` | P/W：`src/papertrace/contracts.py`、`docs/contracts/schema.md`、契约 tests/fixtures；`src/papertrace/app.py` 仅另批 UI 集成计划后 | 单方修改安全合同、借集成任务提前实现 A–E、改 human-only 规则 |
 | 架构起草 | R-common、经授权的课程原文提取/审计材料与冻结源码 | P：根蓝图和 `docs/architecture/` 中逐个批准的 Markdown | 标记学生已批准、替教师解释课程歧义、写业务代码 |
 | Verify / 独立测试 | R-common、对应模块及冻结版本 tests、受控合成 fixtures、最小运行结果 | 独立验证记录、批准清单内新负测；不得改实现或事前批准测试基准求绿 | 自签批准、删失败断言、用 live 代替无预算离线验证 |
@@ -57,13 +59,15 @@ R=只读；P=可起草提案但不能批准；W=只在批准计划的精确文�
 
 表中 module-X 表示完整路径 `docs/team/module-X.md`。过程角色可轮换，A–E 功能 ownership 不变；轮换不叠加前一角色写权限，切换后撤销旧许可。课程项目第 4 页要求轮换责任，不能把功能 ownership 误解为永久管理职务。[1]
 
-**B 与架构只读 baseline 白名单**：`src/paperqa/docs.py`、`types.py`、`settings.py`、`core.py`、`readers.py`、`llms.py`、`prompts.py`、`agents/main.py`、`agents/env.py`、`agents/search.py`、`agents/tools.py`、`agents/models.py`、`agents/__init__.py`（后续条目均相对 `src/paperqa/`）；`pyproject.toml`、`uv.lock`、`LICENSE`；所需 parser 的精确 reader 文件与测试 node 来源。运行前展开文件名；额外源码只读需求也先加清单。上游写权限对所有 AI 角色均否。
+**B 与架构的只读 baseline 白名单**：`src/paperqa/docs.py`、`types.py`、`settings.py`、`core.py`、`readers.py`、`llms.py`、`prompts.py`、`agents/main.py`、`agents/env.py`、`agents/search.py`、`agents/tools.py`、`agents/models.py`、`agents/__init__.py`（后续条目均相对 `src/paperqa/`）；`pyproject.toml`、`uv.lock`、`LICENSE`；所需 parser 的精确 reader 文件与测试 node 来源。运行前展开文件名；额外源码只读需求也先加清单。
+
+“B-only”限定的是团队新增业务代码的 `import paperqa` 与适配/调用实现集中在 B，**不是**禁止 A/D 理解上游行为。A、D 可在各自 Plan 明列的精确只读文件中查看上游 API（如 `src/paperqa/docs.py`、`types.py`、`settings.py`、`core.py`、`readers.py`、`prompts.py`、`llms.py`）；不因该说明自动获得读取权，且不得直接 import/调用上游。上游写入仍按 ADR-002 的独立人工 PR/frozen_check 例外流程，不接受口头豁免。
 
 ## 5. 无条件禁区与需要单独授权的区域
 
 | 区域 / 行为 | 默认权限 | 原因与例外流程 |
 |---|---|---|
-| `src/paperqa/**`、`packages/**`、原 `tests/**` | 已列文件可 R，所有 W 否 | 冻结 baseline；发现缺陷先 ADR+人工明确重开，不静默修改 |
+| `src/paperqa/**`、`packages/**`、原 `tests/**`、上游配置/锁 | 已列文件可 R，普通模块 PR 的 W 否 | 固定基线由现有 `frozen_check` 保护；必要兼容修复须独立 ADR+人工 PR，明确更新该 fitness rule/比较口径并运行受影响回归。只有口头批准不得让当前 CI 通过；不新增旁路授权平台。 |
 | `.opencode/rules.md` | 已授权项目副本 R，W 否 | 课程 human-only；AI 可提供建议差异，不代改或自签 |
 | 任何真实 key/token/cookie/.env、钥匙串、SSH、浏览器 profile、全局 provider 配置 | R/W 均否 | 不能为“检查有没有 key”读取；凭据由持有人通过安全边界注入获批 live 进程 |
 | 仓库外个人目录、无关项目、用户历史 | R/W 均否 | 不以默认工作目录或工具可达性推断授权 |

@@ -1,0 +1,3 @@
+# Supplement the unchanged frozen upstream uv.lock environment.
+# Required only by PaperTrace's socket-guard/reporting harness, not product code.
+pytest-socket==0.8.1

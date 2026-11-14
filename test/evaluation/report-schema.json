@@ -1,71 +1,56 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Future real-model report structure (not a trust verifier)",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema_version",
-    "status",
     "provenance",
     "target",
     "authorization",
-    "limits",
+    "deterministic_results",
     "runs",
-    "scores"
+    "scores",
+    "runtime_environment"
   ],
   "properties": {
     "schema_version": {
-      "const": 1
-    },
-    "status": {
-      "enum": [
-        "PASS",
-        "FAIL",
-        "BLOCKED"
-      ]
+      "const": 3
     },
     "provenance": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
-        "issuer",
         "repository",
-        "workflow_sha",
         "run_id",
-        "attestation_digest"
+        "artifact_id"
       ],
       "properties": {
-        "issuer": {
-          "type": "string",
-          "minLength": 1
-        },
         "repository": {
-          "type": "string",
-          "minLength": 1
-        },
-        "workflow_sha": {
-          "type": "string",
-          "minLength": 1
+          "const": "537Lab/PaperTrace"
         },
         "run_id": {
-          "type": "string",
-          "minLength": 1
+          "type": "integer",
+          "minimum": 1
         },
-        "attestation_digest": {
-          "type": "string",
-          "minLength": 1
+        "artifact_id": {
+          "type": "integer",
+          "minimum": 1
         }
       }
     },
     "target": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "head_sha",
         "source_tree_sha",
         "test_tree_sha",
+        "evaluator_path",
         "evaluator_sha",
         "dataset_sha256",
         "prompt_sha256",
-        "model_config_sha256"
+        "model_config_sha256",
+        "system_prompt_path",
+        "runtime_lock_sha256"
       ],
       "properties": {
         "head_sha": {
@@ -79,6 +64,10 @@
         "test_tree_sha": {
           "type": "string",
           "pattern": "^[0-9a-f]{40}$"
+        },
+        "evaluator_path": {
+          "type": "string",
+          "pattern": "^test/evaluation/[A-Za-z0-9_./-]+\\.py$"
         },
         "evaluator_sha": {
           "type": "string",
@@ -95,32 +84,35 @@
         "model_config_sha256": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
+        },
+        "system_prompt_path": {
+          "type": "string",
+          "pattern": "^prompts/[A-Za-z0-9_./-]+\\.(txt|md)$"
+        },
+        "runtime_lock_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
         }
       }
     },
     "authorization": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
-        "trusted_event_id",
-        "independent_approver",
-        "approved_at",
+        "review_id",
         "provider",
         "model",
         "model_version",
-        "data_scope"
+        "data_scope",
+        "max_calls",
+        "max_cost",
+        "currency",
+        "timeout_seconds"
       ],
       "properties": {
-        "trusted_event_id": {
-          "type": "string",
-          "minLength": 1
-        },
-        "independent_approver": {
-          "type": "string",
-          "minLength": 1
-        },
-        "approved_at": {
-          "type": "string",
-          "minLength": 1
+        "review_id": {
+          "type": "integer",
+          "minimum": 1
         },
         "provider": {
           "type": "string",
@@ -137,25 +129,14 @@
         "data_scope": {
           "type": "string",
           "minLength": 1
-        }
-      }
-    },
-    "limits": {
-      "type": "object",
-      "required": [
-        "max_calls",
-        "max_cost",
-        "currency",
-        "timeout_seconds"
-      ],
-      "properties": {
+        },
         "max_calls": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 18
         },
         "max_cost": {
           "type": "number",
-          "exclusiveMinimum": 0
+          "minimum": 0
         },
         "currency": {
           "type": "string",
@@ -167,11 +148,35 @@
         }
       }
     },
+    "deterministic_results": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "actual"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actual": {
+            "type": "object"
+          }
+        }
+      }
+    },
     "runs": {
       "type": "array",
       "minItems": 18,
+      "maxItems": 18,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": [
           "case_id",
           "repeat",
@@ -180,6 +185,9 @@
           "model_version",
           "input_sha256",
           "prompt_sha256",
+          "request",
+          "sent_ids",
+          "cited_ids",
           "started_at",
           "finished_at",
           "content",
@@ -187,15 +195,18 @@
           "usage",
           "attempts",
           "cost",
+          "response",
           "response_sha256"
         ],
         "properties": {
           "case_id": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "repeat": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "maximum": 3
           },
           "provider": {
             "type": "string",
@@ -217,17 +228,51 @@
             "type": "string",
             "pattern": "^[0-9a-f]{64}$"
           },
-          "response_sha256": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+          "request": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role",
+                "content"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "content": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "sent_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "cited_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           },
           "started_at": {
             "type": "string",
-            "format": "date-time"
+            "minLength": 1
           },
           "finished_at": {
             "type": "string",
-            "format": "date-time"
+            "minLength": 1
           },
           "content": {
             "type": "string",
@@ -239,6 +284,7 @@
           },
           "usage": {
             "type": "object",
+            "additionalProperties": false,
             "required": [
               "input_tokens",
               "output_tokens",
@@ -266,12 +312,74 @@
           "cost": {
             "type": "number",
             "minimum": 0
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "request_id",
+              "model",
+              "model_version",
+              "content",
+              "finish_reason",
+              "usage"
+            ],
+            "properties": {
+              "request_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1
+              },
+              "model_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "content": {
+                "type": "string",
+                "minLength": 1
+              },
+              "finish_reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "usage": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "input_tokens",
+                  "output_tokens",
+                  "total_tokens"
+                ],
+                "properties": {
+                  "input_tokens": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "output_tokens": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "total_tokens": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "response_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
           }
         }
       }
     },
     "scores": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "deterministic_safety_escapes",
         "citation_precision",
@@ -312,9 +420,109 @@
         },
         "independent_ratings": {
           "type": "array",
-          "minItems": 1
+          "minItems": 18,
+          "maxItems": 18,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "case_id",
+              "repeat",
+              "reviewer",
+              "citation_count",
+              "correct_citations",
+              "claim_count",
+              "unsupported_claims",
+              "rubric_items",
+              "rubric_met",
+              "relevance",
+              "safety_escapes",
+              "injection_successes",
+              "rationale"
+            ],
+            "properties": {
+              "case_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "repeat": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              },
+              "reviewer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "citation_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "correct_citations": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "claim_count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "unsupported_claims": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "rubric_items": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "rubric_met": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "relevance": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "safety_escapes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "injection_successes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "runtime_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python_version",
+        "packages"
+      ],
+      "properties": {
+        "python_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9.+-]*$"
+        },
+        "packages": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     }
-  }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PaperTrace real-model evidence report v3; verified by native GitHub run/artifact/reviews, no self-signed approval"
 }

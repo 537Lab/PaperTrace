@@ -1,122 +1,42 @@
-# 六类门禁：面向五人学生团队的最小落地方案
+# 五人团队最小门禁路线
 
-更新：2026-11-14。来源：课程 Project Requirement Sheet p10（六类 blocking gates + 分支保护）、p6 D4（每轮完整既往套件），口径见 [../sources/course-compliance.md](../sources/course-compliance.md)。
+本页是短索引，不另设认证平台、重复批准合同或永久 BLOCKED 规则。六类课程门禁全部保留，工程实现和使用入口见 [README](README.md)。
 
-**六类门禁全部保留，一门不放宽。** 本文只解决一个具体问题：原 `test-approval.md`、`test/evaluation/README.md`、`full-regression.md` 把「可信」实现为自建外部审批服务、OIDC attestation、不可由 PR 修改的信任配置与服务器事件 ID —— 那是对抗恶意供应链的企业级认证，五人课程团队既没有条件部署，也不是老师要求的重点。课程要的是**真实行为**：测试确实先被非作者批准、模型评估确实发生过且被独立复核、既往测试确实跑完且没有 skip。
+- **测试批准**：计划先获监督学生批准 → OpenCode 仅准备模块测试 → 非实现者 GitHub Approve 具体测试 SHA → 才开发实现。测试提案可以 open/RED，不强制把红测试合并 main；实现 PR 引用 `Test approval PR: #N`。同一非实现者可批准测试并做最终 review，不强制四人齐到。详见 [test-approval](test-approval.md)。
+- **语义质量**：只有产品 AI/prompt/model 相关差异适用；真实数据/模型/预算批准后跑固定集并独立逐项评分，以 GitHub run/artifact/review 绑定，不接受本地自写 PASS。详见 [evaluation](../../test/evaluation/README.md)。
+- **完整回归**：新增离线、runtime、上游 `tests/`+`packages/` 三来源，未标记也收集，live 未获准就列清单并 BLOCKED；缺依赖/skip/超时都不等于通过。不用 `-m offline` 漏掉其他测试。详见 [full-regression](full-regression.md)。
+- **静态/Schema/披露**：运行实际验证器，静态/结构通过不代表安全认证、功能完成或学生人审完成。
 
-因此改用 **GitHub 原生 PR 事件 + 轮值人工复核 + 可核对的记录文件** 作为可信来源，不自建 PKI、不设外部服务、不伪造任何 PASS。
+## 私有仓库保护的最简现实路线
 
-## 一、可信来源：为什么 GitHub PR 够用
+2026-11-14 对 `537Lab/PaperTrace` 的经典保护 API 实测 403（要求 Pro 或公开）。保持私有，不升级付费、不迁移仓库、不自建认证。先按可见 CI + 一名非作者 review 手工管理合并，**不声称强制拦截生效**。学生检查自己 Education benefits 是否实际提供可用权益；也可请教师核实 GitHub Education/Team 资格。取得权限后再设六门 required checks、独立批准、撤销旧审查、禁止强推，回读并用真实对照 PR 验收。
 
-GitHub 服务器记录 PR 的创建时间、commit 时间、review 提交时间与 reviewer 身份、head SHA、merge 时间。**PR 作者无法改写服务器时间戳，也无法冒充别人的 Approve。** 对五人互评的课程项目，这已经满足「独立于实现者的可信审批」；再叠一层自建认证系统不增加真实性，只会让流程跑不起来。
+官方依据（2026-11-14 核查）：[Protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)、[GitHub plans](https://docs.github.com/en/get-started/learning-about-github/githubs-plans)、[Education benefits](https://github.com/settings/education/benefits)。资格页面存在不等于本账号已取得权益。
 
-固定分工（沿用 `TEAM_WORK_PLAN.md` 的轮值）：每个 PR 由**非作者**同学担任 reviewer；作者不能自批；测试变动后须重新批准。reviewer 姓名写在 PR 里，不匿名、不代签。
+## PR #1 的一次性首次采纳（bootstrap）
 
-## 二、三类原先「永远 BLOCKED」门禁的最小实现路线
+Bootstrap 指**首次受审引入工程基线**，不是第七类门禁、自动批准开关或六门禁豁免。新验证器不可能先出现在旧 base，所以 PR #1 的 `BASE_VERIFIER_UPGRADE_REQUIRED` 仍真实保留；不修改它为 success。教师原文要求真实监督及六门禁，未找到允许本轮 Hermes 工程修复倒签为学生事前批准的条款。**若课程不接受这份共享初始化/已知失败基线，先向教师确认，不合并 PR #1，也不声称已符合最终考核。**这不妨碍认领、需求、Plan 和测试准备。
 
-### Gate 1 事前测试批准（test-approval）
+### 真人现在具体做什么
 
-**两步 PR 流程**，把「事前」变成可核对的服务器时序：
+1. **固定审查对象。**打开 [PR #1](https://github.com/537Lab/PaperTrace/pull/1)，在 Commits 复制最新完整40位 head SHA；同时确认 base 仍为团队预期 main、没有后续未审提交。不要批准旧摘要对应的过期版本。
+2. **检查有限范围。**在 Files changed 查看六门禁与事件/令牌边界、OpenCode默认拒绝和模块范围、共享合同/五份任务书、原上游未改及AI披露；核对 `artifacts/verification/` 真实执行回执。重点确认请求材料/运行依赖绑定、真实审批顺序，以及 main push 会重验合并来源而不是无编号跳过。确认A–E业务仍留给成员。
+3. **核实能与不能。**复跑受影响离线检查，或核对与当前文件SHA相符的回执；明确完整上游仍FAIL/限时、9 live未授权、真实语义评估未跑、保护API403、学生D5尚未发生。不能要求未经批准的收费调用来凑绿灯。课程共享起点/已知失败基线的接受边界由真实学生/教师确认并在PR留下来源；未确认时不要填“教师已批准”。
+4. **真实独立审核。**由未参与本次实现、有仓库write权限的真人，在 PR → Files changed → Review changes → **Approve** 提交。正文写清最新完整head、实际检查内容、只接受工程起点及上述剩余条件，不把AI复核当自己检查，不补写事前批准。可用下列提示，必须自行填实情：
+   ```text
+   首次工程基线采纳：PR #1，head <完整SHA>。
+   我实际检查了：<具体diff/运行或核对的证据>。
+   接受范围：共享开发起点，不是A–E业务实现或学生D5贡献。
+   未补造事前测试批准；上游FAIL/未授权live/真实模型评估/保护限制按原状态保留。
+   课程共享起点与失败基线的适用依据：<真实来源；尚未确认则暂不建议合并>。
+   结论：<同意在该明确边界下采纳，或要求修改>。
+   ```
+5. **首次合并仍由人操作。**确认上一步是真人当前head的独立APPROVE、课程接受边界已解决、没有变更/冲突，再由维护者在同一PR使用 **Create a merge commit → Confirm merge**。优先保留历史，不rebase/强推；若需修改冲突，先在分支同步main、复验并重新审查，不能在合并时夹带未审内容。**本轮代理不合并、不启用auto-merge。**在套餐无法强制保护时，这个手工采纳必须明示为一次性初始工程决定，不是假称六个红灯已通过；若课程要求此时也必须全绿，就停在第4步并请教师决定，不自行豁免。
+6. **检查第一次main push。**已合入main的代码成为受审控制程序，静态/Schema/full回归/披露会实际重跑；审批与语义检查从原生合并PR回放证据，不再报`missing-pr-number`。**PR #1缺失的真实事前批准/评估仍会BLOCKED/FAIL，full仍可能失败，不自动转绿。**这些欠缺不是本流程修补的课程事实。后续正常PR使用已经采纳的base验证器，提供真实证据即可通过，不再重复初次引入的循环。
 
-1. **测试/计划 PR**：只含 `test/offline/test_<module>.py`、fixtures、计划文档；**不含实现代码**。
-2. 轮值 reviewer（≠ 作者）在 GitHub 上 `Approve`，PR 描述记下测试 PR 的 head SHA 与批准人。
-3. 合并该 PR，然后才开**实现 PR**，描述里贴测试 PR 链接 + merge commit SHA + 批准人。
-4. CI/人工校验（可用只读 `gh api`，无需外部服务）：
+## 今后事件的明确职责
 
-```sh
-gh api repos/537Lab/PaperTrace/pulls/<测试PR号>/reviews \
-  --jq '.[] | {user:.user.login, state:.state, submitted_at:.submitted_at, commit_id:.commit_id}'
-gh api repos/537Lab/PaperTrace/pulls/<测试PR号> \
-  --jq '{head:.head.sha, merged_at:.merged_at, user:.user.login}'
-```
-
-核对：存在 `state=APPROVED`、reviewer 与实现 PR 作者不同、`submitted_at` 早于实现 PR 首个 commit、批准所指 SHA 与测试 PR head 一致、实现 PR 未改动测试文件（改了重新批准）。把输出 JSON 存进 `docs/reviews/`，由 reviewer 复核。
-
-> **现在可做**：两步 PR 流程、PR 模板证据栏、轮值表、上面的只读校验命令。
-> **必须等学生**：真实的非作者 Approve、真实的测试先行 PR。没有就保持 **BLOCKED**，不许用仓库内 `approved: true` 或本地时间戳代替。
-
-### Gate 4 语义评估（semantic）
-
-保留固定集 `test/evaluation/cases.json` 与 `report-schema.json` 不变，去掉「可信 CI 供应链 / OIDC / 不可替换验证器」这一层：
-
-1. 学生先按 [../team/startup.md](../team/startup.md) 第 2 层取得 provider/model、数据范围、次数与金额批准（**学生本人批准并记录**，不是仓库内自写字段）。
-2. 在自己的受控环境用真实 provider 跑固定集，产出 `docs/reviews/eval-<PR>-<head前7位>.json`：每个 case 的 `repeat`、实际发送 prompt SHA256、provider/model/version、真实 `input/output/total usage`、`finish_reason`、脱敏响应 SHA256、head SHA、dataset SHA256。失败/预算中止也保留记录，不静默换模型或加重试。
-3. **独立 reviewer 按 rubric 逐条人工评分**（引用/支持度/矛盾处理/不确定性/中文表达），在 PR 里写明理由并 Approve；事实质量由人判断，不让模型自证。
-4. 轻量校验只做**结构与绑定**：字段齐全、dataset SHA 匹配固定集、10 条全覆盖、usage 非空、head SHA 绑定当前 PR、reviewer ≠ 作者、阈值（安全逃逸=0、citation_precision=1.0 等）经学生批准冻结后才比较。校验器**不**声称证明输出真实性 —— 那由第 3 步的人工复核承担。
-
-> **现在可做**：报告字段清单、rubric 表、PR 模板勾选项、结构校验规则、把「待批准预算计划」写成学生需确认的表格。
-> **必须等学生**：provider/金额批准、真实调用与 usage、独立人工评分。缺任一项保持 **BLOCKED**；固定 mock 回复、跳过调用、仓库内自写 PASS 一律不接受。
-
-### Gate 5 完整既往回归（regression）
-
-把「full」从一个遥不可及的整体，拆成**三层可分别执行、分别记录**的清单：
-
-| 层 | 内容 | 现在状态 |
-|---|---|---|
-| L1 团队离线 suite | `.venv/bin/python -m pytest -c papertrace.pytest.ini test/offline`（全部 170 项，无过滤），读 JUnit 确认 tests>0 且 0 failure/error/skip | **已真实通过**（本机 + GitHub Actions）。每次 PR 都跑 |
-| L2 上游 prior suites（离线） | 在独立冻结环境 `uv sync --frozen` 后跑 `pytest -m 'offline and not live_api' tests`、`... packages`；先 `collect-only` 建立不丢失的 item 清单，保存 JUnit、版本指纹、代码/测试 SHA、前后差异 | **待第 1 层业务环境就绪**；本次因本机临时目录限制未能在本地验证，命令是合同而非已验证结果 |
-| L3 live / 需模型范围 | 枚举需真实 API 的用例，单独申请数据、provider、次数与金额 | **BLOCKED**，未授权，不混入 L1/L2 结论 |
-
-「完整既往回归」= L1 + L2（+ 获批准后的 L3）。**L2 没跑完、有 skip、有基线原有失败但未人审处理，就仍是 BLOCKED**，不能用 L1 的 170 项绿灯冒充。结果写入 `docs/reviews/regression-<sha>.md` 由 reviewer 核对。
-
-> **现在可做**：L1 已跑；L2 的 collect-only 与 JUnit 归档命令、PR 模板勾选、轮值复核。
-> **必须等学生**：装好完整业务依赖、真实跑完 L2、人审前后差异与 L3 授权。
-
-### 另外三类（保持现状，无需新机制）
-
-| 门禁 | 现状 | 说明 |
-|---|---|---|
-| 2 static | `static-analysis` = **success** | 初始化 scope 的 lint/类型/锁一致/冻结/AST/契约表面/机密启发式；完整供应链审计仍非本轮范围 |
-| 3 schema | `schema` = **success** | 27 条 registry 结构校验；远端已真实执行 |
-| 6 AI-use log | `ai-use-log` = **success** | 相对 base 的真实新增披露；不证明披露内容真实性，仍需人审 |
-
-两次真实运行要分开读：
-
-| 运行 | 提交 | 结果 |
-|---|---|---|
-| [首跑 43434164875](https://github.com/537Lab/PaperTrace/actions/runs/43434164875) | `9d7e985`（含代码/prompt） | 3 success / 3 failure(BLOCKED, exit 2) |
-| [修正 43582067150](https://github.com/537Lab/PaperTrace/actions/runs/43582067150) | `4656a8d`（仅文档） | static/schema/ai-log success；test-approval、semantic-evaluation = `NOT_REQUIRED`（job 绿但课程状态仍 BLOCKED）；regression 仍 BLOCKED |
-
-两次整体 `conclusion` 都是 `failure` —— **预期的 fail-closed**，不是配置错误。`NOT_REQUIRED` 表示「差异中没有适用变更」，**绝不能读成门禁通过**。六个 job 名保持不变，便于日后设为 required checks。
-
-## 三、分支保护限制的调研结论（不擅自升级、不公开）
-
-**实测**：仓库 `537Lab/PaperTrace` 为私有、账号套餐为 GitHub Free。经典分支保护 API 与新版 Rulesets API（含仅禁强推的最小规则）均返回 `403 Upgrade to GitHub Pro or make this repository public to enable this feature`。
-
-**官方文档口径**（2026-11-14 查证）：
-
-- [About protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)：*“Protected branches are available in public repositories with GitHub Free… also available in public **and private** repositories with GitHub Pro, GitHub Team, GitHub Enterprise…”* → **免费套餐的私有仓库不支持**，`Require status checks before merging` 是保护规则的一项设置，同样受限。
-- [GitHub's plans](https://docs.github.com/en/get-started/learning-about-github/githubs-plans)：GitHub Pro / Team 在私有仓库提供 `Protected branches`、`Required pull request reviewers`、`Code owners`。
-- [About GitHub Education for students](https://docs.github.com/en/education/about-github-education/github-education-for-students/about-github-education-for-students)：明确的学生 GitHub 自有权益是 **Copilot 免费**与 **Codespaces 每月 180 核心小时（配额等同 Pro）**；原文另写 *“a teacher can apply for GitHub Education so your team can collaborate using GitHub Team… **for free**”*。
-- [Student Developer Pack](https://education.github.com/pack/) 页面当前**未把 “GitHub Pro” 列为权益名称**。社区/第三方资料称历史上包含 Pro，但官方页面没有明确表述 → **不能假定学生包一定给 Pro**，须由学生本人在 <https://github.com/settings/education/benefits> 核实自己账号实际获得什么。
-
-**可行路径（按推荐顺序，均需学生/教师本人操作，本次一律不代做）**：
-
-1. **最推荐：请课程教师申请 GitHub Education，为团队开免费 GitHub Team 组织**（官方文档明写教师可为团队免费取得 Team）。把仓库转入该组织后，私有仓库即可启用 protected branches、required reviewers、required status checks。零费用、最贴合五人团队。
-2. 学生各自查看 Education benefits；若账号确实获得 GitHub Pro，则个人私有仓库可直接启用保护。**先核实，不假定**。
-3. 自费 GitHub Pro（个人付费）—— 用户未授权，不执行。
-4. 把仓库设为 public（Free 即支持保护）—— 上游论文/录制资料许可尚未逐件审查，且用户明确要求保持私有，**排除**。
-
-在保护生效前：用 `.github/pull_request_template.md` 的六类证据清单 + 轮值人工 review + 六个 CI 检查的可见状态作为**流程约束**。必须明确：这**不构成强制合并拦截**，不能写成「门禁已生效」。
-
-## 四、现在可做 / 必须等真实证据（对照表）
-
-| 项 | 现在可做（本次已做或可立即采用） | 必须等学生产生真实证据 |
-|---|---|---|
-| Gate 1 | 两步 PR 流程、PR 模板证据栏、轮值表、`gh api` 只读核对命令 | 非作者 Approve、测试先行 PR、时序记录 |
-| Gate 4 | 报告字段清单、rubric、结构校验规则、待批准预算表 | provider/金额批准、真实调用与 usage、独立人工评分 |
-| Gate 5 | L1 已跑、L2 collect-only/JUnit 归档命令、PR 模板 | 完整业务依赖、L2 真实跑完、前后差异人审、L3 授权 |
-| Gate 2/3/6 | 三个 CI job 已真实运行并 success | 供应链审计、披露真实性人审（课程完整范围） |
-| 分支保护 | PR 模板 + 轮值复核作为流程约束（**非强制**） | 教师 Team 组织 / 学生 Pro 资格核实 → 真正启用规则 |
-| BLOCKED 状态 | **保持** 3 项 BLOCKED，不改名、不改成 PASS、不加 `continue-on-error` | 只有上述真实证据齐全且复核通过，才由学生/教师改判定 |
-
-**红线**：不得把 `test-approval`/`semantic-evaluation`/`regression` 改成 `PASS`、不得把 CI 的 `--scope full` 降级为 `initialization` 来骗绿、不得用 `continue-on-error` 掩盖失败、不得删掉未跑的用例。本轮修正**没有改动 `scripts/gates.py` 的判定逻辑，也没有改动 `.github/workflows/ci.yml` 的六个 job 与 scope**。
-
-## 五、启用后的验收（学生执行）
-
-1. 由教师/学生在具备 Pro/Team 的仓库启用：required status checks 选真实通过的 `static-analysis`、`schema`、`ai-use-log`（以及完成 L2 后的 `regression`）；`Required approvals ≥ 1`、dismiss stale reviews、禁止 force push。
-2. **回读规则**确认生效（不能只凭设置页面宣称）：`gh api repos/<owner>/<repo>/branches/main/protection`。
-3. 用**六类单点违规 PR 与合法对照**实证：无批准、自批、改测试后未重批、错 dataset SHA、L2 有 skip、缺 AI-use 披露、以及一份证据齐全的合法 PR。保留每个 PR 的 check 结果与 reviewer 结论。
-4. 三门原 BLOCKED 门禁只有在真实证据齐全、人工复核通过后，才由学生按上述最小路线实现判定并留下记录；在此之前保持 BLOCKED。
-
-相关：[gates.md](gates.md)、[README.md](README.md)、[事前批准原合同（严格参考）](test-approval.md)、[完整回归原合同](full-regression.md)、[真实评估合同](../../test/evaluation/README.md)、[新人启动流程](../team/startup.md)。
+- **PR / review事件：**从精确base读取控制程序；核对该open PR的测试批准、适用语义评估、静态、Schema、完整回归和新增披露。测试提案可open/RED，不能因为提案红灯就代签批准或提前实现。
+- **main push：**只监听main，避免每个功能push与PR重复运行。已采纳main控制程序核对事件before/after，审批/语义由GitHub commit→merged PR→原base/head及同一tree追溯并重新验证原证据；静态/Schema/完整回归/披露直接检查新main。无来源/多义PR、撤销批准、未批准测试、错repo/SHA/tree、强推/删除/新建main事件都会拒绝，不以缺PR号无条件通过。
+- **手动重跑：**`workflow_dispatch`仅支持main，仍须找回对应真实合并PR；不是直接push或缺证据的逃生口。团队优先使用Create a merge commit，先同步main再获批，避免多PR批量推进或冲突编辑使合并tree与受审head不同。
+- **信任边界：**main上的运行表示已采纳代码，不代表其质量已通过；远端review权限及缺少强制分支保护仍需真人管理。候选可修改workflow本身，所以base钉住并非不可篡改认证系统；必须审查workflow diff，绝不把令牌交给候选测试或真实模型。

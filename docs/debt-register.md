@@ -6,7 +6,7 @@
 |---|---|---|
 | DEBT-01 evaluation debt | 无真实模型连通及语义基线 | B/D：批准provider/model/文献/预算，真实固定评估及usage回执 |
 | DEBT-02 guardrail debt | GitHub保护和可信测试事前批准未部署 | 全组/获授权管理员：回读规则，六类失败PR+合法对照 |
-| DEBT-03 hidden dependencies | 未安装/执行完整PaperQA2及其解析extra测试环境 | B：单独锁定环境，完整prior suite结果及skip/failure清单 |
+| DEBT-03 hidden dependencies | 固定uv.lock的261包已实际安装；377个base/current节点已收集，但full禁网执行有失败/限时，9个live未授权 | B/D：保留原测试，取得真实API数据/费用许可后完成完整prior；不得用250offline冒充 |
 | DEBT-04 prompt rot | 运行prompt只为架构契约初稿，未有真实质量验证 | D：真实对照与阈值、每次模型/prompt变更重跑 |
 | DEBT-05 hallucinated dependencies | 需防止Agent添加未存在/许可未知库 | 每模块：精确锁/官方来源/许可证核查；未证实则不用 |
 | DEBT-06 untouchable code | 上游冻结不是永久不许修复 | B：有证据时最小ADR+归因+人审+回归，不默认重写 |

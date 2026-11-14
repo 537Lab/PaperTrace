@@ -12,7 +12,7 @@
 - Introduction p7仅写Week13项目截止，未给精确日期。本材料不猜DDL；学生核对Canvas/教师最新通知。
 - Introduction p23：最终ZIP不含demo视频，另交10分钟demo，比较有/无新增需求的行为效果，并展示追溯与治理。初始化不伪造性能对照。
 - Project p6–7 D6：最终Report须真实姓名/学号、相对贡献（平均1.0）、每人反思；最多10000词（不含图），原文另写12pt单倍行距超过15页。300–500词是反思的举例，不自行改成硬区间。**本轮共享团队材料匿名，最终课程报告的真实身份与贡献必须由学生本人填写/确认**。
-- Project p10：六类门禁及分支保护是实际行为要求，不是文件名清单。私有仓库 https://github.com/537Lab/PaperTrace 已建立且六个 CI 检查真实运行（3 success / 3 BLOCKED）；**分支保护与 required checks 仍未生效**（免费套餐私有仓库 403）。最小落地方案见`docs/ci/minimal-gates.md`，状态见`docs/ci/gates.md`。
+- Project p10：六类门禁及分支保护是实际行为要求，不是文件名清单。私有仓库 https://github.com/537Lab/PaperTrace 已建立且六个 CI 检查已有真实历史运行（历史首跑3 success / 3 BLOCKED；当前实际状态以`INITIALIZATION_STATUS.md`与PR checks为准）；**分支保护与 required checks 仍未生效**（免费套餐私有仓库 403）。最小落地方案见`docs/ci/minimal-gates.md`，状态见`docs/ci/gates.md`。
 
 ## 本轮交付不代表
 D1/D2/D3/D4/D7的基础材料已能建立；D5个人监督过程、D6正式报告、D8五模块业务及真实AI评估、D7远端保护仍有学生/授权/开发依赖。不能称“课程全部完成”或“拿去直接提交”。

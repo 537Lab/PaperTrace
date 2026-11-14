@@ -1,7 +1,7 @@
 # PaperTrace 架构蓝图（唯一权威正文）
 
-> 状态：**proposed-awaiting-human（提案，等待学生本人审核）**。这是一套开发约束，不是人工批准记录，也不是已运行的 A–E 应用。
-> 固定上游：`Future-House/paper-qa@c692d0dfeac4a0296599f7fe21a253a58b7ac12a`。原 `src/paperqa/`、`packages/` 和 `tests/` 保留，不在团队功能开发中改写。
+> 状态：**proposed-awaiting-human（等待学生本人审核）**；本文是开发约束，不是批准记录或已运行的 A–E 应用。
+> 固定上游：`Future-House/paper-qa@c692d0dfeac4a0296599f7fe21a253a58b7ac12a`。普通功能 PR 的固定 tag/commit 由现有 `frozen_check` 保护，不改上游源码/测试/锁。必要兼容修复须另开 ADR + 人工 PR，明确更新 fitness rule/比较口径并跑受影响回归；仅口头批准不能让当前 CI 通过，不增旁路授权平台。
 > 本轮只初始化文档、共享契约与工具；五模块业务实现、真实模型运行、课程正式开发会话及远端合并保护的验收均须分别完成。
 
 ## 1. 读这份文件能决定什么
@@ -10,13 +10,7 @@ PaperTrace 是 **Evidence Review Workbench（证据审核工作台）**：导入
 
 架构约束的优先顺序：课程原文与明确授权 → 已审需求/不变量 → 本蓝图与 ADR → 共享数据契约 → 获批计划与测试 → 模块代码。冲突时停在计划阶段，提交差异，不让模型自行选择较宽松的解释。未批准的更改不能只靠改一份文档生效。
 
-阅读顺序：
-
-1. 本文件 → [ADR-001](docs/architecture/adr/001-architecture.md)。
-2. [不变量](docs/architecture/invariants.md) → [追踪矩阵](docs/architecture/trace-matrix.md)。
-3. [状态与上下文](docs/architecture/memory-design.md) → [权限](docs/architecture/permission-model.md) → [失败政策](docs/architecture/runtime-policy-catalog.md)。
-4. [候选比较](docs/architecture/evaluation-table.md)、[证据日志](docs/architecture/evaluation-logbook.md)、[风险](docs/architecture/risk-list.md)、[取舍](docs/architecture/option-ledger.md)。
-5. 之后读取根 `AGENTS.md`、`Prompt.md`、需求 registry、共享 `contracts.py` 和本人模块任务书；这些文件的真实状态以仓库验收为准。
+团队唯一启动入口是 [`TEAM_START_HERE.md`](TEAM_START_HERE.md)。开始模块 Plan 前只读根 `AGENTS.md` / `Prompt.md`、本人任务书、相关 registry 与 `contracts.py`、集成合同相关部分；其余架构材料按实际问题查，不要求通读全仓库或沿固定清单无限阅读。此蓝图是深度设计参考，不是每个成员的先决阅读闸门。关键决策包括 [ADR-001](docs/architecture/adr/001-architecture.md) 与提案中的 [ADR-002](docs/architecture/adr/002-development-readiness.md)。
 
 课程项目原文第 5 页要求架构单文件产物放在架构目录，第 9 页树又列根蓝图；本工程采用根文件作 canonical，`docs/architecture/architecture-blueprint.md` 仅作指向页，避免两份正文漂移。是否接受这一提交布局仍由学生向教师确认。[1]
 

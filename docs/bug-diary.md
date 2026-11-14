@@ -17,4 +17,20 @@
 - 暴露不变量：INV-01/03不能为了序列化虚构人工审核事件。新增独立负测及合法对照，真实RED与GREEN保存在artifacts/verification；同步两份Schema及C/D任务书。
 - 状态：170项离线测试通过；账本和发布运行时业务尚未开发。
 
-后续显著bug的记录必须包含症状、最小复现、分类、根因证据、修复diff、暴露的INV缺口和防回归测试。禁止把假设写成已复现。
+## UNBLOCK-001：开发/门禁死结（工程问题，不是学生业务）
+实测修复全provider拒绝、测试未批不能生成测试、永久BLOCKED入口及full漏项/超时/标记绕过；每类负例先RED后GREEN。真实OpenCode测试准备曾写到非自有测试路径被正确拒绝，改为test_library；嵌套fixture显式pytest.ini防继承上游配置。SCM/egg-info真实构建元数据仅窄豁免，新增上游源码仍FAIL。
+
+## UNBLOCK-002：上游完整回归仍未通过
+实际安装固定uv.lock；377个base/current节点一致，首个索引测试在默认禁网下尝试API被socket拒绝，完整执行有真实失败/限时，9个live待授权。保留FAIL、原测试和清单，不解封网络、不用私人key或假结果。250团队离线和1runtime通过不代表full。
+
+## CLOSEOUT-001：语义报告误放行与无关配置误阻断
+- 复现：重算请求/报告哈希可掩盖固定问题/获准正文/发送ID不一致；runtime改锁并刷新head记录仍可能使用旧环境；纯Ruff/pytest修改被要求真实模型评估。均由实际离线负测先观察失败。
+- 根因/修复：自报哈希不验证材料来源，配置摘要漏runtime输入，触发只看文件名。改为精确请求合同、v3运行锁及实际解释器版本核对、生产依赖闭包内容判定；保留未知/畸形配置的保守触发和B/D/上游模型代码覆盖。
+- 回归：全部299项团队离线、0 skip；PaperQA2离线集成1项；Ruff/mypy/static/schema通过。不是正式业务实现、真人事前批准或真实模型质量证据；原full失败不变。本轮证据见artifacts/verification/closeout-semantic.json。
+
+## FINAL-CI-001：push错误复用open-PR审批入口
+- 复现：原workflow同时监听push/PR，但push传空PR号，适用代码变更真实返回missing-pr-number；即使补号，原实现只接受open PR，不能回查已合并证据。
+- 修复：明确事件合同；PR仍用base，main来源逐项绑定原生merged PR与同tree，再回放原测试/语义证据，质量检查实际新main。撤销/错SHA/未批准测试/无PR push拒绝；原生list/detail字段差异和合并后关闭RED提案也加正负测试。
+- 验收：保留299项并新增33项事件检查，共332离线、0 skip；原PaperQA2 smoke1、Ruff/mypy通过，独立限范围92项复跑通过且文件SHA一致。真实main未合并，不能将模拟事件说成线上main验证完成。首次采纳仍需要真实人审与课程接受边界；原full失败保留。
+
+后续显著bug必须留症状、最小复现、根因证据、修复diff和防回归测试，禁止把假设写成复现。

@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "kind": "final_engineering_event_validation_not_student_or_model_approval",
+  "captured_at": "2026-11-14T14:35:06.729348+00:00",
+  "base_commit": "552d9181ee20ab1518e7503b9ebd360ad8a05db8",
+  "pr_url": "https://github.com/537Lab/PaperTrace/pull/1",
+  "branch": "fix/development-unblock",
+  "status": "PASS",
+  "scope": "local_engineering_closeout_only",
+  "reviewed_source_sha256": {
+    ".github/workflows/ci.yml": "ba71a0a226c735787c4b0938569bd4bbef699486a050431a6d43362b298c8626",
+    "scripts/ci_events.py": "bac03dd6b61ce377856aecc190612b90291cb3c9bdb79945d487bbaa5e1ee7ab",
+    "scripts/gates.py": "59f7743552f90786c92aef2987724115a30c078fc567e19b1ad338467b7d1e51",
+    "scripts/gate_evidence.py": "343f400e2d3314fa49581d53ec231dcbe707380839d28511ddf82efae6550162",
+    "scripts/semantic_evidence.py": "5730758baabc4c5b591a5523bf402915c9324859da1d027efee34f356fec7e8a",
+    "test/offline/test_ci_events.py": "44d4593a8ec0e01f6999ab952b2b7a1f813119a4a0db514b4ca90b7f54daee19",
+    "test/offline/test_gate_evidence.py": "1cd511c527a384abdbfa60d6b2f567e346eeb7ef3136442a472d3e07de66cb74",
+    "test/offline/test_semantic_evidence.py": "06a7f29ef74b23663cf08865b8ec276153bb648f1ce2c5e8d885353088101dae"
+  },
+  "bug_reproduced": {
+    "old_workflow": "push subscribed but no PR number is passed to the applicable test-approval verifier",
+    "old_verifier_result": "BLOCKED / missing-pr-number",
+    "additional_issue": "Open-only PR validators cannot validate a merged PR by simply filling its number",
+    "red_tests_observed": true
+  },
+  "implemented": [
+    "PR/review checks keep exact base verifier and real preimplementation test approval",
+    "Main push only: restore one native merged PR, bind before/base/merge SHA and exact reviewed tree",
+    "Replay original-head approvals and applicable model evidence; do not trust check names or skip missing PR",
+    "Static/schema/full regression/disclosure run against the actual merged main",
+    "Reject direct/no-source or ambiguous PR push, invalidated approval, unapproved tests, wrong repo/SHA/tree, force/delete/create/unsupported events",
+    "Permit closing a still-open RED test proposal only after implementation merge, without revoking original evidence"
+  ],
+  "tests": [
+    {
+      "command": ".venv/bin/python -m pytest -c papertrace.pytest.ini test/offline --basetemp=.local/final-start/all-offline -q",
+      "passed": 332,
+      "skipped": 0,
+      "exit_code": 0,
+      "seconds": 32.66,
+      "includes": "Existing 299 tests plus 33 event/real-Git/native-shaped-API/bash-selector/CLI/metadata replay tests, OpenCode native fake-tool loop and five shared contracts"
+    },
+    {
+      "command": ".venv/bin/python -m pytest -c papertrace.pytest.ini test/offline/test_ci_events.py test/offline/test_gate_evidence.py test/offline/test_semantic_evidence.py --basetemp=.local/final-start/affected-fresh -q",
+      "passed": 92,
+      "exit_code": 0,
+      "seconds": 15.47
+    },
+    {
+      "command": ".local/unblock/runtime/.venv/bin/python -m pytest -c papertrace.pytest.ini test/integration/test_paperqa_smoke.py --basetemp=.local/final-start/runtime-smoke -q",
+      "passed": 1,
+      "exit_code": 0,
+      "seconds": 1.61,
+      "limitation": "Actual PaperQA objects/API with explicit fake embedding/summary/answer; not real-model quality"
+    },
+    {
+      "command": ".venv/bin/python -m ruff check --config papertrace.ruff.toml scripts test src/papertrace",
+      "exit_code": 0
+    },
+    {
+      "command": ".venv/bin/python -m mypy --config-file mypy.ini src/papertrace",
+      "exit_code": 0,
+      "source_files": 2
+    }
+  ],
+  "local_gates": {
+    "static_full_scope": "PASS",
+    "schema": "PASS",
+    "ai_log": "PASS",
+    "formal_test_approval": "No genuine student approval was created",
+    "real_semantic_quality": "NOT_RUN",
+    "full_upstream": "Previous real FAIL/time limit retained; 9 live unauthorized; not rerun"
+  },
+  "independent_review": {
+    "delegation_id": "deleg_795d919f",
+    "passed": 92,
+    "source_sha256_matches": true,
+    "finding_count": 0,
+    "bounded_conclusion": "No false pass or permanent block reproduced in event scope",
+    "human_approval": false,
+    "full_security_audit": false
+  },
+  "documentation_scout": {
+    "delegation_id": "deleg_9355f407",
+    "findings": "Five independent fake development paths and D1-D9/human OpenCode constraints preserved; local course text only, not current Canvas",
+    "files_changed_by_scout": false
+  },
+  "actual_github_read": {
+    "commit_pr_list_has_merged_boolean": false,
+    "detail_required": true,
+    "repository_private": true,
+    "allow_merge_commit": true,
+    "branch_protection_api_status": 403,
+    "reviews_at_start": []
+  },
+  "one_time_adoption": {
+    "code_bypass_or_auto_approval_added": false,
+    "procedure": "docs/ci/minimal-gates.md",
+    "steps": [
+      "Independent real write-permission reviewer inspects exact latest head and actual evidence",
+      "Students/instructor confirm this shared engineering/known-failure baseline is acceptable; absent confirmation do not merge",
+      "Real Approve bound to latest head; maintainer manually Create a merge commit, no conflict-time unreviewed edits",
+      "Read first main push; keep missing real initial approval/evaluation/full failures honest; future PRs use adopted base"
+    ],
+    "first_main_push_executed": false,
+    "unmerged_candidate_self_certification": false
+  },
+  "preserved": {
+    "upstream_and_business_tracked_bytes_unchanged": true,
+    "original_verification_files_byte_identical": 28,
+    "original_299_offline_nodes_retained": true,
+    "fixed_dataset_thresholds_six_gates_unchanged": true,
+    "no_A_E_business_implementation": true
+  },
+  "limitations": [
+    "Real main push is simulated only because no main merge is authorized",
+    "No genuine student approval, D5 supervision or model-quality result is created by these tests",
+    "Private plan still does not enforce branch protection; workflow changes require human review",
+    "No product model credentials, private data or unapproved paid calls used",
+    "Full course compliance and initial-baseline adoption remain genuine human/course decisions"
+  ]
+}
