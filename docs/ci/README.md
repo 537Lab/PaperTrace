@@ -20,10 +20,10 @@
 
 ## CI 信任与首次采纳
 
-六个稳定 job 均从精确 base checkout `.control` 执行验证器，candidate 放 `target`。GitHub 只读 token 只进入元数据核对步骤，不带 token 跑目标测试；不使用 pull_request_target。PR/review/push 会触发检查。回归在 macOS runner 执行真实 OpenCode sandbox 测试，使用核实存在的 `@opencode/cli@2.0.12`，会消耗现有 Actions 配额，不开启新套餐/自动购买额度。目标测试的 socket guard 不是 OS 隔离。
+六个稳定 job 在PR/review阶段从精确base checkout `.control` 验证候选`target`；main push/手动main复查使用已合入main的控制程序，元数据门禁先从真实合并记录恢复原PR的base/head并重验原批准。直接push或缺来源不因此通过，静态/Schema/回归/披露实际检查新main。GitHub 只读 token 只进入元数据核对步骤，不带 token 跑目标测试；不使用 pull_request_target。PR/review和main push会触发检查；功能分支push不再与PR重复运行。回归在 macOS runner 执行真实 OpenCode sandbox 测试，使用核实存在的 `@opencode/cli@2.0.12`，会消耗现有 Actions 配额，不开启新套餐/自动购买额度。目标测试的 socket guard 不是 OS 隔离。
 
 工作流本身仍可能被 PR 修改，不能把 base 脚本读回说成不可绕过保护。私有仓库分支保护当前 API 403，Actions 可见红绿不等于 required checks 生效。最简路线是人工独立 PR review；学生/教师自行核实 Education 的 Pro/Team 权益后再启用、读回并做真实违规/合法对照。
 
-首次修复 PR 的 base 尚是旧验证器，不能由新代码自发批准自己；真实缺失的事前批准/模型证据/完整上游结果都保留。须真人审查采纳后，未来 PR 才由这版 base verifier 验证。不伪造追溯批准，不合并 main。
+首次修复 PR 的 base 尚是旧验证器，不能由新代码自发批准自己；真实缺失的事前批准/模型证据/完整上游结果都保留。须真人审查采纳后，未来 PR 才由这版 base verifier 验证。不伪造追溯批准；本轮代理不合并main。真实人员的有限检查、Approve及首次合并步骤见[一次性采纳](minimal-gates.md#pr-1-的一次性首次采纳bootstrap)，未得到课程接受依据就不绕过真实红灯。
 
 当前结果只在 [INITIALIZATION_STATUS.md](../../INITIALIZATION_STATUS.md) 维护；历史日志在 artifacts 保留，不冒充本次结果。

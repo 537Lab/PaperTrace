@@ -27,3 +27,11 @@
 .venv/bin/python scripts/gates.py --gate test-approval --scope full --base <baseSHA> --head <headSHA> --pr-number <实现PR号>
 ```
 不含 token 的离线 API fixtures 只是验证器正负测试，不是学生审批。
+
+## 合并后的main检查不是另一轮事前批准
+
+PR事件核对open PR；main push由`ci_events.py`从真实commit关联记录找到唯一merged PR，绑定事件before、merge SHA、原base/head和相同文件tree，再把原head交给同一批准验证器重验。不会只相信一个绿色check名称，也不会因为环境无PR编号而跳过。撤销/错SHA/未批准测试、未审合并冲突或无来源push仍拒绝。静态/Schema/完整回归/披露检查实际新main，语义报告仍绑定获批的原PR head。
+
+实现合并后，可关闭仍open的旧RED测试提案；回放只接受`closed_at`不早于实现`merged_at`，且原批准/测试blobs仍一致。合并前关闭或撤销提案仍无效。推荐维护者等待main检查回执再关闭测试提案，以减少API时序混淆。
+
+首次工程采纳只执行[一次性人工步骤](minimal-gates.md#pr-1-的一次性首次采纳bootstrap)，不以它代替普通模块事前批准；新的main检查会保留首次修复原本缺少的真实证据，而非报`missing-pr-number`。

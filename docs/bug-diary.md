@@ -28,4 +28,9 @@
 - 根因/修复：自报哈希不验证材料来源，配置摘要漏runtime输入，触发只看文件名。改为精确请求合同、v3运行锁及实际解释器版本核对、生产依赖闭包内容判定；保留未知/畸形配置的保守触发和B/D/上游模型代码覆盖。
 - 回归：全部299项团队离线、0 skip；PaperQA2离线集成1项；Ruff/mypy/static/schema通过。不是正式业务实现、真人事前批准或真实模型质量证据；原full失败不变。本轮证据见artifacts/verification/closeout-semantic.json。
 
+## FINAL-CI-001：push错误复用open-PR审批入口
+- 复现：原workflow同时监听push/PR，但push传空PR号，适用代码变更真实返回missing-pr-number；即使补号，原实现只接受open PR，不能回查已合并证据。
+- 修复：明确事件合同；PR仍用base，main来源逐项绑定原生merged PR与同tree，再回放原测试/语义证据，质量检查实际新main。撤销/错SHA/未批准测试/无PR push拒绝；原生list/detail字段差异和合并后关闭RED提案也加正负测试。
+- 验收：保留299项并新增33项事件检查，共332离线、0 skip；原PaperQA2 smoke1、Ruff/mypy通过，独立限范围92项复跑通过且文件SHA一致。真实main未合并，不能将模拟事件说成线上main验证完成。首次采纳仍需要真实人审与课程接受边界；原full失败保留。
+
 后续显著bug必须留症状、最小复现、根因证据、修复diff和防回归测试，禁止把假设写成复现。

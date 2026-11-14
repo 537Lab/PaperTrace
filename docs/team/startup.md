@@ -11,6 +11,8 @@ git clone https://github.com/537Lab/PaperTrace.git
 cd PaperTrace
 ```
 
+当前main尚未采纳PR #1时，不要从旧main开始业务代码。先按[团队入口的当前阶段](../../TEAM_START_HERE.md#0-当前可做与唯一一次采纳)认领/做Plan；维护者完成受审采纳后，从最新main分别建测试分支。仅需提前准备时，可在GitHub Desktop中选中已审查的`fix/development-unblock`后新建个人`plan/<模块>-<姓名>`分支；不是授权直接修改共享修复分支。
+
 安装 Python 3.14 和官方 `uv`。若已有可用 `.venv`，跳过建环境，仅按需要同步锁文件。
 
 ## 初始化离线环境

@@ -18,7 +18,7 @@ REPOSITORY = "537Lab/PaperTrace"
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 PROTECTED_GATE_PATHS = {
     "scripts/gates.py", "scripts/gate_evidence.py", ".github/workflows/ci.yml",
-    "scripts/full_regression.py", "scripts/semantic_evidence.py", "scripts/semantic_changes.py", "scripts/opencode_support.py", "opencode.jsonc",
+    "scripts/ci_events.py", "scripts/full_regression.py", "scripts/semantic_evidence.py", "scripts/semantic_changes.py", "scripts/opencode_support.py", "opencode.jsonc",
     "test/offline/test_gate_evidence.py", "test/evaluation/cases.json",
     "test/evaluation/report-schema.json",
 }
@@ -65,7 +65,8 @@ def _running_unchanged_base_verifier(ctx):
     try:
         source = Path(__file__).read_bytes()
         oid = sha1(f"blob {len(source)}\0".encode() + source, usedforsecurity=False).hexdigest()
-        return oid == _git_text(ctx, "rev-parse", f"{ctx.base}:scripts/gate_evidence.py")
+        control_ref = getattr(ctx, "merged_commit", None) or ctx.base
+        return oid == _git_text(ctx, "rev-parse", f"{control_ref}:scripts/gate_evidence.py")
     except (OSError, AttributeError, _EvidenceBlocked):
         return False
 
@@ -96,7 +97,7 @@ def verify_test_approval(ctx, github=None, pr_number=None):
             changed_paths=applicable, protected_paths=protected,
             reason="protected-gate-changed",
         )
-    number = _resolve_pr_number(pr_number)
+    number = _resolve_pr_number(pr_number if pr_number is not None else getattr(ctx, "pr_number", None))
     if number is None:
         return _result(
             "test-approval", "BLOCKED", "A live pull request number is required",
@@ -367,9 +368,21 @@ def _safety_review(ctx, client, current, number, changed, participants, allowlis
     adr = matches[0]
     adr_blob = _require_sha(_git_text(ctx, "rev-parse", f"{ctx.head}:{adr}"), "architecture-decision-missing")
     review, _ = _select_approval(client, number, ctx.head, participants, allowlist,
-                                 _parse_time(current.get("created_at")), None)
+                                 _parse_time(current.get("created_at")), _validate_current_pr_state(ctx, current))
     return {"safety_paths": safety, "architecture_decision": adr, "architecture_decision_blob": adr_blob,
             "safety_review_id": review.get("id"), "safety_reviewer": _login(review)}
+
+
+def _validate_current_pr_state(ctx, current):
+    """PR checks require open; post-merge replay requires the server merge binding."""
+    merged = getattr(ctx, "merged_commit", None)
+    if merged:
+        if current.get("state") != "closed" or current.get("merged") is not True or current.get("merge_commit_sha") != merged:
+            raise _EvidenceInvalid("merged-pr-does-not-match-pushed-commit")
+        return _parse_time(current.get("merged_at"))
+    if current.get("state") != "open" or current.get("merged") is True:
+        raise _EvidenceInvalid("implementation-pr-is-not-open")
+    return None
 
 
 def _verify_test_approval(ctx, client, pr_number, changed, allowlist):
@@ -381,8 +394,7 @@ def _verify_test_approval(ctx, client, pr_number, changed, allowlist):
     if not isinstance(current, dict) or current.get("number") != pr_number:
         raise _EvidenceBlocked("implementation-pull-request-not-found")
     _check_pr_repositories(current)
-    if current.get("state") != "open" or current.get("merged") is True:
-        raise _EvidenceInvalid("implementation-pr-is-not-open")
+    _validate_current_pr_state(ctx, current)
     if current.get("base", {}).get("sha") != base_sha or current.get("head", {}).get("sha") != head_sha:
         raise _EvidenceInvalid("local-base-or-head-does-not-match-live-pr")
     remote_changes = _github_files(client, pr_number)
@@ -400,7 +412,9 @@ def _verify_test_approval(ctx, client, pr_number, changed, allowlist):
     _check_pr_repositories(test_pr)
     merged = test_pr.get("merged") is True
     if not merged and test_pr.get("state") != "open":
-        raise _EvidenceInvalid("test-proposal-was-closed-without-merge")
+        implementation_merged_at = _validate_current_pr_state(ctx, current)
+        if implementation_merged_at is None or test_pr.get("state") != "closed" or _parse_time(test_pr.get("closed_at")) < implementation_merged_at:
+            raise _EvidenceInvalid("test-proposal-was-closed-before-implementation-merge")
     test_head = _require_sha(test_pr.get("head", {}).get("sha"), "invalid-test-pr-head")
     merge_sha = _require_sha(test_pr.get("merge_commit_sha"), "test-pr-merge-sha-missing") if merged else None
     if test_pr.get("base", {}).get("ref") != current.get("base", {}).get("ref"):

@@ -80,6 +80,7 @@ class GateContext:
     run_live: bool = False
     repository: str = "537Lab/PaperTrace"
     pr_number: int | None = None
+    merged_commit: str | None = None
 
     def path(self, relative):
         """INV-06: refuse traversal and links outside the repository."""
@@ -555,6 +556,8 @@ def main(argv=None):
     parser.add_argument("--run-live", action="store_true", help="Only after explicit human data/provider/budget approval; never enabled by default CI")
     parser.add_argument("--repository", default=os.environ.get("PAPERTRACE_REPOSITORY", "537Lab/PaperTrace"))
     parser.add_argument("--pr-number", type=int, default=os.environ.get("PAPERTRACE_PR_NUMBER") or None)
+    parser.add_argument("--event-name", default=None, help="Explicit GitHub Actions event; paired with --event-path")
+    parser.add_argument("--event-path", type=Path, default=None)
     args = parser.parse_args(argv)
     reports = []
     try:
@@ -563,6 +566,15 @@ def main(argv=None):
         ctx = GateContext(root=args.root.resolve(), base=args.base, head=args.head, scope=args.scope, baseline=BASELINE, timeout=args.timeout,
                           runtime_python=args.runtime_python, upstream_python=args.upstream_python, run_live=args.run_live,
                           repository=args.repository, pr_number=args.pr_number)
+        mode = None
+        events = support_module("ci_events")
+        if bool(args.event_name) != bool(args.event_path):
+            raise ValueError("Both event name and payload are required")
+        if args.event_path:
+            if args.event_path.stat().st_size > 5_000_000:
+                raise ValueError("Oversized event payload")
+            event = json.loads(args.event_path.read_text())
+            mode = events.validate_event(ctx, args.event_name, event)
         ctx.changes()  # Validate literal SHAs and Git lookup before any gate executes.
         merge_base = ctx.git("merge-base", ctx.base, ctx.head or "HEAD").decode("utf-8").strip()
         if merge_base != ctx.base:
@@ -578,7 +590,15 @@ def main(argv=None):
                  "semantic": semantic_gate, "regression": regression_gate, "ai-log": ai_log_gate}
         selected = list(gates) if args.gate == "all" else [args.gate]
         for name in selected:
-            reports.append(gates[name](ctx))
+            try:
+                target = events.merged_context(ctx) if mode == "merged" and name in {"test-approval", "semantic"} else ctx
+                report = gates[name](target)
+                if mode == "merged" and name in {"test-approval", "semantic"}:
+                    report["details"].update(event_mode="post-merge-evidence-replay", merge_commit=ctx.head,
+                                             reviewed_head=target.head, pr_number=target.pr_number)
+                reports.append(report)
+            except events.EventError as error:
+                reports.append(result(name, "BLOCKED" if error.blocked else "FAIL", "Merged PR provenance could not be established", reason=str(error)))
         code = exit_code(reports)
         payload = {
             "schema_version": 1, "scope": args.scope,

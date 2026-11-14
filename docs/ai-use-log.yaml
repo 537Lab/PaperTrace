@@ -80,3 +80,23 @@ entries:
   - 不代写A–E正式功能，不代签学生测试/计划批准，不把mock工具会话当D5或真实模型质量
   - 未调用任何产品模型或使用私人模型凭据；完整上游此前真实FAIL及9个未授权live不改写
   - 新门禁采纳、真实学生审批、模型预算及独立评分仍需真实人员；不自批bootstrap
+- entry_id: FINAL-CI-20261114-01
+  timestamp: '2026-11-14T14:30:21.251883+00:00'
+  tool: Hermes Agent Desktop with bounded read-only Scout and Verifier
+  model: gpt-6.1-sol (parent runtime-reported); gpt-6-luna (delegation metadata)
+  purpose: 核验并修复PR和main push事件职责，保留真实审批回放，明确一次人工采纳与五人开工入口
+  scope:
+  - Actions-event-context-and-native-merged-PR-evidence-replay
+  - existing-bootstrap-and-team-start-documents
+  status: engineering-closeout-not-human-approval
+  approvals:
+  - 用户授权现有分支/PR收尾；明确禁止合并main、伪造学生批准、未授权费用
+  verification:
+  - 最小旧workflow及验证器路径复现push缺PR号，再加正常PR/main、撤销/未批准变更/异常事件与原生API形状正负测试
+  - 全部团队离线332 passed、0 skip；保留299项；PaperQA2离线smoke1 passed；Ruff/mypy通过
+  - 实际bash选择器、CLI上下文与合并后语义材料回放均有合成Git历史测试；独立AI复核见本轮验证artifact
+  limitations:
+  - 未实施真实main合并；合并后CI仅离线事件模拟，不冒称已在远端main运行通过
+  - 不代写A–E业务；真实Plan/测试/PR审核/D5过程及课程共享起点接受边界须学生/教师完成
+  - 原full上游FAIL/限时、9 live未授权、真实模型质量未评估和私有保护限制保持不变
+  - 不自设bootstrap PASS或取消六门；本轮不使用产品模型凭据/收费调用

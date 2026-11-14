@@ -293,7 +293,8 @@ def _verify(ctx, client, number):
     head = control._require_sha(ctx.head, "exact-head-required")
     current = control._api(client, f"/repos/{control.REPOSITORY}/pulls/{number}")
     control._check_pr_repositories(current)
-    if current.get("number") != number or current.get("state") != "open" or current["head"]["sha"] != head or current["base"]["sha"] != ctx.base:
+    merged_at = control._validate_current_pr_state(ctx, current)
+    if current.get("number") != number or current["head"]["sha"] != head or current["base"]["sha"] != ctx.base:
         raise control._EvidenceInvalid("target-does-not-match-current-live-pr")
     run_id = _identifier(current.get("body"), "Semantic evaluation run")
     artifact_id = _identifier(current.get("body"), "Semantic evaluation artifact")
@@ -328,7 +329,7 @@ def _verify(ctx, client, number):
             if actor.get("login") and actor.get("type") != "Bot":
                 participants.add(actor["login"].casefold())
     approved_at = _authorization(report, current, reviews, client, head, participants)
-    final, rated_at = control._select_approval(client, number, head, participants, control._trusted_reviewers(), control._parse_time(current.get("created_at")), None)
+    final, rated_at = control._select_approval(client, number, head, participants, control._trusted_reviewers(), control._parse_time(current.get("created_at")), merged_at)
     if (final.get("user") or {}).get("type") == "Bot" or rated_at < control._parse_time(run["updated_at"]) or not re.search(r"(?m)^Semantic report SHA256:\s*" + re.escape(report_sha) + r"\s*$", final.get("body") or ""):
         raise control._EvidenceInvalid("independent-post-run-report-review-missing-or-wrong-hash")
     system_path = target["system_prompt_path"]
