@@ -100,3 +100,23 @@ entries:
   - 不代写A–E业务；真实Plan/测试/PR审核/D5过程及课程共享起点接受边界须学生/教师完成
   - 原full上游FAIL/限时、9 live未授权、真实模型质量未评估和私有保护限制保持不变
   - 不自设bootstrap PASS或取消六门；本轮不使用产品模型凭据/收费调用
+- entry_id: C-TEST-20261116-01
+  timestamp: '2026-11-16T04:16:10+00:00'
+  tool: OpenCode 2.0.12 agent papertrace-build-C
+  model: deepseek/deepseek-v4-flash
+  purpose: 只为模块 C 准备离线测试和合成 fixture，不实现审核源码
+  scope:
+  - test/offline/test_review.py
+  - test/fixtures/review
+  status: test-preparation-awaiting-non-author-approval
+  approvals:
+  - 学生李宇轩于 2026-11-16 指示按已批准计划继续，范围只限测试准备；不是另一位学生的 GitHub 测试批准
+  verification:
+  - OpenCode 会话 ses_e1d73cf71ffeUeHwhiDtLbKqE9 写入上述测试和 fixture
+  - 命令 .venv/bin/python -m pytest -c papertrace.pytest.ini test/offline 退出码 1
+  - test_review.py 24 项失败，断言为 papertrace.review 不存在
+  - 同次运行 326 passed、2 skipped；另外 4 个非 C 失败未改对应文件
+  limitations:
+  - 未创建 src/papertrace/review，本记录不授权实现
+  - 没有非作者对具体测试 commit 的 GitHub Approve
+  - 未把 24 项预期红灯改成通过，也未处理同次运行里 4 个既有失败

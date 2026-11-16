@@ -1,0 +1,84 @@
+{
+  "synthetic": true,
+  "provenance": "handwritten; not a real paper, human approval, or model response",
+  "contract": "review-candidate-template",
+  "note": "Candidate templates only. snapshot_id and evidence_id are intentionally omitted; tests build EvidenceRecord from the real snapshot so identity comes from the shared canonical algorithm. No ReviewDecision is stored in this fixture.",
+  "data": [
+    {
+      "schema_version": 1,
+      "document_id": "doc-synthetic-support",
+      "version_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "locator": {
+        "schema_version": 1,
+        "page_start": 1,
+        "page_end": 2,
+        "line_start": null,
+        "line_end": null,
+        "chunk_id": "chunk-synthetic-support-a",
+        "parser_name": "synthetic-parser",
+        "parser_version": "1.0"
+      },
+      "excerpt": "SYNTHETIC：合成摘录 S；仅用于测试「支持」比较行，不是真实论文结论。",
+      "retrieved_at": "2026-03-01T00:01:00Z",
+      "advisory_summary": "synthetic 摘要 S：模型风格占位文字，没有审核权威。",
+      "upstream_context_id": "synthetic-upstream-support"
+    },
+    {
+      "schema_version": 1,
+      "document_id": "doc-synthetic-oppose",
+      "version_sha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+      "locator": {
+        "schema_version": 1,
+        "page_start": 3,
+        "page_end": 4,
+        "line_start": null,
+        "line_end": null,
+        "chunk_id": "chunk-synthetic-oppose-a",
+        "parser_name": "synthetic-parser",
+        "parser_version": "1.0"
+      },
+      "excerpt": "SYNTHETIC：合成摘录 O；仅用于测试「相反」比较行，不是真实论文结论。",
+      "retrieved_at": "2026-03-01T00:02:00Z",
+      "advisory_summary": "synthetic 摘要 O：模型风格占位文字，没有审核权威。",
+      "upstream_context_id": "synthetic-upstream-oppose"
+    },
+    {
+      "schema_version": 1,
+      "document_id": "doc-synthetic-unrelated",
+      "version_sha256": "0011223344556677001122334455667700112233445566770011223344556677",
+      "locator": {
+        "schema_version": 1,
+        "page_start": 5,
+        "page_end": 5,
+        "line_start": null,
+        "line_end": null,
+        "chunk_id": "chunk-synthetic-unrelated-a",
+        "parser_name": "synthetic-parser",
+        "parser_version": "1.0"
+      },
+      "excerpt": "SYNTHETIC：合成摘录 U；与问题无关，仅用于测试独立来源与只读排序。",
+      "retrieved_at": "2026-03-01T00:03:00Z",
+      "advisory_summary": "synthetic 摘要 U：模型风格占位文字，没有审核权威。",
+      "upstream_context_id": "synthetic-upstream-unrelated"
+    },
+    {
+      "schema_version": 1,
+      "document_id": "doc-synthetic-support",
+      "version_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "locator": {
+        "schema_version": 1,
+        "page_start": 2,
+        "page_end": 2,
+        "line_start": null,
+        "line_end": null,
+        "chunk_id": "chunk-synthetic-support-b",
+        "parser_name": "synthetic-parser",
+        "parser_version": "1.0"
+      },
+      "excerpt": "SYNTHETIC：合成摘录 S；仅用于测试「支持」比较行，不是真实论文结论。",
+      "retrieved_at": "2026-03-01T00:04:00Z",
+      "advisory_summary": "synthetic 摘要 S2：与 S 相同原文、不同 locator，仍无审核权威。",
+      "upstream_context_id": "synthetic-upstream-support-b"
+    }
+  ]
+}
