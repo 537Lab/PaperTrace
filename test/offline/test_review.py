@@ -849,7 +849,7 @@ def test_historical_ledger_prefix_is_never_rewritten(tmp_path):
         checks.append(ledger_bytes(tmp_path))
 
     assert len(checks) == 3
-    for previous, current in zip(checks, checks[1:]):
+    for previous, current in zip(checks, checks[1:], strict=False):
         (name, old_bytes), = previous.items()
         assert current[name].startswith(old_bytes)
         assert len(current[name].splitlines()) == len(old_bytes.splitlines()) + 1

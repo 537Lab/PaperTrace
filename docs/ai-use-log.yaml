@@ -120,3 +120,21 @@ entries:
   - 未创建 src/papertrace/review，本记录不授权实现
   - 没有非作者对具体测试 commit 的 GitHub Approve
   - 未把 24 项预期红灯改成通过，也未处理同次运行里 4 个既有失败
+- entry_id: C-LINT-20261116-01
+  timestamp: '2026-11-16T12:59:07+00:00'
+  tool: OpenCode 2.0.12 agent papertrace-build-C
+  model: deepseek/deepseek-v4-flash
+  purpose: 只修正模块 C 测试里一处 ruff B905，不实现审核源码
+  scope:
+  - test/offline/test_review.py
+  status: test-preparation-awaiting-non-author-approval
+  approvals:
+  - 学生李宇轩于 2026-11-16 指示继续处理静态检查失败；不是另一位学生的 GitHub 测试批准
+  verification:
+  - OpenCode 会话 ses_e1b8f7f0dffeX2cj0a3kWCsFpS 只把 zip 调用改为 strict=False
+  - git diff 仅 test/offline/test_review.py 一行
+  - .venv/bin/python -m ruff check --config papertrace.ruff.toml test/offline/test_review.py 退出码 0
+  limitations:
+  - 未写 src/papertrace/review，本记录不授权实现
+  - 没有非作者对具体测试 commit 的 GitHub Approve
+  - 24 项预期红灯保持不变
