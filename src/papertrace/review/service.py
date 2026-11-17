@@ -12,6 +12,7 @@ from __future__ import annotations
 import fcntl
 import json
 import os
+import re
 import uuid
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -33,6 +34,10 @@ _ACTION_STATUS: Mapping[str, ReviewStatus] = {
     "exclude": "excluded",
     "reset": "pending",
 }
+
+# QA-01: the exact patterns from the shared contract, matched in full.
+_QUESTION_ID_PATTERN = re.compile(r"q-[a-z0-9][a-z0-9_-]{0,63}")
+_REVIEWER_REF_PATTERN = re.compile(r"reviewer-[A-Z][A-Z0-9_-]{0,31}")
 
 
 # --------------------------------------------------------------------------- #
@@ -64,6 +69,22 @@ class ReviewDigestMismatch(ReviewLedgerError):
 
 class ReviewLedgerCorrupted(ReviewLedgerError):
     """The on-disk ledger is damaged; it is never silently repaired."""
+
+
+def _validate_question_id(question_id: object) -> str:
+    """QA-01: reject an out-of-contract question before touching the filesystem."""
+
+    if not isinstance(question_id, str) or _QUESTION_ID_PATTERN.fullmatch(question_id) is None:
+        raise ReviewScopeError("question_id does not match the shared contract")
+    return question_id
+
+
+def _validate_reviewer_ref(reviewer_ref: object) -> str:
+    """QA-01: reject an out-of-contract reviewer before touching the filesystem."""
+
+    if not isinstance(reviewer_ref, str) or _REVIEWER_REF_PATTERN.fullmatch(reviewer_ref) is None:
+        raise ValueError("reviewer_ref does not match the shared contract")
+    return reviewer_ref
 
 
 # --------------------------------------------------------------------------- #
@@ -229,6 +250,8 @@ class ReviewLedger:
         status = _ACTION_STATUS.get(action)
         if status is None:
             raise ValueError("action must be one of accept, exclude, reset")
+        _validate_question_id(question_id)
+        _validate_reviewer_ref(reviewer_ref)
         self.evidence_record(evidence_id)
         if not reason.strip():
             raise ValueError("a human review command needs a non-empty reason")
@@ -253,6 +276,8 @@ class ReviewLedger:
 
         if not isinstance(intent, _DecisionIntent):
             raise TypeError("commit_decision requires an intent from prepare_decision")
+        _validate_question_id(intent.question_id)
+        _validate_reviewer_ref(intent.reviewer_ref)
         self.evidence_record(intent.evidence_id)
         if not intent.reason.strip():
             raise ValueError("a human review command needs a non-empty reason")
@@ -266,57 +291,70 @@ class ReviewLedger:
                 raise ReviewNoop("evidence is already pending")
 
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a+b") as handle:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-            try:
-                handle.seek(0)
-                events = self._parse_events(intent.question_id, handle.read())
-                existing = next(
-                    (event for event in events if event.command_id == intent.command_id), None
-                )
-                if existing is not None:
-                    if not self._same_command(existing, intent):
-                        raise ReviewRevisionConflict(
-                            "command_id was already used with different content"
-                        )
+        created = not path.exists()
+        try:
+            with path.open("a+b") as handle:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+                try:
+                    handle.seek(0)
+                    events = self._parse_events(intent.question_id, handle.read())
+                    existing = next(
+                        (event for event in events if event.command_id == intent.command_id), None
+                    )
+                    if existing is not None:
+                        if not self._same_command(existing, intent):
+                            raise ReviewRevisionConflict(
+                                "command_id was already used with different content"
+                            )
+                        if intent.expected_revision != len(events):
+                            raise ReviewRevisionConflict("expected revision is not current")
+                        return self._projection_from_events(intent.question_id, events)
+
                     if intent.expected_revision != len(events):
                         raise ReviewRevisionConflict("expected revision is not current")
-                    return self._projection_from_events(intent.question_id, events)
+                    if _latest_status(events, intent.evidence_id) == intent.status:
+                        raise ReviewNoop("evidence already has the requested status")
 
-                if intent.expected_revision != len(events):
-                    raise ReviewRevisionConflict("expected revision is not current")
-                if _latest_status(events, intent.evidence_id) == intent.status:
-                    raise ReviewNoop("evidence already has the requested status")
-
-                decision = ReviewDecision(
-                    schema_version=1,
-                    evidence_id=intent.evidence_id,
-                    snapshot_id=self._snapshot.snapshot_id,
-                    question_id=intent.question_id,
-                    status=intent.status,
-                    actor_kind="human",
-                    reviewer_ref=intent.reviewer_ref,
-                    revision=len(events) + 1,
-                    reason=intent.reason,
-                    decided_at=self._clock(),
-                )
-                event = ReviewEvent(command_id=intent.command_id, decision=decision)
-                new_events = (*events, event)
-                digest_after = _digest(self._snapshot.snapshot_id, intent.question_id, new_events)
-                line = _canonical_bytes(
-                    {
-                        "command_id": intent.command_id,
-                        "decision": decision.model_dump(mode="json"),
-                        "digest_after": digest_after,
-                    }
-                ) + b"\n"
-                handle.seek(0, os.SEEK_END)
-                handle.write(line)
-                handle.flush()
-                os.fsync(handle.fileno())
-                return self._projection_from_events(intent.question_id, new_events)
-            finally:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                    decision = ReviewDecision(
+                        schema_version=1,
+                        evidence_id=intent.evidence_id,
+                        snapshot_id=self._snapshot.snapshot_id,
+                        question_id=intent.question_id,
+                        status=intent.status,
+                        actor_kind="human",
+                        reviewer_ref=intent.reviewer_ref,
+                        revision=len(events) + 1,
+                        reason=intent.reason,
+                        decided_at=self._clock(),
+                    )
+                    event = ReviewEvent(command_id=intent.command_id, decision=decision)
+                    new_events = (*events, event)
+                    digest_after = _digest(
+                        self._snapshot.snapshot_id, intent.question_id, new_events
+                    )
+                    line = _canonical_bytes(
+                        {
+                            "command_id": intent.command_id,
+                            "decision": decision.model_dump(mode="json"),
+                            "digest_after": digest_after,
+                        }
+                    ) + b"\n"
+                    handle.seek(0, os.SEEK_END)
+                    handle.write(line)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                    return self._projection_from_events(intent.question_id, new_events)
+                finally:
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        except BaseException:
+            # QA-01: a rejected command must not leave a new empty ledger file.
+            if created:
+                try:
+                    if path.stat().st_size == 0:
+                        path.unlink()
+                except FileNotFoundError:
+                    pass
+            raise
 
     # -- internals -------------------------------------------------------- #
     def _ledger_path(self, question_id: str) -> Path:
