@@ -138,3 +138,25 @@ entries:
   - 未写 src/papertrace/review，本记录不授权实现
   - 没有非作者对具体测试 commit 的 GitHub Approve
   - 24 项预期红灯保持不变
+- entry_id: C-SRC-20261117-01
+  timestamp: '2026-11-17T13:40:00+00:00'
+  tool: OpenCode 2.0.12 agent papertrace-build-C
+  model: deepseek/deepseek-v4-flash
+  purpose: 在非作者批准测试 PR #2 之后，实现模块 C 追加审核账本
+  scope:
+  - src/papertrace/review
+  - docs/team/designs/module-C/review-ledger.md
+  - docs/architecture/adr/003-review-ledger.md
+  status: implementation-awaiting-second-review
+  approvals:
+  - yafeili39-arch 在 GitHub PR #2 对当前测试改动给出 Approve，review id 5923403535，具有写权限，不是作者 Andylee56-cyber
+  - 学生李宇轩于 2026-11-17 指示在该批准后继续实现；这不是实现 PR 的第二次批准
+  verification:
+  - OpenCode 会话 ses_e164aedf1ffe7nvZuzS2o3GVQg 写入 src/papertrace/review 与设计记录
+  - .venv/bin/python -m pytest -c papertrace.pytest.ini test/offline/test_review.py 结果 24 passed
+  - .venv/bin/python -m mypy --config-file mypy.ini src/papertrace 无错误
+  - 全量 test/offline 为 350 passed、2 skipped、4 failed；4 个失败来自本次未修改的既有文件
+  limitations:
+  - ADR-003 只是为了让实现 PR 引用架构决定，不是第二次人工批准
+  - ruff 仍报既有 scripts/paperqa_smoke.py 的 I001，本轮未改该文件
+  - 测试 PR #2 保持打开，不合并
