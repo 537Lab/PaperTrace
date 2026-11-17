@@ -100,3 +100,33 @@ entries:
   - 不代写A–E业务；真实Plan/测试/PR审核/D5过程及课程共享起点接受边界须学生/教师完成
   - 原full上游FAIL/限时、9 live未授权、真实模型质量未评估和私有保护限制保持不变
   - 不自设bootstrap PASS或取消六门；本轮不使用产品模型凭据/收费调用
+- entry_id: A-TEST-PREP-20261117-01
+  timestamp: '2026-11-17T20:07:04.009273+00:00'
+  tool: OpenCode v2.0.12 papertrace-build-A；Hermes Agent技术监督、离线验证和本地Git操作
+  model: openai/gpt-6.1-sol（OpenCode官方ChatGPT Plus OAuth）；gpt-6-luna（Hermes只读复核派工元数据）
+  purpose: A Corpus Management仅测试准备：离线测试/Fake、四篇合成材料、设计记录及状态勘误，形成现有本地测试提交；不包含业务实现。
+  scope:
+  - test/offline/test_library.py
+  - test/fixtures/library/normal-alpha.txt
+  - test/fixtures/library/normal-beta.txt
+  - test/fixtures/library/normal-gamma.pdf
+  - test/fixtures/library/broken-delta.txt
+  - test/fixtures/library/README.md
+  - docs/team/designs/module-A/plan-v1.md
+  - docs/team/designs/module-A/test-plan-v1.md
+  status: test-preparation-only-awaiting-independent-student-review
+  approvals:
+  - A模块学生负责人已在聊天明确批准Plan v1进入仅测试准备；该授权不是独立学生对测试提交的GitHub Approve，也不是业务实现授权。
+  verification:
+  - 真实OpenCode Build会话ses_e16070785ffeHshzjX8s115x1L：四次受控执行，仅read/patch；监督端合法导出的完整会话保留31条消息，模型ID如本条所列。
+  - 本地测试提交e5f18bc0ed7b10daf38dde09e275189769f3b6b0，父提交7b5549ced8b5c9c1c1eb35576da95bc1381e858a；仅8个获准文件，未修改src或共享契约/CI/权限/依赖/上游。
+  - 监督端2026-11-17 validation-final：全offline 365项收集/选择，334 PASS、31 FAIL、exit=1；A单模块33项，2 PASS、31 FAIL、exit=1；31均为IMPLEMENTATION_MISSING前置失败，业务断言未到达，不是行为RED。
+  - 同轮Ruff、mypy（既有src）、schema、默认静态preflight实际exit=0；无collection/config error或skip/XFAIL/XPASS；首次两项sandbox环境失败及ASCII目录复跑日志均保留。
+  - 最后一轮仅勘误test-plan状态并记录非阻塞后续覆盖建议，未重跑上述测试/静态检查；测试SHA256 e056958793f7661f52075f8b0baffe2628ed36a50b3d47fe407e7c04cf0e3037及四篇合成源字节保持不变。
+  - GPT对审核ZIP的独立复核结论由学生反馈为合格；这是AI技术审查信息，不是学生GitHub审批。Hermes只读复核意见经监督端核对，不作为批准。
+  limitations:
+  - 披露只对应上述测试准备工作；补写本日志不证明全部CI通过，也不证明真实作者身份或独立学生批准。
+  - 截至本披露草稿准备时，代理未push、创建/合并PR或替学生Approve；后续由学生发布PR、维护者在同一PR分支追加本日志独立提交，再由未参与测试实现的学生对最新head真实Approve。旧head批准不能当新head有效证据。
+  - 仍禁止src/papertrace/library业务实现。A→B回执、部分成功与freshness语义仍属待owner确认提案；正常重启持久性和损坏current/manifest拒绝错误恢复仅作后续测试建议。
+  - 未运行完整冻结上游回归、live或真实产品模型/embedding/OCR/metadata；开发助手消耗Plus额度，native cost=0不代表零额度使用；未使用DeepSeek付费API。用户外部GPT会话模型ID未独立核实，不作猜测。
+  - 合成PDF的标准xref行末空格使git diff --check对父提交到测试提交返回2；当前核对的main CI未直接强制该命令。保留原PDF字节，不修改.gitattributes或CI消除提示。

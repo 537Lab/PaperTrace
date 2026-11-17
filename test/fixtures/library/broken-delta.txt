@@ -1,0 +1,3 @@
+PaperTrace synthetic delta is deliberately nonempty valid text.
+The test ingest fake injects PARSE_FAILED for this safe basename.
+The bytes themselves are not evidence of a parser defect.
