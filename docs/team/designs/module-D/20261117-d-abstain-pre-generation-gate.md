@@ -301,3 +301,83 @@ C 的提案（`ledger.projection(question_id)`，字段含 `snapshot_id/question
 3. 移除「`service` 必须在模块顶层导入 `AnswerDraft`」的可 monkeypatch 约束；「不可读状态」只断言类型化错误向外传播。
 
 三项更正不改变 §4 的接口名、§5 的校验顺序与 §6 的草稿构造规则；用例计数更新为 14 个测试函数 / 33 个用例。
+
+
+## 17. C 接口核对与协作状态（2026-11-18）
+
+本节是 Codex 只读核对腾讯协作板与 GitHub 后形成的补充记录，不是 OpenCode 开发会话、审批证明、接口变更批准或集成通过记录。§7、§12 保留此前提案形成时的历史状态；涉及 C 当前候选实现的信息以本节补充为准。未修改本轮测试、源码或共享契约。
+
+### 17.1 已核实的来源
+
+- 腾讯共享文档第18节任务板，李宇轩行“需要协调”中的“回复D”：ComparisonView 字段；无审核记录时 revision=0、pending；损坏账本抛 ReviewLedgerCorrupted。
+- 文档：https://docs.qq.com/aio/DRkZieXhmaFZUc0xy
+- C 实现 PR：https://github.com/537Lab/PaperTrace/pull/4
+- 核对源码版本：3f32f9aea3d64ef844d74b2cc2cac51e7f614d6d，src/papertrace/review/service.py。该 PR 尚为 open，不是 main 已有实现；本轮未独立重跑 C 测试。
+
+### 17.2 对齐结论与未决边界
+
+| 项目 | C 当前候选实现 | 对 D 的含义 |
+| --- | --- | --- |
+| 状态读取 | ReviewLedger.projection(question_id) -> ReviewProjection；ledger 构造时绑定 snapshot | D 拟议 read_projection 需经获批的中立适配接到 projection；D 不直接依赖 C 私有实现 |
+| 返回类型 | frozen dataclass 对象，属性含 snapshot_id、question_id、revision、digest、accepted_evidence_ids、events | 与现有 FakeProjection 基本同形，不再将“对象还是字典”列为当前候选源码未知项；仍待 owner 确认稳定接口 |
+| 无账本文件 | 空事件、revision=0、accepted为空、按 C 算法计算 digest | 合法空审核状态，应拒答；D 转交 digest，不自行重算或填零 |
+| 损坏账本 | ReviewLedgerCorrupted | 不得捕获后转换为空 approved；传播或映射方案仍待双方确认 |
+| 其他读取故障 | 普通文件读可能抛 OSError 等 | 不得将 I/O 失败冒充“无人审核”；错误适配需在后续批准范围明确 |
+| 版本检查 | verify_current(question_id, revision, digest)，失败为 ReviewTokenStale / ReviewDigestMismatch | 留待后续新鲜度/发布切片，不提前加入本轮实现 |
+| 比较视图 | ComparisonView，含原文、摘要、状态、定位等 | 用于展示，不从展示结果另造审核权威；D 使用可信 ReviewProjection |
+
+本次仅记录映射提案，不改 §4/§5/§6 对应测试语义。当前源码读取端口异常原样传播；如将来需要映射为 D 的 ReviewStateUnavailableError，必须明确适配层、保留原因、同步审查相关测试，不能静默修改。
+
+### 17.3 审批核对（仍待明细确认）
+
+- D PR #3 当前 head 仍为 29b2133829666c25b42688ae7e5b42ac6130cbd8。
+- GitHub reviewDecision 显示 APPROVED，页面显示“1 approval received”。但 REST reviews、GraphQL latestReviews 与页面展开未提供批准人和绑定提交明细；本记录不据此断言无批准，也不编造批准人/commit。
+- 需由实际批准同学提供其已提交 review 的账号和记录入口/截图，核对独立性及精确测试版本后再开始源码实现；不要求为了记录差异直接重复批准。
+- C PR #4 正文与腾讯任务板仍引用 92498e7，最新 head 为 3f32f9a。建议 C owner 更新审查目标，D 不代改其任务行。
+- D 共享 AI-use log 条目整合仍待处理；本次只更新设计记录，不修改共享日志、PR、审批或工作流。
+
+### 17.4 学生确认与可核验状态（2026-11-18，OpenCode 会话记录）
+
+- 学生在本轮消息中确认：李亚飞（Li Yafei）已批准测试提案 PR #3，并要求本条按“学生转述的确认”记录，不补造 GitHub review URL、截图或其他审批证据。
+- 只读核对（`gh pr view 3`）：`state=OPEN`、`reviewDecision=APPROVED`、`headRefOid=29b2133829666c25b42688ae7e5b42ac6130cbd8`，与待批准的测试 commit 完全一致；但 `reviews` 与 `latestReviews` 均为空，API 未提供批准人账号或逐条 review 记录。
+- 记录口径：审批的**存在性**由 GitHub 聚合状态与学生转述共同支持；**批准人账号与独立性未经 API 独立核验**。本记录不写成“GitHub 已核实的具名 Approve”，也不声称持有截图。
+- 实现仅按该确认推进切片 1；若后续需要把批准人与 commit 绑定写成可审计记录，仍由该同学补充 review 入口或截图。
+
+## 18. 实现会话 AI-use log 提议条目（2026-11-18）
+
+共享 `docs/ai-use-log.yaml` 的编辑入口/所有权仍未解决，因此本条**只**记录在本设计记录，状态为 **awaiting shared-log editor**；共享日志未被修改。本条与 §13 的测试准备条目是两次不同会话，不合并、不互相替代。
+
+```yaml
+- entry_id: D1-IMPL-20261118-01
+  timestamp: '2026-11-17T16:47:39Z'  # 本机时间 2026-11-18 (UTC+8)
+  tool: OpenCode desktop session, agent role papertrace-build-D (source implementation stage)
+  model: deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently verified)
+  purpose: 实现模块D切片1：读取审核投影、资格校验与生成前拒答；不实现生成/发布
+  scope:
+  - src/papertrace/answer/__init__.py
+  - src/papertrace/answer/model.py
+  - src/papertrace/answer/errors.py
+  - src/papertrace/answer/eligibility.py
+  - src/papertrace/answer/service.py
+  - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+  status: implementation-complete-awaiting-pr-review-not-merged
+  student_decisions:
+  - 学生批准本模块测试准备范围（2026-11-17），随后批准 CPython 3.14 venv 与 requirements-init.lock 安装
+  - 学生确认李亚飞已批准测试提案 PR #3；本条只按学生转述记录，未补造 review URL/截图
+  - 学生批准切片1实现范围，并要求保留未提交的 .DS_Store 删除、不纳入提交
+  approvals:
+  - 测试commit批准：学生转述的李亚飞批准 + GitHub reviewDecision=APPROVED 绑定 29b2133；逐条review不可得（§17.4）
+  - 实现范围：学生2026-11-18消息；不构成 merge 批准
+  verification:
+  - '.venv/bin/python -m pytest ... test/offline/test_answer.py → exit 0；33 passed'
+  - '.venv/bin/python -m pytest ... test/offline → exit 0；363 passed, 2 skipped（skip 为既有 OpenCode 可执行文件缺失）'
+  - 'ruff（D 文件单独运行）→ exit 0；全局运行仍因未修改的 scripts/paperqa_smoke.py I001 失败'
+  - 'mypy src/papertrace → exit 0，7 source files'
+  - 'scripts/gates.py --gate schema → exit 0，PASS'
+  limitations:
+  - 未调用产品模型；未新增网络调用（仅先前获批的解释器/依赖下载）
+  - 真实 C 集成未验证：C PR #4 仍 open，投影映射为候选接口
+  - 生成、引用解析、freshness/token、预算与发布门均未实现
+  - 静态导入扫描只是补充观察，不证明零出站尝试
+  - 共享 AI-use log 合入待共享日志编辑者处理；本条不是共享日志记录
+```
