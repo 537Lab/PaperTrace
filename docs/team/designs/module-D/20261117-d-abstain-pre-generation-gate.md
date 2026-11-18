@@ -381,3 +381,16 @@ C 的提案（`ledger.projection(question_id)`，字段含 `snapshot_id/question
   - 静态导入扫描只是补充观察，不证明零出站尝试
   - 共享 AI-use log 合入待共享日志编辑者处理；本条不是共享日志记录
 ```
+
+## 19. CI 失败归因（2026-11-19）
+
+| 检查 | PR #6 结果 | 归因 | 依据 |
+|---|---|---|---|
+| schema | PASS | — | — |
+| static | FAIL | 既有：未修改的 scripts/paperqa_smoke.py:37 I001；其余 8 个子检查 PASS | 本 PR diff 不含 scripts/；明细来自 run 44283642138 |
+| regression | FAIL | 既有：完整上游禁网失败/限时，live 未授权 | INITIALIZATION_STATUS.md 第 15、31 行 |
+| test-approval | BLOCKED | 记录缺失：GitHub reviews totalCount=0，timeline 无 review 事件 | PR #3 API 查询 |
+| ai-log | FAIL → 本提交修复 | 新引入缺项，已追加两条披露 | 本提交 |
+| semantic | BLOCKED | 需团队确定评估口径与证据 | gate summary |
+
+本表只用于归因，不构成豁免；既有 static 与 regression 失败仍阻断合并，需由对应共享文件 owner 解决。
