@@ -179,3 +179,24 @@ entries:
   limitations:
   - 未修改已批准的 test/offline/test_review.py。改动该文件会使 test-approval 变为 approved-test-or-plan-file-changed-after-approval
   - 实现 PR 仍等待另一位同学批准最新提交
+- entry_id: C-SRC-20261118-01
+  timestamp: '2026-11-18T04:10:00+00:00'
+  tool: Cursor
+  model: grok-4.7
+  purpose: 空账本清理必须在仍持有锁时完成，避免并发写入时删掉另一个请求正在使用的账本
+  scope:
+  - src/papertrace/review/service.py
+  status: implementation-awaiting-second-review
+  approvals:
+  - 沿用 yafeili39-arch 对测试 PR #2 的 Approve，review id 5923403535
+  - 学生李宇轩于 2026-11-18 要求核实同学提出的并发清理问题；这不是实现 PR 的批准
+  verification:
+  - 30 轮两个进程同时写入同一问题，失败 0；成功写入的 jsonl 都还在
+  - not-a-reviewer 仍抛出 ValueError，目录里没有 jsonl
+  - not-a-question 仍抛出 ReviewScopeError，目录里没有 jsonl
+  - test/offline/test_review.py 仍为 24 passed
+  - 按 papertrace.ruff.toml 与 mypy.ini 检查 src/papertrace/review 通过
+  limitations:
+  - 未修改已批准的 test/offline/test_review.py
+  - 并发检查是本地脚本，没有写进仓库
+  - 实现 PR 仍等待另一位同学批准这次新提交

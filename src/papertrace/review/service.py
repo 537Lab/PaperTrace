@@ -291,6 +291,26 @@ class ReviewLedger:
                 raise ReviewNoop("evidence is already pending")
 
         path.parent.mkdir(parents=True, exist_ok=True)
+        # The ledger file itself cannot be the lock: another request may already
+        # hold it open while this request unlinks an empty path. A sibling lock
+        # is taken before the ledger is created, and the empty file is removed
+        # before that lock is released.
+        lock_path = path.with_name(path.name + ".lock")
+        with lock_path.open("a+b") as lock_handle:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+            try:
+                return self._append_decision(path, intent)
+            finally:
+                fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+
+    def _append_decision(self, path: Path, intent: _DecisionIntent) -> ReviewProjection:
+        """Append one event while the caller holds the sibling lock."""
+
+        if not path.exists():
+            if intent.expected_revision != 0:
+                raise ReviewRevisionConflict("expected revision is not current")
+            if intent.status == "pending":
+                raise ReviewNoop("evidence is already pending")
         created = not path.exists()
         try:
             with path.open("a+b") as handle:
@@ -348,6 +368,7 @@ class ReviewLedger:
                     fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
         except BaseException:
             # QA-01: a rejected command must not leave a new empty ledger file.
+            # This still runs before the sibling lock is released.
             if created:
                 try:
                     if path.stat().st_size == 0:
