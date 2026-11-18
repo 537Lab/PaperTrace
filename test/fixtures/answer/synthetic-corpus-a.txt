@@ -1,0 +1,2 @@
+SYNTHETIC FIXTURE A -- written for offline tests; not a real publication.
+The synthetic resonance cell stores 12 units of daylight energy.
