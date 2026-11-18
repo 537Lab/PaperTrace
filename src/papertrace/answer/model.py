@@ -36,14 +36,29 @@ class AnswerRequest(BaseModel):
 
 
 class ReviewProjectionView(Protocol):
-    """INV-03/INV-04: read-only shape C's projection must expose (still provisional)."""
+    """INV-03/INV-04: read-only shape C's projection must expose (still provisional).
 
-    snapshot_id: str
-    question_id: str
-    revision: int
-    digest: str
-    accepted_evidence_ids: Sequence[str]
-    events: Sequence[object]
+    Properties, not plain attributes: a frozen dataclass exposing the same names and
+    types must satisfy this protocol at type-check time, not only at runtime.
+    """
+
+    @property
+    def snapshot_id(self) -> str: ...
+
+    @property
+    def question_id(self) -> str: ...
+
+    @property
+    def revision(self) -> int: ...
+
+    @property
+    def digest(self) -> str: ...
+
+    @property
+    def accepted_evidence_ids(self) -> Sequence[str]: ...
+
+    @property
+    def events(self) -> Sequence[object]: ...
 
 
 class ReviewProjectionPort(Protocol):
