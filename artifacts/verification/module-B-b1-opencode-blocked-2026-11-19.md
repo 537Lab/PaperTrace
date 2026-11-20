@@ -87,3 +87,19 @@ The `reasoning_text` in the thinking mode must be passed back to the API.
 OpenCode 会话 `ses_e0745d58fffei0NNwkEjinDmtc` 已把实际 B1 API 提案、RED 结果和未批准边界回写 `docs/team/designs/module-B/test-design-v2.1.md`，没有修改其他路径。人工核对随后发现四处仅涉及事实准确性的表述：OpenCode/Codex 分工、`FakeCitationClaim` 的实际字段名、验证记录文件清单，以及本次设计会话 ID。
 
 尝试恢复同一会话进行窄范围更正时，本机 `opencode` 在模型调用前拒绝项目的 V2 权限配置，并提示使用当前环境并不存在的 `opencode2`；因此没有发生新的模型请求。为避免重复请求，Codex 只对上述四处做机械事实修正。测试、fixtures、测试断言和任何 `src/` 文件均未改变；这些修正不构成学生批准，B1 仍为 RED，B2 仍为 NOT_STARTED。
+
+## 2026-11-20 PR #9 COMMENT 后的门禁归因
+
+PR #9 对提交 `4e88d04d7c35b92cf665e1f5be025e9d5584a1db` 收到的是技术 **COMMENT**，不是独立学生 **APPROVE**。评论确认 B1 测试范围与 3 passed / 45 expected RED 合理，同时指出 AI-use log 尚无本轮新增记录，以及仓库级 static-analysis 的 Ruff 子检查失败。
+
+本轮按 append-only 规则在 `docs/ai-use-log.yaml` 新增 `B-TEST-20261120-01`，如实列出三个 OpenCode 会话、学生授权与非审批边界、Codex 干预、验证结果、provider 400 和本机 OpenCode 权限版本限制。
+
+使用现有本地 Ruff 0.17.5 执行与 gate 相同的范围：
+
+```text
+ruff check --config papertrace.ruff.toml src/papertrace test/offline scripts
+```
+
+精确结果只有一项：`scripts/paperqa_smoke.py:37:1 I001 Import block is un-sorted or un-formatted`，退出码 1。该文件不在 PR #9 改动中；此前 `C-SRC-20261117-01` 已记录同一既有问题。B 的 `test/offline/test_retrieval.py` 与 `test/fixtures/retrieval/fake_adapter.py` 单独 Ruff 仍通过，因此不越权修改无关脚本，也不放宽 gate。
+
+`test-approval` 的 `test-proposal-only-do-not-merge-red-tests` 阻塞是 B1 阶段预期状态；不为此提前编写 B2 或合并 RED PR。新增披露将产生新的精确 head，须由未参与 B1 测试编写的学生重新审核并在 GitHub 正式 Approve。
