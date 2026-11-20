@@ -100,3 +100,143 @@ entries:
   - 不代写A–E业务；真实Plan/测试/PR审核/D5过程及课程共享起点接受边界须学生/教师完成
   - 原full上游FAIL/限时、9 live未授权、真实模型质量未评估和私有保护限制保持不变
   - 不自设bootstrap PASS或取消六门；本轮不使用产品模型凭据/收费调用
+- entry_id: C-TEST-20261116-01
+  timestamp: '2026-11-16T04:16:10+00:00'
+  tool: OpenCode 2.0.12 agent papertrace-build-C
+  model: deepseek/deepseek-v4-flash
+  purpose: 只为模块 C 准备离线测试和合成 fixture，不实现审核源码
+  scope:
+  - test/offline/test_review.py
+  - test/fixtures/review
+  status: test-preparation-awaiting-non-author-approval
+  approvals:
+  - 学生李宇轩于 2026-11-16 指示按已批准计划继续，范围只限测试准备；不是另一位学生的 GitHub 测试批准
+  verification:
+  - OpenCode 会话 ses_e1d73cf71ffeUeHwhiDtLbKqE9 写入上述测试和 fixture
+  - 命令 .venv/bin/python -m pytest -c papertrace.pytest.ini test/offline 退出码 1
+  - test_review.py 24 项失败，断言为 papertrace.review 不存在
+  - 同次运行 326 passed、2 skipped；另外 4 个非 C 失败未改对应文件
+  limitations:
+  - 未创建 src/papertrace/review，本记录不授权实现
+  - 没有非作者对具体测试 commit 的 GitHub Approve
+  - 未把 24 项预期红灯改成通过，也未处理同次运行里 4 个既有失败
+- entry_id: C-LINT-20261116-01
+  timestamp: '2026-11-16T12:59:07+00:00'
+  tool: OpenCode 2.0.12 agent papertrace-build-C
+  model: deepseek/deepseek-v4-flash
+  purpose: 只修正模块 C 测试里一处 ruff B905，不实现审核源码
+  scope:
+  - test/offline/test_review.py
+  status: test-preparation-awaiting-non-author-approval
+  approvals:
+  - 学生李宇轩于 2026-11-16 指示继续处理静态检查失败；不是另一位学生的 GitHub 测试批准
+  verification:
+  - OpenCode 会话 ses_e1b8f7f0dffeX2cj0a3kWCsFpS 只把 zip 调用改为 strict=False
+  - git diff 仅 test/offline/test_review.py 一行
+  - .venv/bin/python -m ruff check --config papertrace.ruff.toml test/offline/test_review.py 退出码 0
+  limitations:
+  - 未写 src/papertrace/review，本记录不授权实现
+  - 没有非作者对具体测试 commit 的 GitHub Approve
+  - 24 项预期红灯保持不变
+- entry_id: C-SRC-20261117-01
+  timestamp: '2026-11-17T13:40:00+00:00'
+  tool: OpenCode 2.0.12 agent papertrace-build-C
+  model: deepseek/deepseek-v4-flash
+  purpose: 在非作者批准测试 PR #2 之后，实现模块 C 追加审核账本
+  scope:
+  - src/papertrace/review
+  - docs/team/designs/module-C/review-ledger.md
+  - docs/architecture/adr/003-review-ledger.md
+  status: implementation-awaiting-second-review
+  approvals:
+  - yafeili39-arch 在 GitHub PR #2 对当前测试改动给出 Approve，review id 5923403535，具有写权限，不是作者 Andylee56-cyber
+  - 学生李宇轩于 2026-11-17 指示在该批准后继续实现；这不是实现 PR 的第二次批准
+  verification:
+  - OpenCode 会话 ses_e164aedf1ffe7nvZuzS2o3GVQg 写入 src/papertrace/review 与设计记录
+  - .venv/bin/python -m pytest -c papertrace.pytest.ini test/offline/test_review.py 结果 24 passed
+  - .venv/bin/python -m mypy --config-file mypy.ini src/papertrace 无错误
+  - 全量 test/offline 为 350 passed、2 skipped、4 failed；4 个失败来自本次未修改的既有文件
+  limitations:
+  - ADR-003 只是为了让实现 PR 引用架构决定，不是第二次人工批准
+  - ruff 仍报既有 scripts/paperqa_smoke.py 的 I001，本轮未改该文件
+  - 测试 PR #2 保持打开，不合并
+- entry_id: C-SRC-20261117-02
+  timestamp: '2026-11-17T15:55:00+00:00'
+  tool: OpenCode 2.0.12 agent papertrace-build-C
+  model: deepseek/deepseek-v4-flash
+  purpose: 非法 reviewer_ref 或 question_id 在拒绝时不得留下空账本文件
+  scope:
+  - src/papertrace/review/service.py
+  status: implementation-awaiting-second-review
+  approvals:
+  - 沿用 yafeili39-arch 对测试 PR #2 的 Approve，review id 5923403535
+  - 学生李宇轩于 2026-11-17 要求按同学意见补上写入前校验；这不是实现 PR 的批准
+  verification:
+  - not-a-reviewer 在打开文件前抛出 ValueError，目录里没有 jsonl
+  - not-a-question 在打开文件前抛出 ReviewScopeError，目录里没有 jsonl
+  - test/offline/test_review.py 仍为 24 passed
+  - ruff 与 mypy 检查 src/papertrace/review 通过
+  limitations:
+  - 未修改已批准的 test/offline/test_review.py。改动该文件会使 test-approval 变为 approved-test-or-plan-file-changed-after-approval
+  - 实现 PR 仍等待另一位同学批准最新提交
+- entry_id: C-SRC-20261118-01
+  timestamp: '2026-11-18T04:10:00+00:00'
+  tool: Cursor
+  model: grok-4.7
+  purpose: 空账本清理必须在仍持有锁时完成，避免并发写入时删掉另一个请求正在使用的账本
+  scope:
+  - src/papertrace/review/service.py
+  status: implementation-awaiting-second-review
+  approvals:
+  - 沿用 yafeili39-arch 对测试 PR #2 的 Approve，review id 5923403535
+  - 学生李宇轩于 2026-11-18 要求核实同学提出的并发清理问题；这不是实现 PR 的批准
+  verification:
+  - 30 轮两个进程同时写入同一问题，失败 0；成功写入的 jsonl 都还在
+  - not-a-reviewer 仍抛出 ValueError，目录里没有 jsonl
+  - not-a-question 仍抛出 ReviewScopeError，目录里没有 jsonl
+  - test/offline/test_review.py 仍为 24 passed
+  - 按 papertrace.ruff.toml 与 mypy.ini 检查 src/papertrace/review 通过
+  limitations:
+  - 未修改已批准的 test/offline/test_review.py
+  - 并发检查是本地脚本，没有写进仓库
+  - 实现 PR 仍等待另一位同学批准这次新提交
+- entry_id: C-SRC-20261119-01
+  timestamp: '2026-11-19T09:20:00+00:00'
+  tool: Cursor
+  model: grok-4.7
+  purpose: 原测试批准人账号被删除后，按 537Lab 对 3339b75 的新批准，重新提交同一份模块 C 实现
+  scope:
+  - src/papertrace/review/service.py
+  - src/papertrace/review/view.py
+  - src/papertrace/review/__init__.py
+  - docs/architecture/adr/003-review-ledger.md
+  - docs/team/designs/module-C/review-ledger.md
+  status: implementation-awaiting-second-review
+  approvals:
+  - 537Lab 于 2026-11-19T09:13:17Z 批准测试 PR #2 的提交 3339b75a6b87e3463465bf4b6a896723e02ab4f2，review id 5972210357
+  - 学生李宇轩于 2026-11-19 要求在该批准之后重新提交实现；这不是实现 PR 的批准
+  verification:
+  - 审核源码与 cb1e6b7ad0161768a61421b34d5c8199fe5cf61a 相同
+  - 未修改已批准的 test/offline/test_review.py
+  limitations:
+  - 这不是新的功能改动
+  - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: C-SRC-20261120-01
+  timestamp: '2026-11-20T14:20:00+00:00'
+  tool: Cursor
+  model: grok-4.7
+  purpose: PR #7 合并后测试 PR #2 被标成已合并，main 回放失败。PR #10 已把实现从 main 撤下，现按该合并时间之后重新提交同一份模块 C 源码
+  scope:
+  - src/papertrace/review/service.py
+  - src/papertrace/review/view.py
+  - src/papertrace/review/__init__.py
+  status: implementation-awaiting-second-review
+  approvals:
+  - 537Lab 于 2026-11-19T09:13:17Z 批准测试 PR #2 的提交 3339b75a6b87e3463465bf4b6a896723e02ab4f2，review id 5972210357
+  - 学生李宇轩于 2026-11-20 要求在测试 PR 已合并之后重新提交实现；这不是实现 PR 的批准
+  verification:
+  - 三份审核源码与 91d703d1d27c50d63674012e0cfe61c61e715e37 相同
+  - 未修改已批准的 test/offline/test_review.py 和 test/fixtures/review
+  limitations:
+  - 这不是新的功能改动
+  - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交

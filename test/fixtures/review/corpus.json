@@ -1,0 +1,36 @@
+{
+  "synthetic": true,
+  "provenance": "handwritten; not a real paper, human approval, or model response",
+  "contract": "CorpusSnapshot",
+  "note": "Three synthetic documents only. version_sha256 values are deterministic placeholders because these fixtures carry no source files. snapshot_id is intentionally omitted and computed by the shared CorpusSnapshot contract.",
+  "data": {
+    "schema_version": 1,
+    "created_at": "2026-03-01T00:00:00Z",
+    "documents": [
+      {
+        "schema_version": 1,
+        "document_id": "doc-synthetic-support",
+        "version_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "title": "合成文献 S：支持观点样例（不是真实论文）",
+        "source_name": "synthetic-support.txt",
+        "status": "ready"
+      },
+      {
+        "schema_version": 1,
+        "document_id": "doc-synthetic-oppose",
+        "version_sha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+        "title": "合成文献 O：相反观点样例（不是真实论文）",
+        "source_name": "synthetic-oppose.txt",
+        "status": "ready"
+      },
+      {
+        "schema_version": 1,
+        "document_id": "doc-synthetic-unrelated",
+        "version_sha256": "0011223344556677001122334455667700112233445566770011223344556677",
+        "title": "合成文献 U：无关观点样例（不是真实论文）",
+        "source_name": "synthetic-unrelated.txt",
+        "status": "ready"
+      }
+    ]
+  }
+}
