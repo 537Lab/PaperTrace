@@ -6,10 +6,10 @@ Missing implementation must fail explicitly. No source implementation is supplie
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import importlib.util
 import json
-import hashlib
 from pathlib import Path
 
 import pytest
@@ -188,9 +188,67 @@ def test_original_excerpt_requires_export_permission():
     original = record()
     for exported in (api.export_json(original), api.export_markdown(original)):
         assert original.evidence[0].excerpt not in exported
-    assert original.evidence[0].excerpt in api.export_json(
-        original, include_excerpts=True,
+    with pytest.raises(api.ExportPermissionDenied):
+        api.export_json(original, include_excerpts=True)
+    permission = api.ExportPermission(
+        record_id=original.record_id,
+        evidence_ids=(original.evidence[0].evidence_id,),
+        purpose="external-export",
+        granted_by="reviewer-SYNTHETIC",
     )
+    for exporter in (api.export_json, api.export_markdown):
+        assert original.evidence[0].excerpt in exporter(
+            original, include_excerpts=True, permission=permission,
+        )
+
+
+@pytest.mark.parametrize("scope", ["wrong-record", "no-evidence", "internal-read"])
+def test_export_permission_must_match_record_evidence_and_purpose(scope):
+    api = reports()
+    original = record()
+    permission = api.ExportPermission(
+        record_id="d3a03bf6-88af-4acb-a368-c1a02592192d"
+        if scope == "wrong-record" else original.record_id,
+        evidence_ids=() if scope == "no-evidence" else (original.evidence[0].evidence_id,),
+        purpose="internal-read" if scope == "internal-read" else "external-export",
+        granted_by="reviewer-SYNTHETIC",
+    )
+    for exporter in (api.export_json, api.export_markdown):
+        with pytest.raises(api.ExportPermissionDenied):
+            exporter(original, include_excerpts=True, permission=permission)
+
+
+def test_symlink_history_root_cannot_escape(tmp_path):
+    api = reports()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    sentinel = outside / "sentinel.txt"
+    sentinel.write_text("SYNTHETIC unchanged", encoding="utf-8")
+    linked = tmp_path / "history"
+    linked.symlink_to(outside, target_is_directory=True)
+    with pytest.raises(api.InvalidRecord):
+        api.HistoryStore(linked).save(record())
+    assert sentinel.read_text("utf-8") == "SYNTHETIC unchanged"
+    assert sorted(p.name for p in outside.iterdir()) == ["sentinel.txt"]
+
+
+@pytest.mark.parametrize("path", ["/Users/SYNTHETIC/private/paper.pdf", "C:\\Users\\SYNTHETIC\\paper.pdf"])
+def test_absolute_path_in_metadata_is_rejected(path):
+    api = reports()
+    data = payload()
+    data["run_metadata"]["source_path"] = path
+    with pytest.raises(ValueError):
+        api.ResearchRecord.model_validate(data)
+
+
+@pytest.mark.parametrize("path", ["/Users/SYNTHETIC/private/paper.pdf", "C:\\Users\\SYNTHETIC\\paper.pdf"])
+def test_absolute_path_in_free_text_is_not_exported(path):
+    api = reports()
+    data = payload()
+    data["draft"]["body"] = f"SYNTHETIC answer from {path}"
+    original = api.ResearchRecord.model_validate(data)
+    for exporter in (api.export_json, api.export_markdown):
+        assert path not in exporter(original)
 
 
 def test_write_failure_does_not_damage_previous_record(tmp_path, monkeypatch):
