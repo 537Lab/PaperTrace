@@ -1,29 +1,30 @@
 # B1 测试设计 v2.1
 
-日期：2026-11-19。依据：已批准 Plan v2.1、现有 `contracts.py`、`integration-contract.md`、FR-B-01/02 与 FR-D-03。
+日期：2026-11-19（设计依据）；2026-11-20 状态更新。依据：已批准 Plan v2.1、现有 `contracts.py`、`integration-contract.md`、FR-B-01/02 与 FR-D-03。
 
-状态：**设计草稿已完成；测试代码 NOT_CREATED；OpenCode Build NOT_RUN；独立测试审批 NOT_REQUESTED；B2 NOT_STARTED**。
+状态：**测试已由 OpenCode 创建并处于 B1 RED；B2 NOT_STARTED；独立测试审批 NOT_REQUESTED / NOT_GRANTED**。
 
-本文件由 Codex 辅助整理，不能算作 OpenCode 已生成测试或真实学生 Approve。没有修改共享契约或其他成员模块。
+测试文件与 fixtures 已由 OpenCode 生成；Codex 仅编排本地验证与事实一致性核对，这些动作不能算作真实学生 Approve。没有修改共享契约或其他成员模块。测试文件与 fixtures 已实际存在，但业务实现尚未开始。
 
 ## 1. 测试对象与边界
 
-- 测试文件：`test/offline/test_retrieval.py`。
-- B2 拟实现对象仍为已批准的 `src/papertrace/retrieval/{__init__,gateway,service,view}.py`；本阶段不创建这些文件。
+- 测试文件：`test/offline/test_retrieval.py`（已创建）。
+- 合成 fixtures：`test/fixtures/retrieval/` 下四个文件（已创建，见第 2 节）。
+- B2 拟实现对象仍为已批准的 `src/papertrace/retrieval/{__init__,gateway,service,view}.py`；本阶段**不创建**这些文件。
 - B 的内部结果可区分 SUCCESS、EMPTY_RESULT、TIMEOUT、PARSE_ERROR、UPSTREAM_ERROR；不能把这些状态添加到共享模型。
 - B1 fake 记录输入、序列化结果和尝试次数，只测边界；B0 smoke 另测真实 PaperQA2 本地 API 接线。两者均不能代替 live 检索质量评估。
-- 具体 Python 函数签名需在 OpenCode 生成测试时明确记录，并与 A/D 的公开端口核对。本文不宣称现有 A/D 已实现或同意任何新签名。
+- 测试面向的具体 Python 形状以第 4 节为准；该节是 B1 提案，不是已实现或已由 A/D 同意的接口。
 
-## 2. 合成数据与 fake 的精确候选路径
+## 2. 合成数据与 fake 的实际情况
 
-下列是供 OpenCode 展开的候选清单，尚未创建或批准为新的范围扩展；若实际权限/原计划要求逐文件审批，须先由学生确认清单。
+已创建的文件（均为自写合成内容，非真实论文或凭据）：
 
-- `test/fixtures/retrieval/source-a.txt`：自写两段合成文本，可验证完整行范围。
-- `test/fixtures/retrieval/source-b.txt`：另一来源，测试跨来源、排除和 pending marker。
-- `test/fixtures/retrieval/fake_adapter.py`：仅离线 spy、异常注入及实际 payload 捕获，不加载 PaperQA2 或凭据。
-- `test/fixtures/retrieval/README.md`：说明数据非真实论文、用途与 fake 限制。
+- `test/fixtures/retrieval/source-a.txt`：两段合成文本，用于完整行范围与回查。
+- `test/fixtures/retrieval/source-b.txt`：另一合成来源，含 pending marker，用于跨来源、排除和 pending 文本不进入发送集。
+- `test/fixtures/retrieval/fake_adapter.py`：仅离线 spy、异常注入及实际 payload 捕获；不加载 PaperQA2、不读凭据、不联网。其 AST 导入根不含 `papertrace` 或 `paperqa`，由测试断言固定。
+- `test/fixtures/retrieval/README.md`：说明数据为合成、用途与 fake 限制。
 
-document version 用源文件实际字节 SHA256；snapshot/evidence ID 由现有共享模型派生。不得手写随机合法外观 ID 来绕过校验。固定合成时间采用有时区时间，不含成员身份。
+document version 用源文件实际字节 SHA256；snapshot/evidence ID 由现有共享模型派生。不手写随机合法外观 ID 来绕过校验。固定合成时间采用带时区时间，不含成员身份。fixtures 不含绝对个人路径、邮箱样式或 credential-like 值，由测试断言固定。
 
 ## 3. 测试矩阵
 
@@ -44,31 +45,70 @@ document version 用源文件实际字节 SHA256；snapshot/evidence ID 由现�
 
 12000 输入硬上限、9000 策略触发点、2000 输出上限依 Plan v2.1。需分别测试临界值、超过上限和真实装配后的计数；B 按 D 策略执行，不自行决定获准集合或修改预算政策。
 
-## 4. RED 必须能够说明什么
+## 4. 测试面向的 B1 API 提案（未批准）
 
-测试文件必须可以正常 collection。缺少业务模块时，用清晰断言报告目标公共接口尚未实现，而不是以 import 崩溃冒充业务负测已验证。测试在实现前 RED 是提案状态；获得实现后，每项断言必须真正执行，不能只测 fake 自己。
+以下签名**逐项来自当前 `test/offline/test_retrieval.py` 实际编码的形状**，仅用于说明测试期望什么。它们是 **B1 测试提案**，等待未参与测试实现的学生对具体测试 commit 独立批准，并在之后由 A/D 确认各自侧端口；**不是已实现代码，也不是已与 A/D 达成的接口**。未修改 `contracts.py`，也不据此创建 `src/`。
+
+计划模块 `papertrace.retrieval.gateway`：
+
+- `Gateway(*, adapter, source_reader, model_factory, index=None, clock)`，方法 `retrieve(request)` 与 `generate(request)`。`clock` 返回带时区时间。
+- `RetrievalRequest(*, snapshot, question, config)`；`RetrievalConfig(*, provider, model, max_retries=0, parser_name, parser_version)`。
+- `RetrievalStatus`：`SUCCESS`、`EMPTY_RESULT`、`TIMEOUT`、`PARSE_ERROR`、`UPSTREAM_ERROR`。
+- 检索结果暴露 `status`、`evidence`（共享 `EvidenceRecord` 元组）、`attempts`（每次尝试含 `provider`、`model`、`stage`），失败时结果还有 `stage`。
+- `GenerationRequest(*, snapshot, question, approved_evidence, selected_evidence_ids, policy, review_revision, review_digest)`。
+- `GenerationPolicy(*, provider, model, max_input_tokens=12000, compress_at_tokens=9000, max_output_tokens=2000, max_sources=None, get_evidence_if_no_contexts=False, pre_prompt=None, post_prompt=None, autonomous_agent=False)`。
+- `GenerationStatus`：`REFUSED`、`SUCCESS`、`AMBIGUOUS_CITATIONS`。
+- 生成结果暴露 `status`、`refusal_reason`、`raw_output`、`sent_evidence_ids`、`citation_aliases`（alias→evidence ID）、`unknown_citation_keys`、`ambiguous_citation_keys`。
+- 拒绝原因字符串（B 内部，不加入共享模型）：`EMPTY_APPROVED`、`SELECTED_OUTSIDE_APPROVED`、`INVALID_BUDGET`、`UNSAFE_SESSION_POLICY`、`EMPTY_SENT`、`EVIDENCE_OUTSIDE_SNAPSHOT`、`EVIDENCE_VERSION_MISMATCH`。
+- `UnsafeIndexError`：在 loader 被调用前拒绝不可信索引。
+
+受控来源读取（A 侧形状，待 A 确认）：
+
+- `read_source(*, snapshot_id, document_id, version_sha256) -> bytes`，仅允许关键字调用；测试的 reader spy 按这三个键记录每次调用，并在读取后由 B 核对 SHA256。
+- 测试 spy 形状：`FakeSourceReader(sources={(snapshot_id, document_id, version_sha256): bytes}, fail_with=None)`，暴露 `calls`（dict 列表，键为上述三项）。
+
+adapter / factory / session spy 形状（仅测试用，不等于生产端口）：
+
+- `FakeRetrievalAdapter(script=[FakeOutcome(...)])`，暴露 `search_calls` 与 `requests`；`FakeOutcome(contexts=(), failure=None)`；`FakeFailure(kind, stage, retryable)`；`FakeContext(document_id, version_sha256, excerpt, line_start, line_end, page_start, page_end, chunk_id, summary, score, upstream_context_id)`。
+- `FakeModelFactory(scripted=[FakeGenerationOutput(...)])`，暴露 `create_calls`、`sdk_calls`、`http_calls`、`sessions`、`create_payloads`、`questions`、`ask_order`；`create_payloads` 每项含 `"policy"`，其 `get_evidence_if_no_contexts`、`pre_prompt`、`post_prompt`、`autonomous_agent` 可被断言。
+- `FakeGenerationOutput(raw_output, citations, usage_tokens)`；`FakeCitationClaim(key, candidates)`；session 暴露 `contexts`（每项有 `evidence_id`、`text`）与 `reused`。
+- `CountingUntrustedSource` 暴露 `load_calls`，用于证明未反序列化。
+- 测试常量：provider `synthetic-provider`、model `synthetic-model`、parser `synthetic-parser` / `1.0`，仅用于合成断言。
+
+view 模块 `papertrace.retrieval.view`：
+
+- `project_retrieval_view(result) -> dict`，含 `status`（枚举 `value` 字符串）与 `evidence` 列表；每项至少含 `evidence_id`、`document_id`、`version_sha256`、`locator`、`excerpt`、`advisory_summary`，且不得含 `accepted`、`accepted_by`、`review_decision`、`release_decision`、`released`、`release_status`。
+
+以上命名、默认值和返回结构若在独立测试批准或 A/D 确认时发生变化，必须先改测试提案并重新走审批，不得在实现阶段暗中放宽断言。
+
+## 5. RED 必须能够说明什么
+
+测试文件已能正常 collection。缺少业务模块时，用清晰断言报告目标公共接口尚未实现，而不是以 import 崩溃冒充业务负测已验证。测试在实现前 RED 是提案状态；获得实现后，每项断言必须真正执行，不能只测 fake 自己。
+
+当前实测：`test/offline/test_retrieval.py` 收集 **48** 项；**3** 项 fixture/architecture 安全检查通过（fixtures 合成且无凭据/绝对路径、fake 不导入 `papertrace`/`paperqa`、团队新增源码仅 retrieval 可导入 paperqa）；**45** 项行为测试按设计失败，报错明确指向缺失的 `papertrace.retrieval.gateway`（B1 RED），而不是 collection error。45 项失败均为“目标接口未实现”，尚未证明任何业务行为；在独立测试批准与 B2 实现之前不得把 RED 描述为通过或已联调。
 
 禁用 skip/xfail/弱化断言求绿。不把共享模型本身已经拒绝非法输入，当作 B 运行时边界已经验证。
 
-## 5. 运行与交接
+## 6. 运行与交接
 
-1. B0 已于 2026-11-19 在独立真实 Git 副本恢复并通过：1 passed，实际 socket 连接尝试为 0。新证据见 `artifacts/verification/module-B-recovery-and-pr5-review-2026-11-19.md` 与 `module-B-paperqa-smoke-recovered-2026-11-19.json`；原 BLOCKED 报告保留为历史。恢复基线与准备 B1 的状态分别记录。
-2. 学生确认精确 fixtures 清单及开发助手调用边界后，使用 `papertrace-build-B` 新会话附上 Plan v2.1 与真实批准记录；只生成测试、fixtures 和本设计记录，不写 src。
-3. 使用第 7.1 节批准的离线测试命令；若实际 Python 路径需适配隔离环境，记录真实命令。保存 collection、预期 RED 与共享合同回归的真实退出码；未运行则 NOT_RUN。
-4. 核对最终文件清单和内容 hash，确认无 src/共享/上游/锁/CI 改动；保留真实 OpenCode 原始会话与人工干预，准确披露 Codex 的设计辅助。
-5. 从真实 Git checkout 创建测试提案 commit/PR，注明所有失败原因。请未参与测试实现的另一位学生对精确 commit 在 GitHub Approve；测试提案可保持 RED/open。
-6. 真实批准后，从该测试 head 开始 B2，不预写业务实现。完整离线回归、Ruff/mypy/schema/frozen 与 live 状态分别如实报告。
+1. B0 已于 2026-11-19 在独立真实 Git 副本恢复并通过：1 passed，实际 socket 连接尝试为 0。证据见 `artifacts/verification/module-B-recovery-and-pr5-review-2026-11-19.md` 与 `module-B-paperqa-smoke-recovered-2026-11-19.json`；原 BLOCKED 报告保留为历史。
+2. B1 测试与 fixtures 已由 OpenCode 在会话 `ses_e0b52e19cffeKNNWGvabD35xQ7` 与 `ses_e075ae192ffeqS0IgLofyGjpFw` 中创建；本次设计状态更新由 OpenCode 会话 `ses_e0745d58fffei0NNwkEjinDmtc` 完成。CityU 模型端点对包含 `reasoning_text` 的请求返回 HTTP 400，该限制使模型侧无法在相关会话继续迭代；随后由 **Codex 编排本地验证**（collection、离线 pytest、schema gate、Ruff），这不是 OpenCode 自动结果，也不构成人工审批。提交范围仍只包含 B1 测试、fixtures、设计记录与验证记录，不含业务源码。
+3. 本地验证结果：`test/offline/test_retrieval.py` 收集 48、3 通过、45 个预期 B1 RED；schema gate 通过；补充 Ruff 通过；`test/offline` 全量为 **353 passed、51 failed**，其中 **45** 个是上述预期 B1 RED，另 **6** 个是无关的既有/环境失败，不计入 B1 证据，也不以修改 B1 测试掩盖。
+4. 已核对文件清单：新增 `test/offline/test_retrieval.py`、四个 `test/fixtures/retrieval/` 文件、验证记录 `artifacts/verification/module-B-b1-opencode-blocked-2026-11-19.md`，并更新本设计记录；无 `src/`、共享契约、上游冻结、锁或 CI 改动。保留真实 OpenCode 会话与 Codex 事实一致性修正的披露。
+5. 测试提案应以真实 Git commit/PR 提交并保持 open、RED；请未参与测试实现的另一位学生对**精确测试 commit** 在 GitHub 实际 Approve。**当前尚未请求、也尚未获得任何测试批准**；角色选择、会话文字或工具权限都不证明批准。
+6. 只有真实批准后，才从该测试 head 开始 B2，不预写业务实现。完整离线回归、Ruff/mypy/schema/frozen 与 live 状态分别如实报告。
 
-## 6. 待确认而非已完成
+## 7. 待确认而非已完成
 
-- A 的受控源文本读取与文献版本端口的实际签名。
-- D 的中立生成端口实际签名、预算策略输入、raw/actual-sent/alias-map 输出的对接。
-- Git checkout 的分支/commit 身份；当前 ZIP 无法独立产生可审查的 Git commit。
-- 本轮 OpenCode 模型调用的数据、次数和费用边界。此前成功的 Plan 会话不能自动视作后续 Build 模型调用的无限许可。
+- A 的受控源文本读取与文献版本端口的实际签名（第 4 节 `read_source` 仅为 B 侧提案）。
+- D 的中立生成端口实际签名、预算策略输入、raw/actual-sent/alias-map 输出的对接；第 4 节 `GenerationPolicy`/`GenerationRequest` 仍待 D 确认。
+- 测试提案 PR 的分支/commit 身份与独立审批人。
+- 本轮 OpenCode 模型调用的数据、次数和费用边界；CityU 端点的 `reasoning_text` 400 限制及后续替代验证方式应记录在真实会话/PR 中。
+- B2 未开始，任何 `src/papertrace/retrieval/` 文件均不存在。
 
 这些事项不允许通过修改 `contracts.py`、人工规则或其他成员源码解决。
 
-## 7. 2026-11-19 A/B 接口核对与 B 侧交接意见
+## 8. 2026-11-19 A/B 接口核对与 B 侧交接意见
 
 核对来源：腾讯任务板当前 A 行、PR #5 精确 head `310ebb3b7b781288308d2b2e15d5574c10b80878` 的计划/测试/设计、现有共享 contracts 与 integration-contract。以下是 B 侧设计意见，尚未发送给其他 owner，也不是已完成联调；其他 owner 的批准不可由本文代填。
 
@@ -95,7 +135,7 @@ B 侧意见：该最小形状足以作为后续薄适配端口的设计依据；
 - A-local `(snapshot_id, corpus_revision)` 可供后续 freshness 检查，避免移除后恢复同一 snapshot 的 ABA；B 可传递运行 token，不裁定发布。D/最终编排还须确认发布提交的一致性机制；不宣称仅两次读取即可消除竞态。
 - A 的文件大小上限、磁盘布局及恢复策略归 A；本次 B 协调不替负责人批准这些策略。
 
-## 8. 2026-11-19 D/B 生成接口交接意见
+## 9. 2026-11-19 D/B 生成接口交接意见
 
 核对对象：PR #6 head `c3817ae676eb7c7a0ee8790b42c04232c19212e6` 及 D 设计记录。当前 D 第一切片没有 generation collaborator：eligible 仍返回 GENERATION_PATH_NOT_ENABLED，因此尚无可直接接线的已实现生成端口。
 
@@ -109,8 +149,8 @@ B 侧意见：该最小形状足以作为后续薄适配端口的设计依据；
 | session/隐式调用 | 每次新建仅含选定 contexts 的 session；关闭空集补证、pre/post 和自主 Agent；不复用旧会话 | B 适配器 |
 | 未知引用、版本变化 | raw 保留，明确错误/未知映射交 D；不删引用求通过、不取最新审核自动放行 | D 发布门及后续编排 |
 
-请 D 在下个生成切片确认具体调用签名、配置/预算表示与实际序列化观测点；B1 将据双方确认的最小签名测试 fake generation port。该确认前 D 现有第一切片可继续独立开发，不能把本次 B0 smoke 当成 D/B 联调通过。
+第 4 节的 `GenerationRequest`/`GenerationPolicy`/结果字段是 B1 测试对这些语义的编码，**仍待 D 确认**；确认前 D 现有第一切片可继续独立开发，不能把本次 B0 smoke 或 B1 RED 当成 D/B 联调通过。
 
-## 9. 本轮停止位置
+## 10. 本轮停止位置
 
-用户在 2026-11-19 明确选择“先完成审核和接口交接，暂不调用模型”。本轮不启动 OpenCode Build，不生成 B1 测试，不编写 B2 源码。B0 已通过；A/B 与 D/B 的上述意见可由 B 负责人转发，只有对方真实回应后才记录双方确认完成。
+B1 测试、fixtures 与本地验证已完成并保持 RED；B2 未开始，未创建任何业务实现；测试提案尚未提交到 GitHub，独立测试审批尚未请求、尚未获得。下一步是提交测试提案 commit/PR 并请求真实审批；在此之前不得继续 B2，也不得把本轮 Codex 编排的本地结果或角色配置写成学生批准。
