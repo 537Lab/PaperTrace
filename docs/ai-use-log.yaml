@@ -1,5 +1,26 @@
 schema_version: 1
 entries:
+- entry_id: E-TEST-20261120-01
+  timestamp: '2026-11-20T14:27:19+00:00'
+  tool: Codex desktop
+  model: session model identifier not independently verified
+  purpose: 模块E测试提案及PR8审查修订，修复import排序并补充导出许可与路径安全负例
+  scope:
+  - test/offline/test_reports.py
+  - test/fixtures/reports/scenarios.json
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  approvals:
+  - 学生在当前聊天明确批准计划并要求准备测试，随后授权提交PR8
+  - 学生转述审查意见要求修复，尚无本次具体测试版本的独立批准
+  verification:
+  - 本轮ruff检查test/offline/test_reports.py通过
+  - 按项目pytest配置运行31项，1 passed和30 failed，失败均在缺少reports实现的显式断言处
+  limitations:
+  - OpenCode尚未运行，本条只披露真实Codex测试准备，不能计为OpenCode会话
+  - 本地验证工具为pytest9.0.2和ruff0.17.6，非CI完整锁定环境
+  - 旧CI团队测试23失败与上游82失败需逐项分析，不将其全部归为预期RED
+  - ExportPermission是待审核接口设计，真实调用方授权和许可撤销需集成设计
 - entry_id: INIT-20261113-01
   timestamp: '2026-11-13T11:42:18.324716+00:00'
   tool: Hermes Agent Desktop (initialization assistance, not OpenCode student session)
