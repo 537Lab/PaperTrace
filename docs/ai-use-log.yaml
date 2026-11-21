@@ -322,3 +322,22 @@ entries:
   - This Codex delivery repair is not a student OpenCode implementation session, D5 evidence or a human Approve
   - Applicable ADR confirmation, independent review of the new head and post-merge replay handling remain outstanding
   - No product-model calls, no new functionality and no C-to-D integration tests
+- entry_id: D1-ADR-20261121-01
+  timestamp: '2026-11-21T20:02:59+08:00'
+  tool: Codex desktop, governance evidence synchronization
+  model: Codex runtime model not independently attested
+  purpose: Record the supervising student's limited ADR-001 applicability approval for D slice 1 and the C-to-D/B-to-D boundaries
+  scope:
+  - docs/architecture/adr/001-architecture.md
+  - docs/team/designs/module-D/20261121-d-slice1-delivery-supplement.md
+  - docs/ai-use-log.yaml
+  - PR #13 body architecture-decision declaration
+  status: architecture-applicability-recorded-awaiting-independent-implementation-review
+  approvals:
+  - 'Student statement: 我确认并批准 ADR-001 适用于当前 D slice 1、C→D 投影及 B→D 生成边界；本确认不等于批准任何实现 PR、合并或真实模型调用。'
+  verification:
+  - The ADR records limited scope and exclusions without changing implementation source, tests, dependencies, CI or contracts
+  - The delivery supplement preserves the exact statement and requires review of the resulting new head
+  limitations:
+  - This is not implementation approval, merge authorization, auto-merge authorization or product-model authorization
+  - C-to-D and B-to-D integration tests remain future separately approved work

@@ -55,9 +55,12 @@ failure is not waived. No new test or code changes were made in response to it.
 ## Outstanding review and acceptance conditions
 
 Changes to `answer/model.py`, `errors.py`, `eligibility.py` and `service.py` trigger
-safety review. An actually applicable ADR reference and a real independent review
-on the new head remain required. ADR-001 is a candidate only; its proposed status
-is not changed or represented as accepted.
+safety review. On 2026-11-21 the supervising student explicitly confirmed and
+approved ADR-001 for the limited scope of D slice 1, the C→D projection and the
+B→D generation boundary, while explicitly excluding implementation approval,
+merge authorization and real-model calls. The PR body must carry the exact
+`Architecture decision: docs/architecture/adr/001-architecture.md` declaration.
+A real independent review on the resulting new head remains required.
 
 The current gate can switch to its merged-test rule if GitHub automatically marks
 PR #3 as merged after the implementation lands. C #7 demonstrated this sequence.
@@ -67,6 +70,18 @@ preparation does not guarantee a passing post-merge replay and does not modify g
 Real product semantic evaluation is not run without authorized provider/model,
 data, budget and real evidence. C's successful check does not establish D's result.
 C-to-D integration, generation and later freshness/release work remain separate.
+
+## 2026-11-21 limited ADR applicability confirmation
+
+The supervising student's exact statement was:
+
+> 我确认并批准 ADR-001 适用于当前 D slice 1、C→D 投影及 B→D 生成边界；本确认不等于批准任何实现 PR、合并或真实模型调用。
+
+This confirmation resolves only the ADR-applicability question for the listed
+scope. It does not convert this draft PR into an approved implementation, does not
+authorize merge or auto-merge, and does not authorize product-model execution.
+Because this evidence changes the PR head, independent review must target the new
+exact commit rather than `0fa0d01`.
 
 ## Historical additions preserved verbatim from PR #6
 
