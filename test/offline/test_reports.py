@@ -197,6 +197,12 @@ def test_original_excerpt_requires_export_permission():
         granted_by="reviewer-SYNTHETIC",
     )
     for exporter in (api.export_json, api.export_markdown):
+        with pytest.raises(api.ExportPermissionDenied):
+            exporter(original, include_excerpts=True, permission=permission)
+    # A trusted integration port validates the grant against its private ledger.
+    trusted_grants = (permission,)
+    service = api.ExportService(permission_verifier=lambda grant: grant is trusted_grants[0])
+    for exporter in (service.export_json, service.export_markdown):
         assert original.evidence[0].excerpt in exporter(
             original, include_excerpts=True, permission=permission,
         )
@@ -261,11 +267,47 @@ def test_write_failure_does_not_damage_previous_record(tmp_path, monkeypatch):
     data["record_id"] = "d3a03bf6-88af-4acb-a368-c1a02592192d"
     second = api.ResearchRecord.model_validate(data)
 
+    reached = []
+
     def disk_failure(*args, **kwargs):
+        reached.append(True)
         raise OSError("SYNTHETIC disk full")
 
-    monkeypatch.setattr("os.write", disk_failure)
+    # Public injectable boundary receives the serialized bytes for atomic storage.
+    store = api.HistoryStore(tmp_path, atomic_writer=disk_failure)
     with pytest.raises(OSError):
         store.save(second)
+    assert reached == [True]
     assert store.load(original.record_id).model_dump_json() == before
     assert second.record_id not in [item.record_id for item in store.list_records()]
+    assert {p.name for p in tmp_path.iterdir()} == {f"{original.record_id}.json"}
+
+
+def test_forged_export_grant_is_rejected_by_trusted_verifier():
+    api = reports()
+    original = record()
+    forged = api.ExportPermission(
+        record_id=original.record_id,
+        evidence_ids=(original.evidence[0].evidence_id,),
+        purpose="external-export",
+        granted_by="reviewer-SYNTHETIC",
+    )
+    issued = api.ExportPermission(
+        record_id=original.record_id,
+        evidence_ids=(original.evidence[0].evidence_id,),
+        purpose="external-export",
+        granted_by="reviewer-SYNTHETIC",
+    )
+    checked = []
+
+    def reject_unissued_grant(grant):
+        checked.append(grant)
+        return grant is issued
+
+    service = api.ExportService(permission_verifier=reject_unissued_grant)
+    for exporter in (service.export_json, service.export_markdown):
+        with pytest.raises(api.ExportPermissionDenied):
+            exporter(
+                original, include_excerpts=True, permission=forged,
+            )
+    assert checked == [forged, forged]
