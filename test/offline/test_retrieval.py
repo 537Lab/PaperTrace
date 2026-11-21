@@ -540,6 +540,29 @@ def test_retrieval_preserves_page_range_locator_with_parser_metadata():
     assert evidence.locator.parser_version == PARSER_VERSION
 
 
+def test_retrieval_rejects_forged_excerpt_with_page_only_locator():
+    """FR-B-01 / INV-02: page metadata alone cannot authenticate forged text."""
+    fake = fake_module()
+    context = make_context(
+        "doc-synthetic-a",
+        line_start=None,
+        line_end=None,
+        page_start=1,
+        page_end=1,
+        excerpt="FORGED_PAGE_ONLY_EXCERPT_NOT_PRESENT_IN_CONTROLLED_SOURCE",
+        chunk_id="chunk-forged-page-a",
+    )
+    reader = make_source_reader()
+    adapter = fake.FakeRetrievalAdapter(
+        script=[fake.FakeOutcome(contexts=(context,))]
+    )
+    _, result = retrieve_with(adapter, reader=reader)
+
+    assert result.status is gateway_module().RetrievalStatus.PARSE_ERROR
+    assert result.evidence == ()
+    assert reader.calls, "page-only evidence must be checked against controlled bytes"
+
+
 def test_retrieval_deduplicates_identical_provenance_but_keeps_advisory_separate():
     """FR-B-01 / INV-02: same provenance yields one stable evidence identity."""
     fake = fake_module()
@@ -1374,6 +1397,161 @@ def test_generation_creates_fresh_isolated_sessions_with_sanitized_policy():
         assert policy.pre_prompt is None
         assert policy.post_prompt is None
         assert policy.autonomous_agent is False
+
+
+def test_concrete_paperqa2_adapter_calls_aadd_aget_evidence_and_aquery(
+    monkeypatch, tmp_path
+):
+    """FR-B-01 / FR-D-03: the production bridge uses the real Docs API shape."""
+    gateway = gateway_module()
+    records = generation_records()
+    reader = make_source_reader()
+
+    class RecordingDocs:
+        def __init__(self):
+            self.add_calls = []
+            self.get_calls = []
+            self.query_calls = []
+
+        async def aadd(self, path, **kwargs):
+            self.add_calls.append(
+                {
+                    "bytes": Path(path).read_bytes(),
+                    "citation": kwargs["citation"],
+                    "docname": kwargs["docname"],
+                    "dockey": kwargs["dockey"],
+                    "settings": kwargs["settings"],
+                    "llm_model": kwargs["llm_model"],
+                    "embedding_model": kwargs["embedding_model"],
+                }
+            )
+            return kwargs["docname"]
+
+        async def aget_evidence(self, question, **kwargs):
+            self.get_calls.append({"question": question, **kwargs})
+            added = self.add_calls[0]
+            upstream_doc = types.SimpleNamespace(dockey=added["dockey"])
+            upstream_text = types.SimpleNamespace(
+                text=line_text("doc-synthetic-a", 3, 4),
+                name=f"{added['docname']} lines 3-4",
+                doc=upstream_doc,
+            )
+            context = types.SimpleNamespace(
+                id="paperqa-context-a",
+                context="Synthetic PaperQA advisory summary.",
+                score=9,
+                text=upstream_text,
+            )
+            return types.SimpleNamespace(contexts=[context])
+
+        async def aquery(self, session, **kwargs):
+            self.query_calls.append({"session": session, **kwargs})
+            key = session.contexts[0].id
+            return types.SimpleNamespace(
+                raw_answer=f"Synthetic grounded draft ({key}).",
+                answer="",
+                contexts=session.contexts,
+            )
+
+    class FakeDoc:
+        def __init__(self, **values):
+            self.__dict__.update(values)
+            self.formatted_citation = values["citation"]
+
+    class FakeText:
+        def __init__(self, **values):
+            self.__dict__.update(values)
+
+    class FakeContext:
+        def __init__(self, **values):
+            self.__dict__.update(values)
+
+    class FakePQASession:
+        def __init__(self, **values):
+            self.__dict__.update(values)
+
+    fake_types = types.ModuleType("paperqa.types")
+    fake_types.Doc = FakeDoc
+    fake_types.Text = FakeText
+    fake_types.Context = FakeContext
+    fake_types.PQASession = FakePQASession
+    monkeypatch.setitem(sys.modules, "paperqa.types", fake_types)
+
+    class SafeSettings:
+        def __init__(self):
+            self.answer = types.SimpleNamespace(
+                get_evidence_if_no_contexts=False,
+                answer_max_sources=5,
+            )
+            self.prompts = types.SimpleNamespace(
+                pre=None,
+                post=None,
+                answer_iteration_prompt=None,
+            )
+
+        def model_copy(self, *, deep=False):
+            del deep
+            copied = SafeSettings()
+            copied.answer.answer_max_sources = self.answer.answer_max_sources
+            return copied
+
+    docs_instances = []
+
+    def docs_factory(**_kwargs):
+        instance = RecordingDocs()
+        docs_instances.append(instance)
+        return instance
+
+    settings = SafeSettings()
+    answer_model = object()
+    summary_model = object()
+    embedding_model = object()
+    bridge = gateway.PaperQA2Adapter(
+        source_reader=reader,
+        settings=settings,
+        answer_llm_model=answer_model,
+        summary_llm_model=summary_model,
+        embedding_model=embedding_model,
+        docs_factory=docs_factory,
+        temporary_directory=tmp_path,
+    )
+    port = make_gateway(adapter=bridge, reader=reader, factory=bridge)
+
+    retrieval = port.retrieve(retrieval_request(gateway))
+    assert retrieval.status is gateway.RetrievalStatus.SUCCESS
+    assert len(retrieval.evidence) == 1
+    retrieval_docs = docs_instances[0]
+    assert len(retrieval_docs.add_calls) == len(fixture_bundle().snapshot.documents)
+    assert len(retrieval_docs.get_calls) == 1
+    assert retrieval_docs.get_calls[0]["question"] == (
+        "Synthetic retrieval question; not a real research question."
+    )
+    assert {call["bytes"] for call in retrieval_docs.add_calls} == {
+        fixture_bundle().source_a,
+        fixture_bundle().source_b,
+    }
+
+    generation = port.generate(
+        generation_request(
+            gateway,
+            approved=(records.ev_a,),
+            selected=(records.ev_a.evidence_id,),
+        )
+    )
+    assert generation.status is gateway.GenerationStatus.SUCCESS
+    assert generation.sent_evidence_ids == (records.ev_a.evidence_id,)
+    assert generation.raw_output.startswith("Synthetic grounded draft")
+    assert tuple(dict(generation.citation_aliases).values()) == (
+        records.ev_a.evidence_id,
+    )
+    generation_docs = docs_instances[1]
+    assert len(generation_docs.query_calls) == 1
+    query = generation_docs.query_calls[0]
+    assert query["llm_model"] is answer_model
+    assert query["summary_llm_model"] is summary_model
+    assert query["embedding_model"] is embedding_model
+    assert len(query["session"].contexts) == 1
+    assert query["session"].contexts[0].context == records.ev_a.excerpt
 
 
 # --------------------------------------------------------------------------- #

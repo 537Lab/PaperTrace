@@ -249,3 +249,24 @@ entries:
   - 批准 runtime 缺少 Ruff 和 mypy 模块，未下载依赖或修改锁；补充 Ruff 来自已有只读本地环境
   - 未创建 src/papertrace/retrieval，未修改共享契约、其他模块、依赖、CI 或冻结上游；B2 仍为 NOT_STARTED
   - 本条披露会产生新的 PR head；必须由未参与 B1 测试编写的学生重新审核并批准新的精确提交后才能进入 B2
+- entry_id: B-TEST-20261121-02
+  timestamp: '2026-11-21T18:41:15+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按 PR #12 正式 Request Changes 增补 page-only 来源校验与真实 PaperQA2 Docs API 桥接的 RED 回归约束
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/team/designs/module-B/plan-v2.1.md
+  - artifacts/verification/module-B-pr12-review-test-remediation-2026-11-21.md
+  - docs/ai-use-log.yaml
+  status: test-remediation-awaiting-non-author-approval
+  approvals:
+  - PR #12 review PRR_kwDOVtJ17M8AAAABZeU9_g 对 ea1bfed 提出三项阻塞；这不是对新增测试的批准
+  - 旧 PR #9 Approve 只绑定 7833527，不覆盖本次新增测试版本
+  verification:
+  - 新增两项定向测试在无 B2 源码的测试分支得到 2 failed、48 deselected，失败明确指向 gateway 尚未实现
+  - Python 语法编译通过；Ruff 检查 test/offline/test_retrieval.py 通过；git diff --check 通过
+  limitations:
+  - 本轮尚未修改任何 src 文件，也未声称真实 PaperQA2 bridge 已完成
+  - 新测试必须由未参与测试编写的同学在 PR #9 对新的精确 head 重新 Approve

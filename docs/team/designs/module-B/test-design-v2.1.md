@@ -154,3 +154,29 @@ B 侧意见：该最小形状足以作为后续薄适配端口的设计依据；
 ## 10. 本轮停止位置
 
 B1 测试、fixtures 与本地验证已完成并保持 RED；B2 未开始，未创建任何业务实现；测试提案尚未提交到 GitHub，独立测试审批尚未请求、尚未获得。下一步是提交测试提案 commit/PR 并请求真实审批；在此之前不得继续 B2，也不得把本轮 Codex 编排的本地结果或角色配置写成学生批准。
+
+## 11. 2026-11-21 PR #12 Review 后的测试增补提案
+
+PR #12 对精确实现提交 `ea1bfed328528d11578980a757c80bef1c7a84b0`
+收到 GitHub `REQUEST_CHANGES`（review
+`PRR_kwDOVtJ17M8AAAABZeU9_g`）。评审指出原 48 项测试遗漏了两个实现阻塞：
+
+1. page-only locator 的摘录只通过 `SourceLocator` 结构校验，未证明摘录真实存在于
+   A 提供的受控源 bytes；
+2. fake adapter 测试没有要求生产桥实际调用 PaperQA2 的 `Docs.aadd`、
+   `Docs.aget_evidence` 与 `Docs.aquery`。
+
+因此本测试提案新增两项、不修改或放宽原 48 项断言：
+
+- `test_retrieval_rejects_forged_excerpt_with_page_only_locator`：构造结构合法但
+  原文不存在的 page-only context，要求结果为 `PARSE_ERROR`、证据为空，并证明
+  受控 reader 被调用；
+- `test_concrete_paperqa2_adapter_calls_aadd_aget_evidence_and_aquery`：要求公共
+  `PaperQA2Adapter` 在合成、无网络的 Docs API 记录器上，先为固定 snapshot 的
+  每个文档调用 `aadd`，再调用 `aget_evidence`，并在只含获准 evidence 的新 session
+  上调用 `aquery`；同时核对 raw 输出、actual sent 与 alias→evidence ID。
+
+新增两项在缺少业务源码的测试分支上按预期 RED：`2 failed, 48 deselected`；
+文件可编译、Ruff 通过、`git diff --check` 通过。该结果只证明新测试能捕获缺失实现，
+不证明真实 PaperQA2 适配已经完成。新增测试版本必须在 PR #9 重新获得未参与测试编写
+同学对精确 head 的 GitHub Approve；旧 head `7833527` 的批准不覆盖本次增补。

@@ -213,3 +213,19 @@ PYTHONDONTWRITEBYTECODE=1 "$RUNTIME/.venv/bin/python" -m pytest \
 - 用户本轮明确要求先完成审核与接口交接，暂不调用开发助手模型；B1 测试生成继续暂停。
 
 本节只修正进度记录，不扩大第 6/7 节权限、不新增依赖、不批准恢复提案或 B2 实现；模型文字、文件存在或角色权限本身均不构成学生审批。
+
+## 12. 2026-11-21 PR #12 Review 修复检查点
+
+- PR #9 的精确测试 head `7833527e2fd069fe61c0c56900949de03d6e3e8f`
+  曾获独立批准；PR #12 的实现 head
+  `ea1bfed328528d11578980a757c80bef1c7a84b0` 随后被正式
+  `REQUEST_CHANGES`，不得合并。
+- Review 指出 PR #12 从仍开放的 #9 分支派生，导致测试提案和实现同时进入
+  `main` diff。修复后的实现分支必须从当时最新 `main` 创建，只携带四个 B2 源码
+  文件及适当 B2 披露；PR #9 继续开放、未合并。
+- Review 还指出 page-only 摘录校验及真实 PaperQA2 桥接测试遗漏。本轮先仅更新
+  B1 测试提案，不写 `src/`：新增伪造 page-only 摘录负测，以及要求具体
+  `PaperQA2Adapter` 调用 `Docs.aadd`、`Docs.aget_evidence`、`Docs.aquery` 的合成
+  离线测试。
+- 旧批准只绑定 `7833527`，不覆盖新增测试。新增测试必须在 PR #9 对新的精确 head
+  重新获得合格非作者 Approve，之后才能修改实现并请求 PR #12 复审。
