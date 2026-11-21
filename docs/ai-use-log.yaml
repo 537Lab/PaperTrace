@@ -240,3 +240,104 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: D1-TESTPREP-20261117-01
+  timestamp: '2026-11-17T06:07:18Z'
+  tool: OpenCode desktop session, agent role papertrace-build-D (test-preparation stage)
+  model: deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently verified)
+  purpose: 模块D切片1（获准资格门与生成前拒答）的离线测试、合成fixtures与设计记录；不实现src
+  scope:
+  - test/offline/test_answer.py
+  - test/fixtures/answer/synthetic-corpus-a.txt
+  - test/fixtures/answer/synthetic-corpus-b.txt
+  - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+  status: test-preparation-complete-awaiting-independent-test-commit-approval
+  approvals:
+  - 学生2026-11-17自包含消息批准“仅模块D测试准备”范围；不构成测试commit批准或源码实现批准
+  verification:
+  - 本地实测（.venv, CPython 3.14.8, requirements-init.lock）：单文件 32 failed / 1 passed；全套离线 32 failed / 331 passed / 2 skipped
+  - 32 个失败全部是“proposed module papertrace.answer is not implemented”的预期缺失实现断言，无 collection error
+  - ruff 1 个既有错误位于未修改的 scripts/paperqa_smoke.py（I001）；mypy 0；schema PASS
+  limitations:
+  - 不是非实现者的GitHub Approve，不证明测试已被人工批准
+  - 未写src/，未改共享契约/依赖/CI/权限/共享fixture/共享日志
+  - 下游断言在实现前仍未验证
+  - 本条于 2026-11-19 应 reviewer 要求追加到共享日志；本披露不构成任何批准存在的证据
+- entry_id: D1-IMPL-20261118-01
+  timestamp: '2026-11-17T16:47:39Z'  # 本机时间 2026-11-18 (UTC+8)
+  tool: OpenCode desktop session, agent role papertrace-build-D (source implementation stage)
+  model: deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently verified)
+  purpose: 实现模块D切片1：读取审核投影、资格校验与生成前拒答；不实现生成/发布
+  scope:
+  - src/papertrace/answer/__init__.py
+  - src/papertrace/answer/model.py
+  - src/papertrace/answer/errors.py
+  - src/papertrace/answer/eligibility.py
+  - src/papertrace/answer/service.py
+  - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+  status: implementation-complete-awaiting-pr-review-not-merged
+  student_decisions:
+  - 学生批准本模块测试准备范围（2026-11-17），随后批准 CPython 3.14 venv 与 requirements-init.lock 安装
+  - 学生确认李亚飞已批准测试提案 PR #3；本条只按学生转述记录，未补造 review URL/截图
+  - 学生批准切片1实现范围，并要求保留未提交的 .DS_Store 删除、不纳入提交
+  approvals:
+  - '测试commit批准：GitHub reviews.totalCount = 0 且 PR timeline 无 review 事件，未记录任何非作者对 29b2133 的 Approve；该说法仅来自学生口头转述'
+  - 实现范围：学生2026-11-18消息；不构成 merge 批准
+  verification:
+  - '.venv/bin/python -m pytest ... test/offline/test_answer.py → exit 0；33 passed'
+  - '.venv/bin/python -m pytest ... test/offline → exit 0；363 passed, 2 skipped（skip 为既有 OpenCode 可执行文件缺失）'
+  - 'ruff（D 文件单独运行）→ exit 0；全局运行仍因未修改的 scripts/paperqa_smoke.py I001 失败'
+  - 'mypy src/papertrace → exit 0，7 source files'
+  - 'scripts/gates.py --gate schema → exit 0，PASS'
+  limitations:
+  - 未调用产品模型；未新增网络调用（仅先前获批的解释器/依赖下载）
+  - 真实 C 集成未验证：C PR #4 仍 open，投影映射为候选接口
+  - 生成、引用解析、freshness/token、预算与发布门均未实现
+  - 静态导入扫描只是补充观察，不证明零出站尝试
+  - 本条于 2026-11-19 应 reviewer 要求追加到共享日志；本披露不构成任何批准存在的证据
+- entry_id: D1-DELIVERY-20261121-01
+  timestamp: '2026-11-20T21:33:57+00:00'
+  tool: Codex desktop, local Git orchestration and byte-for-byte re-application
+  model: GPT-6 (session instruction; runtime identifier not independently attested)
+  purpose: Prepare the already implemented D slice 1 for re-submission after the visible test approval; preserve approved blobs and historical disclosures
+  scope:
+  - src/papertrace/answer/
+  - docs/team/designs/module-D/20261121-d-slice1-delivery-supplement.md
+  - docs/ai-use-log.yaml
+  status: local-delivery-preparation-not-published-awaiting-independent-review
+  approvals:
+  - The student explicitly authorized isolated local preparation, local commits and offline verification in this chat on 2026-11-21 HKT; no push, PR creation, merge, gate changes or product-model calls
+  - 'GitHub reviews API verified 537Lab APPROVED test PR #3 head 29b2133829666c25b42688ae7e5b42ac6130cbd8 at 2026-11-19T04:03:57Z; the old implementation predates that visible approval'
+  human_intervention:
+  - The student reviewed successive repair plans and then explicitly authorized the final limited local execution
+  - Codex preserved both old D disclosures and all current-main records; old review-visibility observations are not rewritten
+  verification:
+  - D slice-1 pytest exited 0 with 33 passed; full team offline pytest exited 0 with 387 passed and 2 skipped because OpenCode is unavailable
+  - mypy exited 0 for 10 source files; schema exited 0 PASS; AI-use-log gate exited 0 PASS with 3 additional entries relative to base
+  - Full static gate exited 1 solely on inherited scripts/paperqa_smoke.py:37 I001; types, dependencies, frozen baseline, architecture, contract API, secret heuristic and permissions passed
+  - Test-approval gate exited 2 BLOCKED with missing-pr-number; no new PR or independent review is claimed
+  - Five source files match c3817ae byte-for-byte; all four approved PR3 file blobs and all 12 main disclosure entries were verified unchanged
+  - Real product semantic evaluation, full upstream/live regression and remote PR checks were not run; the two skipped runtime cases remain unverified
+  limitations:
+  - The original source is re-applied from c3817ae676eb7c7a0ee8790b42c04232c19212e6; this does not establish that it was originally written after test approval
+  - This Codex delivery repair is not a student OpenCode implementation session, D5 evidence or a human Approve
+  - Applicable ADR confirmation, independent review of the new head and post-merge replay handling remain outstanding
+  - No product-model calls, no new functionality and no C-to-D integration tests
+- entry_id: D1-ADR-20261121-01
+  timestamp: '2026-11-21T20:02:59+08:00'
+  tool: Codex desktop, governance evidence synchronization
+  model: Codex runtime model not independently attested
+  purpose: Record the supervising student's limited ADR-001 applicability approval for D slice 1 and the C-to-D/B-to-D boundaries
+  scope:
+  - docs/architecture/adr/001-architecture.md
+  - docs/team/designs/module-D/20261121-d-slice1-delivery-supplement.md
+  - docs/ai-use-log.yaml
+  - PR #13 body architecture-decision declaration
+  status: architecture-applicability-recorded-awaiting-independent-implementation-review
+  approvals:
+  - 'Student statement: 我确认并批准 ADR-001 适用于当前 D slice 1、C→D 投影及 B→D 生成边界；本确认不等于批准任何实现 PR、合并或真实模型调用。'
+  verification:
+  - The ADR records limited scope and exclusions without changing implementation source, tests, dependencies, CI or contracts
+  - The delivery supplement preserves the exact statement and requires review of the resulting new head
+  limitations:
+  - This is not implementation approval, merge authorization, auto-merge authorization or product-model authorization
+  - C-to-D and B-to-D integration tests remain future separately approved work
