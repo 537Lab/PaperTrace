@@ -1,5 +1,20 @@
 schema_version: 1
 entries:
+- entry_id: E-TEST-REVIEW-20261121-01
+  timestamp: '2026-11-21T11:27:26+08:00'
+  tool: Codex desktop
+  model: session model identifier not independently verified
+  purpose: 按PR8 Request Changes修订可信导出许可验证端口与原子写入失败注入测试
+  scope:
+  - test/offline/test_reports.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  verification:
+  - 锁定依赖下ruff通过
+  - E测试32项，1 passed与31项缺少reports实现的RED
+  limitations:
+  - 验证端口由可信应用编排预先装配，授权来源不可由导出请求替换
+  - 测试仍是提案，未实现业务源码，OpenCode尚未运行
 - entry_id: E-TEST-20261120-01
   timestamp: '2026-11-20T14:27:19+00:00'
   tool: Codex desktop
