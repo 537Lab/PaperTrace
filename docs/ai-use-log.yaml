@@ -9,6 +9,10 @@ entries:
   - test/offline/test_reports.py
   - docs/ai-use-log.yaml
   status: test-proposal-awaiting-independent-review
+  approvals:
+  - 学生在本聊天批准模块E计划并授权测试准备、提交PR8和按Request Changes修订
+  - 学生在本聊天要求补齐真实披露并确认CI
+  - 截至本次修订尚未获得对最新具体测试提交的独立Approve，537Lab要求先修复披露格式
   verification:
   - 锁定依赖下ruff通过
   - E测试32项，1 passed与31项缺少reports实现的RED
