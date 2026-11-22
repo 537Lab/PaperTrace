@@ -358,3 +358,49 @@ entries:
   - No fresh remote CI or independent exact-head Approve; local checks do not establish merge readiness
   - Full upstream regression, real product-model/live/semantic evaluation and executable OpenCode E2E NOT_RUN
   - Only test-proposal files/disclosure prepared; no C adapter, generation, publication implementation or permission/CI edits
+- entry_id: D-C-INTEGRATION-TESTREVISION-20261123-01
+  timestamp: '2026-11-22T16:31:14.593961+00:00'
+  tool: OpenCode papertrace-build-D; author-reported existing C-to-D tests/design preparation and publication-readiness revision
+  model: DeepSeek V4.1 Flash 1017; provider deepseek/model deepseek-flash; self-reported by coding assistant, not independently verified
+  purpose: Prepare and revise real-C projection integration tests for safe source-free collection; no adapter implementation
+  scope:
+  - test/offline/test_answer_c_integration.py
+  - docs/team/designs/module-D/20261121-d-c-integration-test-plan.md
+  status: local-test-design-revision-supervisor-verified-awaiting-publication-and-exact-test-approval
+  approvals:
+  - Student authorized local C-to-D tests/design preparation on 2026-11-21 HKT and its two-file correction on 2026-11-22 HKT; not independent GitHub approval or source/merge authorization
+  verification:
+  - Supervisor verified authored test SHA256 9c7e4f5c6226d8348e9155c2f222b3810d2194e904ff2f324d709f20050635d6 and authored design SHA256 5f22743fb1e4cac80f052d4979398b65a171ce6099c3ac548830c94dc1de7881
+  - Eleven functions/fifteen test items and seven behavior groups retained; runtime real-D imports distinguish missing prerequisite from exact missing adapter
+  - Coding session reported syntax/whitespace checks only; project-interpreter dual-base results were independently run by supervisor and are separately disclosed
+  - One in-file AnswerApi to AnswerSymbols rename used a shell Python script; native edits were used elsewhere; this tool-use deviation is retained in the design
+  limitations:
+  - Timestamp records disclosure preparation, not an invented session start
+  - Assistant provider/model identity is self-reported; complete raw session retention and provider receipt were not independently audited
+  - No fake approval/session ID or source implementation; assistant-provider traffic is separate from no PaperTrace product-model/live/semantic calls
+  - No Git writes, dependency installation or permission widening reported in the coding session; tests may fail before integration assertions until D/adapter exist
+- entry_id: D-C-INTEGRATION-SUPERVISOR-20261123-01
+  timestamp: '2026-11-22T16:31:14.593961+00:00'
+  tool: Codex desktop supervisor; independent source review, offline dual-base checks and cumulative tests-only candidate packaging
+  model: GPT-6 (session instructions; runtime/provider identity not independently attested)
+  purpose: Verify OpenCode revision, preserve approved D tests and assemble source-free C-to-D test publication candidate; no student business/test code authored
+  scope:
+  - test/offline/test_answer_c_integration.py
+  - docs/team/designs/module-D/20261121-d-c-integration-test-plan.md
+  - docs/ai-use-log.yaml
+  status: local-cumulative-test-candidate-not-committed-or-published
+  approvals:
+  - Student authorized continuing the existing test-publication preparation; independent exact test-head review remains future work
+  - PR15/PR19 remain open and unmerged; this verification does not authorize adapter implementation or merge
+  verification:
+  - Source-free PR15 base:15 new missing-D failures; full427 collected,65 failed/360 passed/2 skipped; paired412 collected,50 failed/360 passed/2 skipped; zero collection errors
+  - Approved-D19 base:15 new collected,13 exact missing-adapter failures/2 passes; full427 collected,14 failed/411 passed/2 skipped; paired412 collected,1 failed/409 passed/2 skipped
+  - Both paired JUnit comparisons preserve all412 baseline node outcomes; only15 new nodes are added; original56 D tests pass on approved-D19
+  - Targeted Ruff PASS both bases; full Ruff only unchanged public scripts/paperqa_smoke.py:37 I001; mypy PASS on5/10 source files
+  - Initial archive-only schema attempts lacked Git metadata and failed; schema passed after correct Git checkout/metadata was supplied without source/config/gate changes
+  - Test copied byte-for-byte; six previously approved test/fixture/plan blobs preserved; local author setup/source and candidate source/config remain unchanged
+  limitations:
+  - Missing-D prerequisite, missing adapter availability and sandbox ps PermissionError are separate; no adapter-mediated behavior or read-fault hook ran
+  - Two skips concern unavailable OpenCode executable checks; remote unknown regression failures are not relabeled local sandbox failures
+  - No full upstream/live/real semantic/native-engine E2E or remote candidate CI; scoped local PASS does not certify merge readiness
+  - Original author design is preserved; candidate design adds dated measured supervisor evidence; complete raw coding-session retention is not independently audited
