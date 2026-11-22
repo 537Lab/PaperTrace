@@ -40,9 +40,12 @@ def read_selected(path: Path, limit: int) -> bytes:
         descriptor = os.open(
             path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory
         )
-        with os.fdopen(descriptor, "rb") as source:
-            if not stat.S_ISREG(os.fstat(source.fileno()).st_mode):
+        try:
+            if not stat.S_ISREG(os.fstat(descriptor).st_mode):
                 raise ValueError("SOURCE_NOT_AUTHORIZED")
-            return source.read(limit + 1)
+            with os.fdopen(descriptor, "rb", closefd=False) as source:
+                return source.read(limit + 1)
+        finally:
+            os.close(descriptor)
     finally:
         os.close(directory)

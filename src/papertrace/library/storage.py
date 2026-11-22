@@ -19,6 +19,10 @@ def encoded(value: object) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
 
 
+_STORAGE_FOLDERS = ("sources", "snapshots", "manifests")
+_EMPTY_CURRENT = encoded({"schema_version": 1, "empty": True})
+
+
 class Storage:
     """No scanning, replay, automatic fallback, or overwriting history."""
 
@@ -35,7 +39,7 @@ class Storage:
             raise ValueError("PERSISTENCE_FAILED")
 
     def path(self, folder: str, name: str) -> Path:
-        if folder not in {"sources", "snapshots", "manifests"}:
+        if folder not in _STORAGE_FOLDERS:
             raise ValueError("PERSISTENCE_FAILED")
         if not name or Path(name).name != name or name in {".", ".."}:
             raise ValueError("PERSISTENCE_FAILED")
@@ -46,6 +50,21 @@ class Storage:
     def fault(self, stage: str) -> None:
         if self.fault_hook is not None:
             self.fault_hook(stage)
+
+    @staticmethod
+    def _write_synced(path: Path, payload: bytes) -> None:
+        with path.open("xb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+
+    @staticmethod
+    def _sync_directory(directory: Path) -> None:
+        descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
 
     @staticmethod
     def read(path: Path) -> bytes:
@@ -62,10 +81,7 @@ class Storage:
         self.check(path)
         temporary = path.parent / (".pending-" + uuid4().hex)
         try:
-            with temporary.open("xb") as stream:
-                stream.write(payload)
-                stream.flush()
-                os.fsync(stream.fileno())
+            self._write_synced(temporary, payload)
             try:
                 os.link(temporary, path)
             except FileExistsError:
@@ -100,14 +116,19 @@ class Storage:
         try:
             self.check(pointer)
             if not pointer.exists():
-                # Never interpret a nonempty damaged store as a new empty library.
-                if self.root.exists() and any(
-                    (self.root / folder).exists()
-                    for folder in ("sources", "snapshots", "manifests")
-                ):
-                    raise ValueError("PERSISTENCE_FAILED")
+                # Older first imports could leave empty directories before any write.
+                for folder in _STORAGE_FOLDERS:
+                    directory = self.root / folder
+                    self.check(directory)
+                    if directory.exists() and (
+                        not directory.is_dir() or next(directory.iterdir(), None) is not None
+                    ):
+                        raise ValueError("PERSISTENCE_FAILED")
                 return None
-            record = json.loads(self.read(pointer))
+            payload = self.read(pointer)
+            if payload == _EMPTY_CURRENT:
+                return None
+            record = json.loads(payload)
             name = record["manifest"]
             if not isinstance(name, str) or re.fullmatch(r"[0-9a-f]{32}\.json", name) is None:
                 raise ValueError("PERSISTENCE_FAILED")
@@ -126,11 +147,21 @@ class Storage:
     ) -> None:
         """Publish only after every immutable record is complete and fsynced."""
         temporary = self.root / (".current-" + uuid4().hex)
+        current = self.root / "current"
         try:
             self.check(self.root)
             self.root.mkdir(parents=True, exist_ok=True)
-            for folder in ("sources", "snapshots", "manifests"):
-                directory = self.root / folder
+            self.check(current)
+            if not current.exists():
+                if state["revision"] != 1:
+                    raise ValueError("PERSISTENCE_FAILED")
+                self.load()  # A missing pointer may be initialized only in a fresh store.
+                # Durably publish the empty state before creating any managed records.
+                self._write_synced(temporary, _EMPTY_CURRENT)
+                os.replace(temporary, current)
+                self._sync_directory(self.root)
+            directories = [self.root / folder for folder in _STORAGE_FOLDERS]
+            for directory in directories:
                 self.check(directory)
                 directory.mkdir(exist_ok=True)
             for digest, payload in sources.items():
@@ -147,27 +178,15 @@ class Storage:
             payload = encoded(state)
             self.immutable(self.path("manifests", name), payload)
             pointer = encoded({"manifest": name, "sha256": sha256(payload).hexdigest()})
-            with temporary.open("xb") as stream:
-                stream.write(pointer)
-                stream.flush()
-                os.fsync(stream.fileno())
-            for directory in (self.root / "sources", self.root / "snapshots",
-                              self.root / "manifests", self.root):
-                descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-                try:
-                    os.fsync(descriptor)
-                finally:
-                    os.close(descriptor)
+            self._write_synced(temporary, pointer)
+            for directory in (*directories, self.root):
+                self._sync_directory(directory)
             self.fault("replace_current")
-            self.check(self.root / "current")
-            os.replace(temporary, self.root / "current")
+            self.check(current)
+            os.replace(temporary, current)
             # Publication is the commit point. Do not raise a false rollback after it.
             try:
-                descriptor = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-                try:
-                    os.fsync(descriptor)
-                finally:
-                    os.close(descriptor)
+                self._sync_directory(self.root)
             except OSError:
                 pass
         except (OSError, ValueError, TypeError):

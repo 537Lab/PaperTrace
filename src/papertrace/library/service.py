@@ -110,6 +110,13 @@ class CorpusService:
                     )
                     if item["version_sha256"]:
                         self._storage.source(item["version_sha256"])
+                if "retry_origin" in record and (
+                    not isinstance(record["retry_origin"], str)
+                    or record["retry_origin"] not in state["origins"]
+                    or attempts[-1]["status"] != "failed"
+                    or attempts[-1]["version_sha256"]
+                ):
+                    raise ValueError
                 if document_id in state["members"]:
                     member = state["members"][document_id]
                     if member["document_id"] != document_id or not any(
@@ -138,9 +145,11 @@ class CorpusService:
             ),
             created_at=datetime.now(timezone.utc),
         )
-        if snapshot.snapshot_id == self._snapshot.snapshot_id:
+        same_snapshot = snapshot.snapshot_id == self._snapshot.snapshot_id
+        if same_snapshot:
             snapshot = self._snapshot
-        else:
+        if not same_snapshot or self._state["revision"] == 0:
+            # The first interrupted commit may have written this immutable snapshot.
             existing = self._storage.path("snapshots", snapshot.snapshot_id + ".json")
             if existing.exists():
                 try:
@@ -162,7 +171,7 @@ class CorpusService:
         except FileNotFoundError:
             return None, "SOURCE_MISSING"
         except OSError:
-            # Opening a raced symlink/directory is a refusal, not a parser failure.
+            # Recheck authorization when traversal fails after selection was checked.
             authorize(path, self._root, self._selected)
             return None, "SOURCE_UNREADABLE"
         if not payload:
@@ -189,9 +198,14 @@ class CorpusService:
         }
 
     @staticmethod
-    def _append(state: dict[str, Any], item: dict[str, Any]) -> None:
+    def _append(state: dict[str, Any], item: dict[str, Any], origin: str | None) -> None:
         document_id = item["document_id"]
-        state["records"][document_id]["attempts"].append(deepcopy(item))
+        record = state["records"][document_id]
+        record["attempts"].append(deepcopy(item))
+        if origin is not None and not item["version_sha256"]:
+            record["retry_origin"] = origin
+        else:
+            record.pop("retry_origin", None)
         if item["status"] == "ready":
             doc = DocumentVersion(
                 schema_version=1, document_id=document_id,
@@ -221,22 +235,31 @@ class CorpusService:
             raise ValueError("INVALID_REPLACEMENT")
         if any(value not in self._state["records"] for value in replacement_map.values()):
             raise ValueError("INVALID_REPLACEMENT")
+        # Open and validate each source before any call to the ingest port.
+        inputs = {path: self._input(path) for path in dict.fromkeys(authorized)}
         state = deepcopy(self._state)
+        origins: dict[str, str] = state["origins"]
         items: list[dict[str, Any]] = []
         sources: dict[str, bytes] = {}
         changed = False
         for path in authorized:
-            payload, reason = self._input(path)
+            payload, reason = inputs[path]
             origin = origin_key(path)
-            document_id = replacement_map.get(path) or state["origins"].get(origin)
+            document_id = replacement_map.get(path) or origins.get(origin)
             if document_id is None:
                 document_id = "doc-" + uuid4().hex
                 state["records"][document_id] = {"attempts": []}
-            state["origins"][origin] = document_id
-            history = state["records"][document_id]["attempts"]
+            record = state["records"][document_id]
+            history = record["attempts"]
             digest = sha256(payload).hexdigest() if payload is not None else ""
+            last_origin = record.get("retry_origin")
+            if history and not digest and last_origin is None:
+                # Resolve a legacy failure against the bindings before rebinding.
+                last_origin = self._unique_origin(origins, document_id)
+            origins[origin] = document_id
             if history and history[-1]["version_sha256"] == digest and (
-                payload is not None or history[-1]["reason_code"] == reason
+                payload is not None
+                or (history[-1]["reason_code"] == reason and last_origin == origin)
             ):
                 # Ready reuse verifies the managed source too; never silently repair it.
                 if digest and digest not in sources:
@@ -246,7 +269,7 @@ class CorpusService:
             item = self._attempt(document_id, display_name(path), payload, reason)
             if payload is not None:
                 sources[digest] = payload
-            self._append(state, item)
+            self._append(state, item, origin)
             items.append(item)
             changed = True
         # A byte-identical explicit replacement may only add/rebind an origin.
@@ -255,6 +278,22 @@ class CorpusService:
         if changed or state["origins"] != self._state["origins"]:
             self._publish(state, sources)
         return self._batch(items)
+
+    @staticmethod
+    def _unique_origin(origins: dict[str, str], document_id: str) -> str | None:
+        bindings = [key for key, target in origins.items() if target == document_id]
+        return bindings[0] if len(bindings) == 1 else None
+
+    def _retry_path(self, document_id: str, origin: str | None) -> Path:
+        origins: dict[str, str] = self._state["origins"]
+        if origin is None:
+            # Older manifests have no origin for a failed read. Use a unique binding.
+            origin = self._unique_origin(origins, document_id)
+        if origin is not None and origins.get(origin) == document_id:
+            for path in self._selected:
+                if origin_key(path) == origin:
+                    return authorize(path, self._root, self._selected)
+        raise ValueError("SOURCE_NOT_AUTHORIZED")
 
     def retry_failed(self, document_ids: Sequence[str]) -> dict[str, Any]:
         """Explicit retry appends attempts; it cannot re-ingest ready records."""
@@ -265,29 +304,28 @@ class CorpusService:
             record = self._state["records"].get(document_id)
             if record is None or record["attempts"][-1]["status"] != "failed":
                 raise ValueError("NOT_FAILED")
+        retries: list[tuple[str, str, bytes | None, str | None, str | None]] = []
+        for document_id in ids:
+            record = self._state["records"][document_id]
+            previous = record["attempts"][-1]
+            digest = previous["version_sha256"]
+            origin = None
+            if digest:
+                payload: bytes | None = self._storage.source(digest)
+                reason: str | None = None
+            else:
+                path = self._retry_path(document_id, record.get("retry_origin"))
+                payload, reason = self._input(path)
+                origin = origin_key(path)
+            retries.append((document_id, previous["source_name"], payload, reason, origin))
         state = deepcopy(self._state)
         sources: dict[str, bytes] = {}
         items: list[dict[str, Any]] = []
-        for document_id in ids:
-            previous = state["records"][document_id]["attempts"][-1]
-            digest = previous["version_sha256"]
-            payload: bytes | None
-            reason: str | None
-            if digest:
-                payload, reason = self._storage.source(digest), None
-            else:
-                candidates = [
-                    path for path in self._selected
-                    if state["origins"].get(origin_key(path)) == document_id
-                ]
-                if len(candidates) != 1:
-                    raise ValueError("SOURCE_NOT_AUTHORIZED")
-                path = authorize(candidates[0], self._root, self._selected)
-                payload, reason = self._input(path)
-            item = self._attempt(document_id, previous["source_name"], payload, reason)
+        for document_id, name, payload, reason, origin in retries:
+            item = self._attempt(document_id, name, payload, reason)
             if payload is not None:
                 sources[item["version_sha256"]] = payload
-            self._append(state, item)
+            self._append(state, item, origin)
             items.append(item)
         if ids:
             self._publish(state, sources)
