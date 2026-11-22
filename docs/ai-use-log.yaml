@@ -240,3 +240,29 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: B-SRC-20261122-01
+  timestamp: '2026-11-22T11:19:59+08:00'
+  tool: OpenCode single-turn patch generation followed by Codex Desktop application, review remediation, and offline verification
+  model: cityu/CS5351/DeepSeek-V4-Flash for the previously authorized source patch; Codex runtime model not independently attested
+  purpose: 基于已独立批准的 PR #9 精确测试 head 实现模块 B 检索与受控生成桥，并修复 PR #12 review 编码成的 11 项阻塞回归
+  scope:
+  - src/papertrace/retrieval/__init__.py
+  - src/papertrace/retrieval/gateway.py
+  - src/papertrace/retrieval/service.py
+  - src/papertrace/retrieval/view.py
+  - artifacts/verification/module-B-b2-implementation-2026-11-22.md
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-human-push-and-independent-review
+  approvals:
+  - PR #9 精确 head 4d44f6dc7b009108aa82edb814605fe7c8086f39 于 2026-11-22T02:48:52Z 获 ziqilin669 的 GitHub APPROVED；实现提交先基于该测试 head 完成，再只把 B2 实现与披露重放到 origin/main，避免实现 PR 夹带测试 PR
+  - 用户确认 PR #9 已批准并要求继续下一步工作；这授权本地 B2 实现与已批准离线验证，不等于实现 PR 审批、推送、合并或真实模型调用授权
+  verification:
+  - test/offline/test_retrieval.py 使用禁用插件自动加载的现有解释器运行，61 passed；未调用真实模型、provider 或网络
+  - Ruff 检查 src/papertrace/retrieval 通过；mypy 检查 src/papertrace 9 个文件通过；schema gate 27 项要求通过；compileall 与 git diff --check 通过
+  - 修复覆盖固定来源定位生成稳定 chunk identity、最终 serializer 实际发送集合、provider/model 与输出上限绑定、最终输入预算拒绝，以及 aadd/aget/source decode 的阶段和重试分类
+  limitations:
+  - 全量 offline collection 因现有解释器缺少 pytest_socket 在 test_initialization_edges.py 停止；未下载依赖、未跳过或放宽测试来冒充通过
+  - 全仓 Ruff 唯一仍报既有 scripts/paperqa_smoke.py:37 I001；本轮未修改该无关文件
+  - 没有修改测试、fixtures、共享 contracts、其他模块、依赖、锁、CI、冻结上游或远端权限；没有代理 push 或 merge
+  - 后续须由用户推送本地实现分支，创建正文含 Test approval PR: #9 的新实现 PR，并由独立同学审查其精确最新 head
+
