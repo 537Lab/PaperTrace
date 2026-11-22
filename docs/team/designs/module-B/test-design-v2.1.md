@@ -180,3 +180,33 @@ PR #12 对精确实现提交 `ea1bfed328528d11578980a757c80bef1c7a84b0`
 文件可编译、Ruff 通过、`git diff --check` 通过。该结果只证明新测试能捕获缺失实现，
 不证明真实 PaperQA2 适配已经完成。新增测试版本必须在 PR #9 重新获得未参与测试编写
 同学对精确 head 的 GitHub Approve；旧 head `7833527` 的批准不覆盖本次增补。
+
+## 12. 2026-11-22 PR #12 第二轮 Review 回归提案
+
+PR #12 对 clean-main 实现 head `a79ace7c72d9e53d62d21e61491a41b75f55c7a4`
+收到第二轮正式 `REQUEST_CHANGES`（review `6007155751`）。本轮不扩大 Plan v2.1；
+只把 §2、§3.1、§3.2 和 §5 已明确要求、但具体 PaperQA2 bridge 尚未覆盖的行为
+编码成 synthetic RED：
+
+1. 同一固定来源、摘录、行范围和 parser provenance 只改变 advisory summary 或
+   upstream `Context.id` 时，`locator.chunk_id` 与 `evidence_id` 必须稳定；上游 ID
+   只保存在 `upstream_context_id`。
+2. 默认 serializer 过滤为空时，答案调用为零并返回 `EMPTY_SENT`；自定义 serializer
+   只保留部分 contexts 时，`sent_evidence_ids` 与 alias 映射只包含最终实际集合。
+3. D 的 provider/model 必须与 bridge 绑定模型一致；不一致时在创建 Docs/答案调用前
+   `MODEL_POLICY_MISMATCH`。实际传给 `aquery` 的模型副本须使用请求的
+   `max_output_tokens`，不得改写共享模型对象。
+4. 最终 system/context/question prompt 经绑定模型的确定性 token counter 计数，超过
+   `max_input_tokens` 时在答案调用前 `INPUT_BUDGET_EXCEEDED`。
+5. concrete `aadd`/`aget_evidence` 的 timeout 保留真实 stage、按批准上限有界重试；
+   普通 upstream failure 不重试；受控源 decode failure 为 `PARSE_ERROR/source_decode`。
+
+新增测试含参数化用例共 11 项。把测试文件对 PR #12 当前修复源码 `e2c05a8` 做本地
+组合运行，结果为 `50 passed, 11 failed`；11 个失败分别命中上述四类 Review blocker，
+原 50 项仍通过。Ruff 0.17.5 检查测试文件通过。组合运行使用 synthetic doubles、无凭据、
+无真实论文和无 provider 调用；本机补充 pytest 未加载 `pytest-socket`，因此该 RED 证据
+不替代此前及独立 Review 中带 socket fence 的验证。
+
+本轮只修改测试、设计记录和 AI-use log，不写任何 `src/`。新精确测试 head 必须由
+未参与本次测试编写的同学在 PR #9 重新 Review/Approve；在该批准出现前，不继续实现
+剩余四项修复，也不合并 PR #9 或 PR #12。

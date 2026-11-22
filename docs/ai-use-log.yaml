@@ -270,3 +270,25 @@ entries:
   limitations:
   - 本轮尚未修改任何 src 文件，也未声称真实 PaperQA2 bridge 已完成
   - 新测试必须由未参与测试编写的同学在 PR #9 对新的精确 head 重新 Approve
+- entry_id: B-TEST-20261122-03
+  timestamp: '2026-11-22T09:10:55+08:00'
+  tool: Codex Desktop review-regression preparation and local RED verification
+  model: Codex runtime model not independently attested
+  purpose: 将 PR #12 第二轮 Review 的 stable identity、actual sent、generation policy/budget 与 concrete failure taxonomy 阻塞编码成 B1 synthetic RED 回归
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/ai-use-log.yaml
+  status: test-remediation-awaiting-non-author-approval
+  approvals:
+  - 监督学生于 2026-11-22 要求继续完成前面未完成的 B 模块工作；这授权本轮测试准备，不是对新测试 head 的独立 Approve、实现批准或合并授权
+  - PR #12 review 6007155751 对 a79ace7 提出五项阻塞；其中 mypy 已在实现分支独立修复，其余四项需先增补获批回归
+  verification:
+  - Ruff 0.17.5 检查 test/offline/test_retrieval.py 通过
+  - 新增参数化用例共 11 项，对 PR #12 当前 e2c05a8 源码组合运行结果为 50 passed、11 failed；原 50 项保持通过
+  - 失败分别覆盖 upstream Context.id/summary 改变 identity、serializer 后 sent 不实、model/output/input policy 未绑定，以及 concrete timeout/parse/stage 分类丢失
+  limitations:
+  - 本轮没有修改 src、shared contracts、CI、依赖、锁、冻结上游、其他模块或远端权限
+  - 组合 RED 使用现有本地 pytest 且未加载 pytest-socket；全部 collaborator 为 synthetic recorder，没有真实网络、provider、凭据或论文
+  - PR #9 新 head 必须由未参与本轮测试编写的学生重新 Approve，批准前不得继续相应业务实现
+  - 不合并 PR #9 或 PR #12，不自动重试或切换模型

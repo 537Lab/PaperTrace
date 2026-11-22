@@ -1482,12 +1482,21 @@ def test_concrete_paperqa2_adapter_calls_aadd_aget_evidence_and_aquery(
             self.answer = types.SimpleNamespace(
                 get_evidence_if_no_contexts=False,
                 answer_max_sources=5,
+                evidence_relevance_score_cutoff=0,
+                group_contexts_by_question=False,
+                answer_length="about 50 words",
             )
             self.prompts = types.SimpleNamespace(
                 pre=None,
                 post=None,
                 answer_iteration_prompt=None,
+                system="Synthetic system prompt.",
+                context_inner="{name}: {text} ({citation})",
+                context_outer="{context_str}\nValid keys: {valid_keys}",
+                qa="{context}\nQuestion: {question}\nLength: {answer_length}",
+                EXAMPLE_CITATION="(example)",
             )
+            self.custom_context_serializer = None
 
         def model_copy(self, *, deep=False):
             del deep
@@ -1503,7 +1512,7 @@ def test_concrete_paperqa2_adapter_calls_aadd_aget_evidence_and_aquery(
         return instance
 
     settings = SafeSettings()
-    answer_model = object()
+    answer_model = _RecordingAnswerModel()
     summary_model = object()
     embedding_model = object()
     bridge = gateway.PaperQA2Adapter(
@@ -1552,6 +1561,460 @@ def test_concrete_paperqa2_adapter_calls_aadd_aget_evidence_and_aquery(
     assert query["embedding_model"] is embedding_model
     assert len(query["session"].contexts) == 1
     assert query["session"].contexts[0].context == records.ev_a.excerpt
+
+
+# --------------------------------------------------------------------------- #
+# Concrete-bridge review regressions (PR #12 review round 2)
+# --------------------------------------------------------------------------- #
+class _RecordingAnswerModel:
+    """Synthetic model identity/config/token counter; never performs a call."""
+
+    def __init__(
+        self,
+        *,
+        provider=PROVIDER,
+        model=MODEL,
+        max_tokens=4096,
+        forced_token_count=None,
+    ):
+        self.provider = provider
+        self.model = model
+        self.name = f"{provider}/{model}"
+        self.max_tokens = max_tokens
+        self.forced_token_count = forced_token_count
+        self.config = {
+            "model_list": [
+                {
+                    "model_name": self.name,
+                    "litellm_params": {
+                        "model": self.name,
+                        "max_tokens": max_tokens,
+                    },
+                }
+            ]
+        }
+
+    def model_copy(self, *, deep=False):
+        del deep
+        return _RecordingAnswerModel(
+            provider=self.provider,
+            model=self.model,
+            max_tokens=self.max_tokens,
+            forced_token_count=self.forced_token_count,
+        )
+
+    def count_tokens(self, text):
+        if self.forced_token_count is not None:
+            return self.forced_token_count
+        return len(str(text).split())
+
+
+class _ReviewSettings:
+    """Small Settings double that exposes the real serializer decisions."""
+
+    def __init__(self, *, cutoff=0, answer_max_sources=5, custom_serializer=None):
+        self.answer = types.SimpleNamespace(
+            get_evidence_if_no_contexts=False,
+            answer_max_sources=answer_max_sources,
+            evidence_relevance_score_cutoff=cutoff,
+            group_contexts_by_question=False,
+            answer_length="about 50 words",
+        )
+        self.prompts = types.SimpleNamespace(
+            pre=None,
+            post=None,
+            answer_iteration_prompt=None,
+            system="Synthetic system prompt.",
+            context_inner="{name}: {text} ({citation})",
+            context_outer="{context_str}\nValid keys: {valid_keys}",
+            qa="{context}\nQuestion: {question}\nLength: {answer_length}",
+            EXAMPLE_CITATION="(example)",
+        )
+        self.custom_context_serializer = custom_serializer
+        self.serialized_context_ids = ()
+
+    def model_copy(self, *, deep=False):
+        del deep
+        return _ReviewSettings(
+            cutoff=self.answer.evidence_relevance_score_cutoff,
+            answer_max_sources=self.answer.answer_max_sources,
+            custom_serializer=self.custom_context_serializer,
+        )
+
+    async def context_serializer(self, *, contexts, question, pre_str):
+        if self.custom_context_serializer is not None:
+            return await self.custom_context_serializer(
+                settings=self,
+                contexts=contexts,
+                question=question,
+                pre_str=pre_str,
+            )
+        filtered = sorted(contexts, key=lambda item: (-item.score, item.text.name))[
+            : self.answer.answer_max_sources
+        ]
+        filtered = [
+            item
+            for item in filtered
+            if item.score >= self.answer.evidence_relevance_score_cutoff
+        ]
+        self.serialized_context_ids = tuple(item.id for item in filtered)
+        body = "\n".join(f"{item.id}: {item.context}" for item in filtered)
+        return body
+
+
+def _install_review_paperqa_types(monkeypatch):
+    class FakeDoc:
+        def __init__(self, **values):
+            self.__dict__.update(values)
+            self.formatted_citation = values["citation"]
+
+    class FakeText:
+        def __init__(self, **values):
+            self.__dict__.update(values)
+
+    class FakeContext:
+        def __init__(self, **values):
+            self.__dict__.update(values)
+
+    class FakePQASession:
+        def __init__(self, **values):
+            self.__dict__.update(values)
+
+    fake_types = types.ModuleType("paperqa.types")
+    fake_types.Doc = FakeDoc
+    fake_types.Text = FakeText
+    fake_types.Context = FakeContext
+    fake_types.PQASession = FakePQASession
+    monkeypatch.setitem(sys.modules, "paperqa.types", fake_types)
+
+
+class _SerializerRecordingDocs:
+    def __init__(self):
+        self.query_calls = []
+        self.answer_calls = 0
+
+    async def aquery(self, session, **kwargs):
+        settings = kwargs["settings"]
+        serialized = await settings.context_serializer(
+            contexts=session.contexts,
+            question=session.question,
+            pre_str=None,
+        )
+        self.query_calls.append(
+            {
+                "session": session,
+                "settings": settings,
+                "llm_model": kwargs["llm_model"],
+                "serialized": serialized,
+                "serialized_context_ids": tuple(settings.serialized_context_ids),
+            }
+        )
+        if serialized.strip():
+            self.answer_calls += 1
+        keys = ", ".join(settings.serialized_context_ids)
+        return types.SimpleNamespace(
+            raw_answer=f"Synthetic grounded draft ({keys})." if keys else "",
+            answer="",
+            contexts=session.contexts,
+        )
+
+
+def _concrete_generation_port(
+    monkeypatch,
+    tmp_path,
+    *,
+    settings=None,
+    answer_model=None,
+):
+    gateway = gateway_module()
+    _install_review_paperqa_types(monkeypatch)
+    docs_instances = []
+
+    def docs_factory(**_kwargs):
+        instance = _SerializerRecordingDocs()
+        docs_instances.append(instance)
+        return instance
+
+    reader = make_source_reader()
+    bridge = gateway.PaperQA2Adapter(
+        source_reader=reader,
+        settings=settings if settings is not None else _ReviewSettings(),
+        answer_llm_model=(
+            answer_model if answer_model is not None else _RecordingAnswerModel()
+        ),
+        summary_llm_model=object(),
+        embedding_model=object(),
+        docs_factory=docs_factory,
+        temporary_directory=tmp_path,
+    )
+    return gateway, make_gateway(adapter=bridge, reader=reader, factory=bridge), docs_instances
+
+
+def test_concrete_bridge_identity_ignores_context_id_and_summary(tmp_path):
+    """FR-B-01/INV-02: advisory/upstream IDs cannot change evidence identity."""
+    gateway = gateway_module()
+    reader = make_source_reader()
+    variants = [
+        ("upstream-a", "Synthetic advisory summary A."),
+        ("upstream-b", "Different advisory summary B."),
+    ]
+
+    class IdentityDocs:
+        def __init__(self, upstream_id, summary):
+            self.upstream_id = upstream_id
+            self.summary = summary
+            self.add_calls = []
+
+        async def aadd(self, path, **kwargs):
+            del path
+            self.add_calls.append(kwargs)
+
+        async def aget_evidence(self, question, **kwargs):
+            del question, kwargs
+            added = self.add_calls[0]
+            text = types.SimpleNamespace(
+                text=line_text("doc-synthetic-a", 3, 4),
+                name="stable source lines",
+                doc=types.SimpleNamespace(dockey=added["dockey"]),
+            )
+            return types.SimpleNamespace(
+                contexts=[
+                    types.SimpleNamespace(
+                        id=self.upstream_id,
+                        context=self.summary,
+                        score=10,
+                        text=text,
+                    )
+                ]
+            )
+
+    def docs_factory(**_kwargs):
+        upstream_id, summary = variants.pop(0)
+        return IdentityDocs(upstream_id, summary)
+
+    bridge = gateway.PaperQA2Adapter(
+        source_reader=reader,
+        settings=object(),
+        answer_llm_model=object(),
+        summary_llm_model=object(),
+        embedding_model=object(),
+        docs_factory=docs_factory,
+        temporary_directory=tmp_path,
+    )
+    port = make_gateway(adapter=bridge, reader=reader, factory=bridge)
+
+    first = port.retrieve(retrieval_request(gateway))
+    second = port.retrieve(retrieval_request(gateway))
+
+    assert first.status is gateway.RetrievalStatus.SUCCESS
+    assert second.status is gateway.RetrievalStatus.SUCCESS
+    assert first.evidence[0].upstream_context_id != second.evidence[0].upstream_context_id
+    assert first.evidence[0].advisory_summary != second.evidence[0].advisory_summary
+    assert first.evidence[0].locator.chunk_id == second.evidence[0].locator.chunk_id
+    assert first.evidence[0].evidence_id == second.evidence[0].evidence_id
+
+
+def test_concrete_generation_refuses_empty_final_serializer_set(monkeypatch, tmp_path):
+    """FR-D-03/INV-04: an empty post-serializer set cannot become SUCCESS."""
+    gateway, port, docs_instances = _concrete_generation_port(
+        monkeypatch,
+        tmp_path,
+        settings=_ReviewSettings(cutoff=11),
+    )
+    records = generation_records()
+
+    result = port.generate(
+        generation_request(
+            gateway,
+            approved=(records.ev_a,),
+            selected=(records.ev_a.evidence_id,),
+        )
+    )
+
+    assert result.status is gateway.GenerationStatus.REFUSED
+    assert result.refusal_reason == "EMPTY_SENT"
+    assert result.sent_evidence_ids == ()
+    assert docs_instances[0].answer_calls == 0
+
+
+def test_concrete_generation_reports_custom_serializer_subset(monkeypatch, tmp_path):
+    """FR-D-03/INV-04: sent IDs are the custom serializer's final subset."""
+
+    async def only_second(*, settings, contexts, question, pre_str):
+        del question, pre_str
+        selected = contexts[-1:]
+        settings.serialized_context_ids = tuple(item.id for item in selected)
+        return "\n".join(f"{item.id}: {item.context}" for item in selected)
+
+    gateway, port, docs_instances = _concrete_generation_port(
+        monkeypatch,
+        tmp_path,
+        settings=_ReviewSettings(custom_serializer=only_second),
+    )
+    records = generation_records()
+
+    result = port.generate(
+        generation_request(
+            gateway,
+            approved=(records.ev_a, records.ev_b),
+            selected=(records.ev_a.evidence_id, records.ev_b.evidence_id),
+        )
+    )
+
+    assert result.status is gateway.GenerationStatus.SUCCESS
+    assert result.sent_evidence_ids == (records.ev_b.evidence_id,)
+    assert tuple(dict(result.citation_aliases).values()) == (records.ev_b.evidence_id,)
+    assert docs_instances[0].query_calls[0]["serialized_context_ids"] == ("b2",)
+
+
+def test_concrete_generation_binds_model_and_output_limit(monkeypatch, tmp_path):
+    """INV-07: outbound model identity and max tokens equal D's approved policy."""
+    original_model = _RecordingAnswerModel(max_tokens=4096)
+    gateway, port, docs_instances = _concrete_generation_port(
+        monkeypatch,
+        tmp_path,
+        answer_model=original_model,
+    )
+    records = generation_records()
+
+    result = port.generate(
+        generation_request(
+            gateway,
+            approved=(records.ev_a,),
+            selected=(records.ev_a.evidence_id,),
+            policy=generation_policy(gateway, max_output_tokens=1),
+        )
+    )
+
+    assert result.status is gateway.GenerationStatus.SUCCESS
+    outbound_model = docs_instances[0].query_calls[0]["llm_model"]
+    assert outbound_model.provider == PROVIDER
+    assert outbound_model.model == MODEL
+    assert outbound_model.config["model_list"][0]["litellm_params"]["max_tokens"] == 1
+    assert original_model.config["model_list"][0]["litellm_params"]["max_tokens"] == 4096
+
+
+@pytest.mark.parametrize(
+    ("changes", "reason"),
+    [
+        ({"provider": "other-provider"}, "MODEL_POLICY_MISMATCH"),
+        ({"model": "other-model"}, "MODEL_POLICY_MISMATCH"),
+    ],
+)
+def test_concrete_generation_rejects_model_policy_mismatch_before_docs(
+    monkeypatch, tmp_path, changes, reason
+):
+    """INV-07/COST-01: D cannot request a model other than the bound model."""
+    gateway, port, docs_instances = _concrete_generation_port(monkeypatch, tmp_path)
+    records = generation_records()
+
+    result = port.generate(
+        generation_request(
+            gateway,
+            approved=(records.ev_a,),
+            selected=(records.ev_a.evidence_id,),
+            policy=generation_policy(gateway, **changes),
+        )
+    )
+
+    assert result.status is gateway.GenerationStatus.REFUSED
+    assert result.refusal_reason == reason
+    assert docs_instances == []
+
+
+def test_concrete_generation_enforces_final_input_budget_before_answer(
+    monkeypatch, tmp_path
+):
+    """INV-07: final serialized prompt is counted before the answer attempt."""
+    model = _RecordingAnswerModel(forced_token_count=12001)
+    gateway, port, docs_instances = _concrete_generation_port(
+        monkeypatch,
+        tmp_path,
+        answer_model=model,
+    )
+    records = generation_records()
+
+    result = port.generate(
+        generation_request(
+            gateway,
+            approved=(records.ev_a,),
+            selected=(records.ev_a.evidence_id,),
+            policy=generation_policy(gateway, max_input_tokens=12000),
+        )
+    )
+
+    assert result.status is gateway.GenerationStatus.REFUSED
+    assert result.refusal_reason == "INPUT_BUDGET_EXCEEDED"
+    assert result.sent_evidence_ids == ()
+    assert docs_instances[0].answer_calls == 0
+
+
+@pytest.mark.parametrize(
+    ("stage", "failure", "status_name", "expected_attempts"),
+    [
+        ("aadd", TimeoutError("synthetic add timeout"), "TIMEOUT", 2),
+        ("aget_evidence", TimeoutError("synthetic evidence timeout"), "TIMEOUT", 2),
+        ("aadd", RuntimeError("synthetic add failure"), "UPSTREAM_ERROR", 1),
+    ],
+)
+def test_concrete_bridge_preserves_failure_stage_and_category(
+    tmp_path, stage, failure, status_name, expected_attempts
+):
+    """FR-B-02: concrete aadd/aget failures retain category, stage and retryability."""
+    gateway = gateway_module()
+    reader = make_source_reader()
+
+    class FailingDocs:
+        async def aadd(self, path, **kwargs):
+            del path, kwargs
+            if stage == "aadd":
+                raise failure
+
+        async def aget_evidence(self, question, **kwargs):
+            del question, kwargs
+            if stage == "aget_evidence":
+                raise failure
+            return types.SimpleNamespace(contexts=[])
+
+    bridge = gateway.PaperQA2Adapter(
+        source_reader=reader,
+        settings=object(),
+        answer_llm_model=object(),
+        summary_llm_model=object(),
+        embedding_model=object(),
+        docs_factory=lambda **_kwargs: FailingDocs(),
+        temporary_directory=tmp_path,
+    )
+    port = make_gateway(adapter=bridge, reader=reader, factory=bridge)
+
+    result = port.retrieve(retrieval_request(gateway, max_retries=1))
+
+    assert result.status.name == status_name
+    assert result.stage == stage
+    assert len(result.attempts) == expected_attempts
+
+
+def test_concrete_bridge_classifies_source_decode_as_parse_error(tmp_path):
+    """FR-B-02: concrete controlled-source decoding failures are parse errors."""
+    gateway = gateway_module()
+    decode_error = UnicodeDecodeError("utf-8", b"\xff", 0, 1, "synthetic invalid byte")
+    reader = make_source_reader(fail_with=decode_error)
+    bridge = gateway.PaperQA2Adapter(
+        source_reader=reader,
+        settings=object(),
+        answer_llm_model=object(),
+        summary_llm_model=object(),
+        embedding_model=object(),
+        docs_factory=lambda **_kwargs: object(),
+        temporary_directory=tmp_path,
+    )
+    port = make_gateway(adapter=bridge, reader=reader, factory=bridge)
+
+    result = port.retrieve(retrieval_request(gateway, max_retries=1))
+
+    assert result.status is gateway.RetrievalStatus.PARSE_ERROR
+    assert result.stage == "source_decode"
+    assert len(result.attempts) == 1
 
 
 # --------------------------------------------------------------------------- #
