@@ -1,5 +1,30 @@
 schema_version: 1
 entries:
+- entry_id: B-TEST-SCOPE-CLEANUP-20261122-01
+  timestamp: '2026-11-22T10:19:14+08:00'
+  tool: Codex desktop
+  model: session model identifier not independently verified
+  purpose: 按PR9独立审查结果清理测试提案文件范围并澄清测试函数与参数化用例计数
+  scope:
+  - artifacts/verification/module-B-b0-blocked-2026-11-19.json
+  - artifacts/verification/module-B-b0-blocked-2026-11-19.md
+  - artifacts/verification/module-B-b1-opencode-blocked-2026-11-19.md
+  - artifacts/verification/module-B-paperqa-smoke-recovered-2026-11-19.json
+  - artifacts/verification/module-B-pr12-review-test-remediation-2026-11-21.md
+  - artifacts/verification/module-B-recovery-and-pr5-review-2026-11-19.md
+  - docs/team/designs/module-B/plan-v2.1.md
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-cleaned-awaiting-independent-review
+  approvals:
+  - 学生转述PR9独立审查结果并明确要求据此修改、验证及推进下一步
+  verification:
+  - 不修改test/offline/test_retrieval.py或四个synthetic fixtures
+  - 删除门禁不允许的六个artifacts/verification文件
+  - 明确41个测试函数、61个collected cases及最新8个函数展开为11个用例
+  limitations:
+  - 本次不构成对新精确提交的独立Approve
+  - 仓库规则禁止代理push或merge，最终提交仍须由学生推送并由非作者队友审核
 - entry_id: INIT-20261113-01
   timestamp: '2026-11-13T11:42:18.324716+00:00'
   tool: Hermes Agent Desktop (initialization assistance, not OpenCode student session)

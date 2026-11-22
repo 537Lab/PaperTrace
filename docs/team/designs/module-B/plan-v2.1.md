@@ -1,8 +1,8 @@
 # PaperTrace 模块 B 开发计划 v2.1（已获本人审批）
 
-> 负责人：李亚飞  
-> 模块：B｜证据检索、PaperQA2 适配与中立生成端口  
-> 日期：2026-11-17  
+> 负责人：李亚飞
+> 模块：B｜证据检索、PaperQA2 适配与中立生成端口
+> 日期：2026-11-17
 > 状态：2026-11-18 已获模块负责人本人批准 B0/B1 范围与命令；B2 仍须测试 commit 的独立 GitHub Approve
 
 ## 1. 目标、范围与阶段
@@ -205,8 +205,8 @@ PYTHONDONTWRITEBYTECODE=1 "$RUNTIME/.venv/bin/python" -m pytest \
 - 学生本人已于 2026-11-18 批准本计划 B0/B1 范围及第 7 节命令，原文与生效边界见 `approval-v2.1.md`；B2 仍须另一位未参与测试实现的学生批准精确测试 commit。
 - B0 在 2026-11-19 首次复跑时因缺少 `paperqa.version` 得到 `1 failed`；用户随后批准独立 Git/构建恢复。恢复后使用原样 smoke 集成测试得到 `1 passed in 6.77s`，独立脚本报告 `status=PASS`、`network_connect_attempts=0`。旧失败记录保留；本次只证明真实本地 PaperQA2 API 接线与模拟模型 prompt 边界。
 - 当前工作目录为无 `.git` 的 ZIP 副本，缺少由 `setuptools_scm` 生成且未纳入版本控制的 `src/paperqa/version.py`；现有 runtime 锁不含 `setuptools_scm`。不得伪造版本或修改冻结源码来消除错误。
-- 本次实际失败与恢复提案见 `artifacts/verification/module-B-b0-blocked-2026-11-19.md`；机器可读状态见同名 `.json`。
-- 已执行的恢复及 PR #5 技术复核见 `artifacts/verification/module-B-recovery-and-pr5-review-2026-11-19.md`；本次真实 smoke 结果为 `module-B-paperqa-smoke-recovered-2026-11-19.json`。版本文件只在隔离 Git 副本按原构建配置生成，没有更改受跟踪上游或项目锁。
+- B0 失败、恢复与 PR #5 技术复核的原始报告保留在本地历史证据中；为满足测试提案门禁的文件范围，这些 `artifacts/verification/` 报告不纳入 PR #9。真实状态仍由本计划、测试设计与 AI-use log 如实记录，不以移除报告改变历史结论。
+- 本次真实 smoke 只证明隔离 Git 副本中的本地 PaperQA2 API 接线；版本文件按原构建配置生成，没有更改受跟踪上游或项目锁。
 - B1 测试设计已整理至 `test-design-v2.1.md`，属于 Codex 辅助的设计草稿；OpenCode 测试生成尚未开始，测试文件、测试 PR 与测试审批均未完成。
 - B2 源码未创建；真实产品模型/检索质量评估 `NOT_RUN`。本地计划和批准记录尚未上传远端。
 - 已核对任务板 A/B 文献身份、版本、受控读取和摄取回执，以及 D/B 生成端口；B 侧交接意见见 `test-design-v2.1.md` 第 7/8 节。对方 owner 的确认及联调尚未发生；不以设计意见冒称集成完成。

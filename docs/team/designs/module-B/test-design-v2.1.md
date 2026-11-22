@@ -91,10 +91,10 @@ view 模块 `papertrace.retrieval.view`：
 
 ## 6. 运行与交接
 
-1. B0 已于 2026-11-19 在独立真实 Git 副本恢复并通过：1 passed，实际 socket 连接尝试为 0。证据见 `artifacts/verification/module-B-recovery-and-pr5-review-2026-11-19.md` 与 `module-B-paperqa-smoke-recovered-2026-11-19.json`；原 BLOCKED 报告保留为历史。
+1. B0 已于 2026-11-19 在独立真实 Git 副本恢复并通过：1 passed，实际 socket 连接尝试为 0。原始恢复、smoke 与 BLOCKED 报告保留在本地历史证据中；为满足测试提案门禁的文件范围，不纳入 PR #9。
 2. B1 测试与 fixtures 已由 OpenCode 在会话 `ses_e0b52e19cffeKNNWGvabD35xQ7` 与 `ses_e075ae192ffeqS0IgLofyGjpFw` 中创建；本次设计状态更新由 OpenCode 会话 `ses_e0745d58fffei0NNwkEjinDmtc` 完成。CityU 模型端点对包含 `reasoning_text` 的请求返回 HTTP 400，该限制使模型侧无法在相关会话继续迭代；随后由 **Codex 编排本地验证**（collection、离线 pytest、schema gate、Ruff），这不是 OpenCode 自动结果，也不构成人工审批。提交范围仍只包含 B1 测试、fixtures、设计记录与验证记录，不含业务源码。
 3. 本地验证结果：`test/offline/test_retrieval.py` 收集 48、3 通过、45 个预期 B1 RED；schema gate 通过；补充 Ruff 通过；`test/offline` 全量为 **353 passed、51 failed**，其中 **45** 个是上述预期 B1 RED，另 **6** 个是无关的既有/环境失败，不计入 B1 证据，也不以修改 B1 测试掩盖。
-4. 已核对文件清单：新增 `test/offline/test_retrieval.py`、四个 `test/fixtures/retrieval/` 文件、验证记录 `artifacts/verification/module-B-b1-opencode-blocked-2026-11-19.md`，并更新本设计记录；无 `src/`、共享契约、上游冻结、锁或 CI 改动。保留真实 OpenCode 会话与 Codex 事实一致性修正的披露。
+4. 已核对文件清单：新增 `test/offline/test_retrieval.py`、四个 `test/fixtures/retrieval/` 文件，并更新计划、测试设计与 AI-use log；PR #9 不包含 `artifacts/verification/`、`src/`、共享契约、上游冻结、锁或 CI 改动。真实 OpenCode 会话与 Codex 事实一致性修正继续由 AI-use log 披露。
 5. 测试提案应以真实 Git commit/PR 提交并保持 open、RED；请未参与测试实现的另一位学生对**精确测试 commit** 在 GitHub 实际 Approve。**当前尚未请求、也尚未获得任何测试批准**；角色选择、会话文字或工具权限都不证明批准。
 6. 只有真实批准后，才从该测试 head 开始 B2，不预写业务实现。完整离线回归、Ruff/mypy/schema/frozen 与 live 状态分别如实报告。
 
@@ -201,8 +201,10 @@ PR #12 对 clean-main 实现 head `a79ace7c72d9e53d62d21e61491a41b75f55c7a4`
 5. concrete `aadd`/`aget_evidence` 的 timeout 保留真实 stage、按批准上限有界重试；
    普通 upstream failure 不重试；受控源 decode failure 为 `PARSE_ERROR/source_decode`。
 
-新增测试含参数化用例共 11 项。把测试文件对 PR #12 当前修复源码 `e2c05a8` 做本地
-组合运行，结果为 `50 passed, 11 failed`；11 个失败分别命中上述四类 Review blocker，
+本轮新增 8 个测试函数，其中两组参数化分别展开为 2 和 3 个节点，因此 pytest 实际
+新增 11 个 collected cases；完整文件现有 41 个测试函数、61 个 collected cases。把测试
+文件对 PR #12 当前修复源码 `e2c05a8` 做本地组合运行，结果为 `50 passed, 11 failed`；
+11 个失败分别命中上述四类 Review blocker，
 原 50 项仍通过。Ruff 0.17.5 检查测试文件通过。组合运行使用 synthetic doubles、无凭据、
 无真实论文和无 provider 调用；本机补充 pytest 未加载 `pytest-socket`，因此该 RED 证据
 不替代此前及独立 Review 中带 socket fence 的验证。
