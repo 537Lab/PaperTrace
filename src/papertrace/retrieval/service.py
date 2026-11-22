@@ -17,12 +17,12 @@ import hashlib
 import importlib
 import re
 import tempfile
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Coroutine, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, TypeVar, cast, runtime_checkable
 
 from papertrace.contracts import (
     CorpusSnapshot,
@@ -235,7 +235,10 @@ class _PaperQAGenerationOutput:
     citations: tuple[_PaperQACitationClaim, ...]
 
 
-def _run_immediate_coroutine(coroutine: Any) -> Any:
+_T = TypeVar("_T")
+
+
+def _run_immediate_coroutine(coroutine: Coroutine[Any, Any, _T]) -> _T:
     """Drive an injected no-I/O async recorder without opening an event loop.
 
     The approved offline test doubles complete on their first ``send``.  A
@@ -245,7 +248,7 @@ def _run_immediate_coroutine(coroutine: Any) -> Any:
     try:
         coroutine.send(None)
     except StopIteration as completed:
-        return completed.value
+        return cast(_T, completed.value)
     coroutine.close()
     raise RuntimeError("injected Docs coroutine unexpectedly suspended")
 
@@ -339,8 +342,12 @@ class PaperQA2Adapter:
         for context in tuple(getattr(session, "contexts", ()) or ()):
             text = getattr(context, "text", None)
             upstream_document = getattr(text, "doc", None)
-            dockey = getattr(upstream_document, "dockey", None)
-            document_source = by_dockey.get(dockey) if isinstance(dockey, str) else None
+            context_dockey = getattr(upstream_document, "dockey", None)
+            document_source = (
+                by_dockey.get(context_dockey)
+                if isinstance(context_dockey, str)
+                else None
+            )
             if document_source is None:
                 raise ValueError("PaperQA context is not bound to the fixed snapshot")
             document, source = document_source
@@ -534,7 +541,11 @@ def _failure_status(failure: Any) -> tuple[RetrievalStatus, str]:
     """Map an injected failure to a distinct B-private status (FR-B-02)."""
     kind = getattr(failure, "kind", None)
     stage = getattr(failure, "stage", "aget_evidence")
-    status = _FAILURE_KIND_TO_STATUS.get(kind, RetrievalStatus.UPSTREAM_ERROR)
+    status = (
+        _FAILURE_KIND_TO_STATUS.get(kind, RetrievalStatus.UPSTREAM_ERROR)
+        if isinstance(kind, str)
+        else RetrievalStatus.UPSTREAM_ERROR
+    )
     return status, str(stage)
 
 

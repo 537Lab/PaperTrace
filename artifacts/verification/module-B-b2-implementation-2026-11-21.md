@@ -77,3 +77,22 @@ CityU `CS5351/DeepSeek-V4-Flash` 在多轮工具调用中持续出现 `reasoning
 - 真实产品模型、真实论文、live 检索质量与 D 真实业务联调：`NOT_RUN`。
 - 当前 bridge 只支持受控 UTF-8 text；真实 PDF/OCR/page reader 属单独批准范围。
 - PR #12 将更新为新的 clean-main head；仍须独立实现审核，禁止自动合并或作者自审。
+
+## 2026-11-22 PR #12 CI 跟进
+
+对 GitHub Actions run `44919741896` 做只读核对后，`static-analysis` 的两个失败已分别复现：
+
+- 全范围 Ruff 仅报告未被本 PR 修改的 `scripts/paperqa_smoke.py:37:1 I001`；B 模块 scoped Ruff 通过。
+- 固定 `mypy==1.20.2` 对 `src/papertrace` 报告 `service.py` 四个严格类型错误：两个注入协程返回值缺少泛型约束、一个局部变量复用导致赋值类型冲突、一个失败类型字典查询未先收窄 key。修复只增加类型约束和显式收窄，不改变公开接口、控制流或测试。
+
+修复后验证：
+
+```text
+ruff 0.17.5, src/papertrace/retrieval: All checks passed!
+mypy 1.20.2, src/papertrace: Success: no issues found in 9 source files
+PR #9 exact head 1b9b5a0 tests: 50 passed in 0.09s
+```
+
+Ruff/mypy 通过 `uv run --isolated --no-project` 使用 `/private/tmp` 缓存和已有 Python 3.12 执行；未修改项目环境、依赖或锁。50 项测试从 PR #9 精确 head 的 Git blob 提取，使用当前源码运行，未修改、skip、xfail 或放宽测试。由于本轮临时下载 `pytest-socket` 的授权检查未执行，该次 50-pass 是补充回归，不替代上文已经完成的带 socket fence 的 `50 passed in 0.33s`。
+
+`test-approval` 的当前失败不是 B 业务代码问题：PR #9 包含验证 artifacts，而 base verifier 只允许测试、fixtures、团队计划和 AI log；同一 verifier 又要求实现 head 保留获批测试/计划 blob 及祖先关系，而 PR #12 的正式 Review 要求 clean-main diff 不携带 PR #9。两项要求需维护者明确处理路径；本轮没有修改 gate、测试 PR、共享文件或合并顺序来规避冲突。
