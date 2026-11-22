@@ -1,5 +1,29 @@
 schema_version: 1
 entries:
+- entry_id: E-SRC-REPAIR-20261122-01
+  timestamp: '2026-11-22T18:47:16+08:00'
+  tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash
+  purpose: 在新测试获批后修复嵌套路径导出泄露与合法零审核研究记录无法保存
+  scope:
+  - src/papertrace/reports
+  - docs/team/designs/module-E
+  - docs/architecture/adr/004-history-export.md
+  - docs/ai-use-log.yaml
+  status: repaired-implementation-awaiting-independent-review
+  approvals:
+  - 537Lab于2026-11-22T10:04:32Z正式批准PR8测试9b6629b2f3a62c9f00bec7a30ce12cb913d31baa，API已读回
+  - 学生在本聊天要求批准后继续源码修复及提交，不授权合并
+  verification:
+  - 本分支从新测试head创建，带回PR14历史源码再由真实OpenCode会话ses_dfd25ca84ffeUfKp8Rkay2N0pC修复record.py和export.py
+  - 75项获批E测试全部通过，E模块Ruff通过，未改获批测试或共享契约
+  - 新增28项行为RED转绿，内部原文保留、身份令牌不变和非法状态拒绝由获批测试检查
+  - 会话原始输出与真实脱敏导出保留在Team工作区，具体过程及限制见review-repair-verification.md
+  limitations:
+  - 旧源码来自e8ecf815及原OpenCode会话，不冒称本轮新写全部源码
+  - 初次mypy有Any返回类型问题，已要求OpenCode作类型修正并在发布前复验
+  - 全团队离线回归单独记录，不宣称完整上游或真实模型评估通过
+  - 仍需当前实现head非作者审核，PR8与PR14不合并
 - entry_id: E-TEST-REVIEW-20261122-02
   timestamp: '2026-11-22T11:20:59+08:00'
   tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
