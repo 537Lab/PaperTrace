@@ -240,3 +240,75 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: D1-TESTPREP-20261117-01
+  timestamp: '2026-11-17T06:07:18Z'
+  tool: OpenCode desktop session, agent role papertrace-build-D (test-preparation stage)
+  model: deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently verified)
+  purpose: 模块D切片1（获准资格门与生成前拒答）的离线测试、合成fixtures与设计记录；不实现src
+  scope:
+  - test/offline/test_answer.py
+  - test/fixtures/answer/synthetic-corpus-a.txt
+  - test/fixtures/answer/synthetic-corpus-b.txt
+  - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+  status: test-preparation-complete-awaiting-independent-test-commit-approval
+  approvals:
+  - 学生2026-11-17自包含消息批准“仅模块D测试准备”范围；不构成测试commit批准或源码实现批准
+  verification:
+  - 本地实测（.venv, CPython 3.14.8, requirements-init.lock）：单文件 32 failed / 1 passed；全套离线 32 failed / 331 passed / 2 skipped
+  - 32 个失败全部是“proposed module papertrace.answer is not implemented”的预期缺失实现断言，无 collection error
+  - ruff 1 个既有错误位于未修改的 scripts/paperqa_smoke.py（I001）；mypy 0；schema PASS
+  limitations:
+  - 不是非实现者的GitHub Approve，不证明测试已被人工批准
+  - 未写src/，未改共享契约/依赖/CI/权限/共享fixture/共享日志
+  - 下游断言在实现前仍未验证
+  - 本条于 2026-11-19 应 reviewer 要求追加到共享日志；本披露不构成任何批准存在的证据
+- entry_id: D1-TOKEN-TESTPREP-20261122-01
+  timestamp: '2026-11-22T02:32:46Z'
+  tool: OpenCode desktop session, papertrace-build-D; author-reported test-preparation and documentation cleanup
+  model: deepseek-flash; provider deepseek; runtime label DeepSeek V4.1 Flash 1017; author-reported, not independently attested
+  purpose: Prepare behavioral regression tests for validation-time revision/digest reuse and an English design record; no source implementation
+  scope:
+  - test/offline/test_answer_validated_tokens.py
+  - docs/team/designs/module-D/20261122-d-validated-token-reuse.md
+  status: local-test-design-supervisor-reviewed-awaiting-exact-test-commit-approval
+  approvals:
+  - Student locally approved the two-file test-preparation scope on 2026-11-22 HKT; not a GitHub Approve, source implementation, publication or merge authorization
+  verification:
+  - 'Author-reported run: new test file collected 23, 12 failed and 11 passed; existing D tests 33 passed'
+  - 'Author-reported offline suite: 16 failed, 394 passed, 2 skipped; baseline excluding new file: 4 failed, 383 passed, 2 skipped'
+  - Supervisor independently reproduced 12 behavioral failures and 11 passes; separate configuration and sandbox failures are documented in the design record
+  - Final documentation cleanup was verified by the supervisor; regression test SHA256 remained d7385138a954d3f4d0c877f0681c1757093b3ec4a75ad6867de98981c8550a7c
+  limitations:
+  - Timestamp and coding-assistant provider/model are copied from the author report, not independent provider telemetry
+  - Original OpenCode session retention was not independently audited by this supervisor; this entry does not fabricate a session export or provider receipt
+  - No source implementation or product-model/live/semantic evaluation in these offline checks; coding-assistant provider requests are a separate matter
+  - Post-fix behavior NOT_MEASURED; no independent approval of the new cumulative test commit exists yet
+- entry_id: D1-TOKEN-SUPERVISOR-20261122-01
+  timestamp: '2026-11-22T02:47:04Z'
+  tool: Codex desktop supervisor; local review, offline checks and test-only publication candidate assembly
+  model: GPT-6 (session instructions; runtime identifier not independently attested)
+  purpose: Review student-agent output, preserve approved old blobs and assemble a cumulative test-only proposal candidate; no business or test code authored in this supervision pass
+  scope:
+  - test/offline/test_answer.py
+  - test/fixtures/answer/synthetic-corpus-a.txt
+  - test/fixtures/answer/synthetic-corpus-b.txt
+  - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+  - test/offline/test_answer_validated_tokens.py
+  - docs/team/designs/module-D/20261122-d-validated-token-reuse.md
+  - docs/ai-use-log.yaml
+  status: local-publication-candidate-only-not-committed-or-published
+  approvals:
+  - Student authorized two-file test preparation and local setup; supervisor review is not an independent student GitHub Approve
+  - This candidate is prepared for publication authorization; it is not a record of permission to merge or implement source
+  verification:
+  - 'Independent run on reviewed D implementation 0fa0d01: token tests 23 collected, 12 failed, 11 passed; old D tests 33 passed'
+  - 'Whole offline suite: 412 collected, 17 failed, 393 passed, 2 skipped; paired baseline: 389 collected, 5 failed, 382 passed, 2 skipped'
+  - 'Failure attribution: 12 token RED, 4 local configuration-contract mismatches, 1 sandbox ps PermissionError; digest-only value cases independently expose digest rereading'
+  - New-file Ruff PASS; full requested Ruff scope retains scripts/paperqa_smoke.py:37 I001; mypy 10 source files PASS; local schema PASS
+  - New test and protected source/test/fixture/config identities were preserved; no post-fix behavior was measured
+  - 'Clean main-based candidate: package origin matched candidate src; papertrace.answer absent; new test file exited 2 with 0 collected and one ModuleNotFoundError during collection, classified dependency BLOCKED rather than token-defect RED'
+  limitations:
+  - Local reviewed implementation evaluation and main-based test-only dependency checks are different runs; main currently contains no D source
+  - Candidate schema/allowed-path/blob checks do not prove GitHub approval, remote gate success or merge readiness
+  - Full upstream regression, real product-model/semantic evaluation and executable OpenCode E2E NOT_RUN
+  - No source fix, C adapter, generation, publication implementation or merge is included
