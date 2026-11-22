@@ -34,8 +34,20 @@ disabled. Elevated execution enables Windows symlink negative tests.
 - Combined contracts/reports: 180 passed, one failed. The unchanged shared
   `synthetic-paper-a.txt` is checked out as CRLF while Git stores LF; its byte
   hash differs. No fixture or approved test was rewritten to hide that failure.
-- Full team offline regression is being checked separately. No claim of a green
-  full regression, upstream regression, CI or real-provider semantic evaluation.
+- Full team offline regression: 312 passed, 74 failed, 2 skipped in 209.30s.
+  All 32 E tests passed within this run. Failures include Windows lacking C's
+  `fcntl` dependency, unavailable WSL/bash, child test processes unable to find
+  pytest_socket in the separate target installation, LF/CRLF fixture integrity,
+  frozen-tree/static checks, and semantic binding/runtime-distribution checks.
+  The semantic checks report binding mismatches and duplicate installed
+  distributions; their complete root cause has not been independently isolated.
+  These are actual non-E failures/environment blockers, not expected E RED.
+  The two skips require macOS sandbox-exec. No claim of a green full regression,
+  upstream regression, CI or real-provider semantic evaluation.
+- With explicit approved base and full implementation SHA, ai-log and schema
+  gates both PASS. An initial schema invocation using the unavailable default
+  upstream base failed at input resolution; it is not the final gate result.
+- Whole-tree ruff fails on the unchanged scripts/paperqa_smoke.py import order.
 
 ## Development evidence
 
@@ -51,5 +63,6 @@ as `E-opencode-session-sanitized.json`; raw continuation output is also retained
 The sanitized export is a disclosure artifact, not an unredacted transcript or
 evidence of human approval. No credentials belong in repository evidence.
 
-Remaining work: finish full regression classification, submit the implementation
-for independent human review, and verify remote CI. PR #8 stays open; do not merge.
+Implementation PR: https://github.com/537Lab/PaperTrace/pull/14 (open).
+Remaining work: independent human review and remote CI verification.
+PR #8 and implementation PR stay open; do not merge.
