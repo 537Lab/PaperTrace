@@ -265,4 +265,3 @@ entries:
   - 全仓 Ruff 唯一仍报既有 scripts/paperqa_smoke.py:37 I001；本轮未修改该无关文件
   - 没有修改测试、fixtures、共享 contracts、其他模块、依赖、锁、CI、冻结上游或远端权限；没有代理 push 或 merge
   - 后续须由用户推送本地实现分支，创建正文含 Test approval PR: #9 的新实现 PR，并由独立同学审查其精确最新 head
-
