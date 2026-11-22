@@ -240,3 +240,56 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: B-SRC-20261121-01
+  timestamp: '2026-11-21T23:24:52+08:00'
+  tool: OpenCode v2.0.12 papertrace-build-B with Codex review remediation, orchestration and verification
+  model: cityu/CS5351/DeepSeek-V4-Flash for the initial four-file patch; Codex runtime model not independently attested for review remediation
+  purpose: Implement Module B retrieval and neutral generation, then remediate PR #12 review with a concrete PaperQA2 bridge and page-only provenance verification
+  scope:
+  - src/papertrace/retrieval/__init__.py
+  - src/papertrace/retrieval/gateway.py
+  - src/papertrace/retrieval/service.py
+  - src/papertrace/retrieval/view.py
+  - docs/team/designs/module-B/test-approval-pr9.md
+  - artifacts/verification/module-B-b2-implementation-2026-11-21.md
+  - docs/ai-use-log.yaml
+  status: implementation-locally-verified-awaiting-independent-pr-review
+  approvals:
+  - GitHub PR #9 review 6005637987 by ziqilin669 approved exact test head 1b9b5a0e6f6b6716de303b6de3891ed6a695f9f3 after the two review-regression tests were added
+  - The supervising student instructed Codex to continue after reporting that exact PR #9 approval; this is implementation work authorization, not implementation approval or merge authorization
+  provenance:
+  - OpenCode session ses_e03048ce7ffeaYabKuKCoO5oON generated the initial four-file patch in one no-tool response after earlier CityU reasoning_text failures
+  - Codex applied the initial patch, then after PR #12 Request Changes added the approved regression tests first and implemented the concrete bridge and provenance remediation only after their new exact head was approved
+  verification:
+  - Approved Module B tests on the combined verification worktree: 50 passed in 0.33s; no test was changed, skipped, xfailed or weakened on the implementation branch
+  - Real local PaperQA2 bridge smoke called Docs.aadd, Docs.aget_evidence and Docs.aquery with synthetic text and deterministic fake models; retrieval and generation were SUCCESS, summary/answer calls were 1 each and network connect attempts were 0
+  - Full team offline suite: 400 passed and 6 failed; remaining failures are the known shared EvidenceRecord KeyError, sandbox ps/loopback restrictions and runtime tool availability gate self-tests
+  - Ruff passed for Module B and the current combined src/papertrace, test/offline and scripts scope; clean-main schema and AI-use-log gates are recorded separately
+  limitations:
+  - Available runtimes have no mypy executable; mypy remains BLOCKED/NOT_RUN and no dependency or lock was changed
+  - Concrete bridge is limited to controlled UTF-8 text; PDF/OCR/page-reader support, real papers, product models and live semantic quality remain NOT_RUN and require separate approval
+  - PR #12 must be independently reviewed on its new clean-main exact head; this entry is not an Approve or merge authorization
+- entry_id: B-SRC-20261122-02
+  timestamp: '2026-11-22T08:54:43+08:00'
+  tool: Codex CI diagnosis, strict typing remediation and local verification
+  model: Codex runtime model not independently attested
+  purpose: Diagnose PR #12 gate failures and correct four Module B strict-mypy findings without changing behavior or approved tests
+  scope:
+  - src/papertrace/retrieval/service.py
+  - artifacts/verification/module-B-b2-implementation-2026-11-21.md
+  - docs/ai-use-log.yaml
+  status: static-remediation-locally-verified-awaiting-independent-pr-review
+  approvals:
+  - The supervising student instructed Codex on 2026-11-22 to continue and complete the pending work; this authorizes the scoped remediation and verification, not implementation approval, merge or real-model calls
+  provenance:
+  - GitHub Actions run 44919741896 was inspected read-only before editing
+  - Codex added a generic type to the immediate injected-coroutine runner, renamed one context-local key, and explicitly narrowed one failure key before dictionary lookup
+  verification:
+  - Fixed Ruff 0.17.5 scoped check on src/papertrace/retrieval passes
+  - Fixed mypy 1.20.2 check on src/papertrace passes with no issues in 9 source files
+  - Approved PR #9 exact-head tests run against the fixed source report 50 passed; no approved test or fixture was changed
+  - Full-scope Ruff still has only the unchanged scripts/paperqa_smoke.py:37 I001 finding
+  limitations:
+  - The follow-up 50-pass used an existing local pytest without pytest-socket because the temporary dependency authorization was not executed; it supplements rather than replaces the earlier socket-fenced 50-pass
+  - The test-approval gate has a process conflict between PR #9 allowed-file/ancestry rules and the clean-main PR #12 review requirement; this entry does not waive or modify that gate
+  - No product model, provider credential, real paper, merge, approval or automatic retry was used
