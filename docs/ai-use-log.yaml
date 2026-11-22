@@ -1,5 +1,94 @@
 schema_version: 1
 entries:
+- entry_id: E-SRC-REPAIR-20261122-01
+  timestamp: '2026-11-22T18:47:16+08:00'
+  tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash
+  purpose: 在新测试获批后修复嵌套路径导出泄露与合法零审核研究记录无法保存
+  scope:
+  - src/papertrace/reports
+  - docs/team/designs/module-E
+  - docs/architecture/adr/004-history-export.md
+  - docs/ai-use-log.yaml
+  status: repaired-implementation-awaiting-independent-review
+  approvals:
+  - 537Lab于2026-11-22T10:04:32Z正式批准PR8测试9b6629b2f3a62c9f00bec7a30ce12cb913d31baa，API已读回
+  - 学生在本聊天要求批准后继续源码修复及提交，不授权合并
+  verification:
+  - 本分支从新测试head创建，带回PR14历史源码再由真实OpenCode会话ses_dfd25ca84ffeUfKp8Rkay2N0pC修复record.py和export.py
+  - 75项获批E测试全部通过，E模块Ruff通过，未改获批测试或共享契约
+  - 新增28项行为RED转绿，内部原文保留、身份令牌不变和非法状态拒绝由获批测试检查
+  - 会话原始输出与真实脱敏导出保留在Team工作区，具体过程及限制见review-repair-verification.md
+  limitations:
+  - 旧源码来自e8ecf815及原OpenCode会话，不冒称本轮新写全部源码
+  - 初次mypy有Any返回类型问题，已要求OpenCode作类型修正并在发布前复验
+  - 全团队离线回归单独记录，不宣称完整上游或真实模型评估通过
+  - 仍需当前实现head非作者审核，PR8与PR14不合并
+- entry_id: E-TEST-REVIEW-20261122-02
+  timestamp: '2026-11-22T11:20:59+08:00'
+  tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash
+  purpose: 为PR14审查发现的嵌套路径泄露及空证据拒答历史无法保存补充正式回归测试
+  scope:
+  - test/offline/test_reports.py
+  - docs/team/designs/module-E/review-regression-plan.md
+  - docs/ai-use-log.yaml
+  status: test-revision-awaiting-independent-approval
+  approvals:
+  - 学生在本聊天转交PR14对e8ecf815的两项阻塞意见并要求修复，明确修改PR8测试后须重新取得独立批准
+  - 旧测试81e8345的批准仅作历史记录，不能批准本次新增测试
+  - 截至本记录尚无非作者对新测试head的真实Approve，未进行任何业务源码修复
+  verification:
+  - 真实OpenCode测试会话ses_dfecae4b2ffeIwKbVIEJQcj2Z4，Codex复现问题并监督测试修正
+  - 新测试共75项，对照与e8ecf815源码一致的旧实现为47 passed及28 failed，exit1
+  - 28项行为RED包含21项嵌套文本泄露和7项合法零审核历史被拒绝，无收集错误或跳过
+  - 原32项测试保留，仅追加测试及辅助函数，ruff通过，未修改src或共享契约
+  - JUnit及完整测试输出保存在Team工作区E-review-regressions-old-implementation文件中
+  limitations:
+  - 测试提案分支没有reports实现，行为RED通过显式指向被审核实现的pythonpath执行，不冒充测试分支自身已有业务实现
+  - 初稿模型属性访问、JSON转义及空事件辅助函数错误已在发布前纠正，不计作最终业务RED
+  - 本次未重跑完整上游或真实模型评估，未宣称远端CI全绿或缺陷已修复
+  - PR8及PR14保持开放不合并，等待新测试精确版本独立批准后才继续OpenCode源码修复
+- entry_id: E-TEST-REVIEW-20261121-01
+  timestamp: '2026-11-21T11:27:26+08:00'
+  tool: Codex desktop
+  model: session model identifier not independently verified
+  purpose: 按PR8 Request Changes修订可信导出许可验证端口与原子写入失败注入测试
+  scope:
+  - test/offline/test_reports.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  approvals:
+  - 学生在本聊天批准模块E计划并授权测试准备、提交PR8和按Request Changes修订
+  - 学生在本聊天要求补齐真实披露并确认CI
+  - 截至本次修订尚未获得对最新具体测试提交的独立Approve，537Lab要求先修复披露格式
+  verification:
+  - 锁定依赖下ruff通过
+  - E测试32项，1 passed与31项缺少reports实现的RED
+  limitations:
+  - 验证端口由可信应用编排预先装配，授权来源不可由导出请求替换
+  - 测试仍是提案，未实现业务源码，OpenCode尚未运行
+- entry_id: E-TEST-20261120-01
+  timestamp: '2026-11-20T14:27:19+00:00'
+  tool: Codex desktop
+  model: session model identifier not independently verified
+  purpose: 模块E测试提案及PR8审查修订，修复import排序并补充导出许可与路径安全负例
+  scope:
+  - test/offline/test_reports.py
+  - test/fixtures/reports/scenarios.json
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  approvals:
+  - 学生在当前聊天明确批准计划并要求准备测试，随后授权提交PR8
+  - 学生转述审查意见要求修复，尚无本次具体测试版本的独立批准
+  verification:
+  - 本轮ruff检查test/offline/test_reports.py通过
+  - 按项目pytest配置运行31项，1 passed和30 failed，失败均在缺少reports实现的显式断言处
+  limitations:
+  - OpenCode尚未运行，本条只披露真实Codex测试准备，不能计为OpenCode会话
+  - 本地验证工具为pytest9.0.2和ruff0.17.6，非CI完整锁定环境
+  - 旧CI团队测试23失败与上游82失败需逐项分析，不将其全部归为预期RED
+  - ExportPermission是待审核接口设计，真实调用方授权和许可撤销需集成设计
 - entry_id: INIT-20261113-01
   timestamp: '2026-11-13T11:42:18.324716+00:00'
   tool: Hermes Agent Desktop (initialization assistance, not OpenCode student session)
