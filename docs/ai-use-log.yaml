@@ -1,5 +1,30 @@
 schema_version: 1
 entries:
+- entry_id: B-TEST-SCOPE-CLEANUP-20261122-01
+  timestamp: '2026-11-22T10:19:14+08:00'
+  tool: Codex desktop
+  model: session model identifier not independently verified
+  purpose: 按PR9独立审查结果清理测试提案文件范围并澄清测试函数与参数化用例计数
+  scope:
+  - artifacts/verification/module-B-b0-blocked-2026-11-19.json
+  - artifacts/verification/module-B-b0-blocked-2026-11-19.md
+  - artifacts/verification/module-B-b1-opencode-blocked-2026-11-19.md
+  - artifacts/verification/module-B-paperqa-smoke-recovered-2026-11-19.json
+  - artifacts/verification/module-B-pr12-review-test-remediation-2026-11-21.md
+  - artifacts/verification/module-B-recovery-and-pr5-review-2026-11-19.md
+  - docs/team/designs/module-B/plan-v2.1.md
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-cleaned-awaiting-independent-review
+  approvals:
+  - 学生转述PR9独立审查结果并明确要求据此修改、验证及推进下一步
+  verification:
+  - 不修改test/offline/test_retrieval.py或四个synthetic fixtures
+  - 删除门禁不允许的六个artifacts/verification文件
+  - 明确41个测试函数、61个collected cases及最新8个函数展开为11个用例
+  limitations:
+  - 本次不构成对新精确提交的独立Approve
+  - 仓库规则禁止代理push或merge，最终提交仍须由学生推送并由非作者队友审核
 - entry_id: INIT-20261113-01
   timestamp: '2026-11-13T11:42:18.324716+00:00'
   tool: Hermes Agent Desktop (initialization assistance, not OpenCode student session)
@@ -221,6 +246,77 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: B-TEST-20261120-01
+  timestamp: '2026-11-20T22:45:44+08:00'
+  tool: OpenCode agent papertrace-build-B with Codex Desktop orchestration and verification
+  model: cityu/CS5351/DeepSeek-V4-Flash for OpenCode sessions; Codex runtime model not independently attested
+  purpose: 按已批准的模块 B v2.1 计划准备离线 RED 测试、合成 fixtures、测试设计和真实验证记录，不实现业务源码
+  scope:
+  - test/offline/test_retrieval.py
+  - test/fixtures/retrieval
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - artifacts/verification/module-B-b1-opencode-blocked-2026-11-19.md
+  - docs/ai-use-log.yaml
+  status: test-preparation-awaiting-non-author-approval
+  approvals:
+  - 学生于 2026-11-20 明确授权按已批准 Plan v2.1 进行受控 OpenCode B1 测试准备，并逐次授权受限会话；这些授权不是非作者对精确测试提交的 GitHub Approve
+  - 学生授权创建本地提交、单次推送并创建 PR #9；该授权及 PR 中的 COMMENT review 都不是测试批准
+  verification:
+  - OpenCode 会话 ses_e0b52e19cffeKNNWGvabD35xQ7 创建四个 synthetic fixtures；会话 ses_e075ae192ffeqS0IgLofyGjpFw 创建测试并修正 fake 动态加载登记
+  - OpenCode 会话 ses_e0745d58fffei0NNwkEjinDmtc 回写实际 B1 API 提案、RED 结果和未批准边界；Codex 随后仅修正四处事实一致性表述
+  - 精确提交 4e88d04d7c35b92cf665e1f5be025e9d5584a1db 的模块测试收集 48 项，3 passed、45 个预期 RED，失败均明确指向 papertrace.retrieval.gateway 尚未实现
+  - schema gate 通过；Ruff 0.17.5 检查两个新增 Python 文件通过；全仓 Ruff 唯一报错为本 PR 未修改的 scripts/paperqa_smoke.py:37 I001
+  - test/offline 全量为 353 passed、51 failed，其中 45 个是 B1 预期 RED，另外 6 个既有或环境失败没有通过修改 B 测试掩盖
+  - PR #9 当前 Review 为 COMMENT 而非 APPROVE；test-approval 的 test-proposal-only-do-not-merge-red-tests 阻塞符合 B1 阶段预期
+  limitations:
+  - CityU provider 多次返回 reasoning_text HTTP 400；没有切换 provider、没有使用 --auto，也没有自动循环重试
+  - 恢复设计会话做事实更正时，本机 opencode 在模型调用前拒绝 V2 权限配置且 opencode2 不存在；因此由 Codex 做四处机械文档修正，没有发生新的模型请求
+  - 批准 runtime 缺少 Ruff 和 mypy 模块，未下载依赖或修改锁；补充 Ruff 来自已有只读本地环境
+  - 未创建 src/papertrace/retrieval，未修改共享契约、其他模块、依赖、CI 或冻结上游；B2 仍为 NOT_STARTED
+  - 本条披露会产生新的 PR head；必须由未参与 B1 测试编写的学生重新审核并批准新的精确提交后才能进入 B2
+- entry_id: B-TEST-20261121-02
+  timestamp: '2026-11-21T18:41:15+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按 PR #12 正式 Request Changes 增补 page-only 来源校验与真实 PaperQA2 Docs API 桥接的 RED 回归约束
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/team/designs/module-B/plan-v2.1.md
+  - artifacts/verification/module-B-pr12-review-test-remediation-2026-11-21.md
+  - docs/ai-use-log.yaml
+  status: test-remediation-awaiting-non-author-approval
+  approvals:
+  - PR #12 review PRR_kwDOVtJ17M8AAAABZeU9_g 对 ea1bfed 提出三项阻塞；这不是对新增测试的批准
+  - 旧 PR #9 Approve 只绑定 7833527，不覆盖本次新增测试版本
+  verification:
+  - 新增两项定向测试在无 B2 源码的测试分支得到 2 failed、48 deselected，失败明确指向 gateway 尚未实现
+  - Python 语法编译通过；Ruff 检查 test/offline/test_retrieval.py 通过；git diff --check 通过
+  limitations:
+  - 本轮尚未修改任何 src 文件，也未声称真实 PaperQA2 bridge 已完成
+  - 新测试必须由未参与测试编写的同学在 PR #9 对新的精确 head 重新 Approve
+- entry_id: B-TEST-20261122-03
+  timestamp: '2026-11-22T09:10:55+08:00'
+  tool: Codex Desktop review-regression preparation and local RED verification
+  model: Codex runtime model not independently attested
+  purpose: 将 PR #12 第二轮 Review 的 stable identity、actual sent、generation policy/budget 与 concrete failure taxonomy 阻塞编码成 B1 synthetic RED 回归
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/ai-use-log.yaml
+  status: test-remediation-awaiting-non-author-approval
+  approvals:
+  - 监督学生于 2026-11-22 要求继续完成前面未完成的 B 模块工作；这授权本轮测试准备，不是对新测试 head 的独立 Approve、实现批准或合并授权
+  - PR #12 review 6007155751 对 a79ace7 提出五项阻塞；其中 mypy 已在实现分支独立修复，其余四项需先增补获批回归
+  verification:
+  - Ruff 0.17.5 检查 test/offline/test_retrieval.py 通过
+  - 新增参数化用例共 11 项，对 PR #12 当前 e2c05a8 源码组合运行结果为 50 passed、11 failed；原 50 项保持通过
+  - 失败分别覆盖 upstream Context.id/summary 改变 identity、serializer 后 sent 不实、model/output/input policy 未绑定，以及 concrete timeout/parse/stage 分类丢失
+  limitations:
+  - 本轮没有修改 src、shared contracts、CI、依赖、锁、冻结上游、其他模块或远端权限
+  - 组合 RED 使用现有本地 pytest 且未加载 pytest-socket；全部 collaborator 为 synthetic recorder，没有真实网络、provider、凭据或论文
+  - PR #9 新 head 必须由未参与本轮测试编写的学生重新 Approve，批准前不得继续相应业务实现
+  - 不合并 PR #9 或 PR #12，不自动重试或切换模型
 - entry_id: C-SRC-20261120-01
   timestamp: '2026-11-20T14:20:00+00:00'
   tool: Cursor
