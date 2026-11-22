@@ -270,3 +270,21 @@ entries:
   - 仍禁止src/papertrace/library业务实现。A→B回执、部分成功与freshness语义仍属待owner确认提案；正常重启持久性和损坏current/manifest拒绝错误恢复仅作后续测试建议。
   - 未运行完整冻结上游回归、live或真实产品模型/embedding/OCR/metadata；开发助手消耗Plus额度，native cost=0不代表零额度使用；未使用DeepSeek付费API。用户外部GPT会话模型ID未独立核实，不作猜测。
   - 合成PDF的标准xref行末空格使git diff --check对父提交到测试提交返回2；当前核对的main CI未直接强制该命令。保留原PDF字节，不修改.gitattributes或CI消除提示。
+- entry_id: A-SRC-20261122-01
+  timestamp: '2026-11-22T07:17:36+00:00'
+  tool: OpenCode 编码会话；Hermes 离线复核
+  model: 未在本次核对中独立确认，不猜测
+  purpose: A 模块源码实现与本地离线验证，待独立人工复审
+  scope:
+  - src/papertrace/library
+  status: implementation-awaiting-independent-review
+  approvals:
+  - PR 5 评论 7075607211 记录用户本轮批准 A 源码 Build；该记录是 AI 辅助转录，不是实现 PR 的独立 GitHub Review。
+  verification:
+  - OpenCode 会话 ses_dfdf508c5ffeuPGqImqbRjD3hJ 可导出，含32条消息且提及 library 下五个源码文件；仅据此不推断学生本人操作。
+  - 使用现有环境复跑 test_library.py 得到33 passed；全部 test/offline 得到389 passed。
+  - A 源码 Ruff 和 src/papertrace mypy 通过；schema 初始化结构检查通过。
+  limitations:
+  - 首次以系统 Python 执行 pytest 时缺少 --disable-socket 插件，两个测试命令均以4退出；改用现有项目环境后才通过。
+  - 系统 Python 的全范围 Ruff 对未修改的 scripts/paperqa_smoke.py 报 I001；不将 A 范围 Ruff 通过冒充全范围通过。
+  - 本记录不证明人工审查、完整上游回归、远端 CI 通过或已合并；本轮未新增付费产品调用。
