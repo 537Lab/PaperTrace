@@ -66,3 +66,21 @@ evidence of human approval. No credentials belong in repository evidence.
 Implementation PR: https://github.com/537Lab/PaperTrace/pull/14 (open).
 Remaining work: independent human review and remote CI verification.
 PR #8 and implementation PR stay open; do not merge.
+
+## Integration follow-up
+
+Main was synchronized on the remote branch. The exact 5af4292 archive was
+verified again: 32 E tests passed, E ruff and mypy passed. A local copy is in
+Team/PaperTrace-E-submitted-5af4292. Git HTTPS transport repeatedly failed;
+GitHub authenticated API was used for synchronization and evidence upload.
+The original worktree retains local c05cef5 and has not been falsely represented
+as synchronized with the remote Git history.
+
+CI for 5af4292: ai-use-log, schema and semantic-evaluation succeeded. Static
+checks failed lint while types, dependencies, frozen baseline, architecture,
+contract API, secret heuristics and permission checks passed. Test approval
+reported missing execution plan in the test PR body. The previously approved
+plan summary was truthfully added to PR8 body afterwards, explicitly dated as
+a later recording; approved test head 81e8345 was unchanged. This documentation
+commit requests fresh CI; no successful approval check is claimed before rerun.
+Full remote regression was still in progress at this observation.
