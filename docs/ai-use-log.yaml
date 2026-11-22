@@ -240,3 +240,283 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: D1-TESTPREP-20261117-01
+  timestamp: '2026-11-17T06:07:18Z'
+  tool: OpenCode desktop session, agent role papertrace-build-D (test-preparation stage)
+  model: deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently verified)
+  purpose: 模块D切片1（获准资格门与生成前拒答）的离线测试、合成fixtures与设计记录；不实现src
+  scope:
+  - test/offline/test_answer.py
+  - test/fixtures/answer/synthetic-corpus-a.txt
+  - test/fixtures/answer/synthetic-corpus-b.txt
+  - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+  status: test-preparation-complete-awaiting-independent-test-commit-approval
+  approvals:
+  - 学生2026-11-17自包含消息批准“仅模块D测试准备”范围；不构成测试commit批准或源码实现批准
+  verification:
+  - 本地实测（.venv, CPython 3.14.8, requirements-init.lock）：单文件 32 failed / 1 passed；全套离线 32 failed / 331 passed / 2 skipped
+  - 32 个失败全部是“proposed module papertrace.answer is not implemented”的预期缺失实现断言，无 collection error
+  - ruff 1 个既有错误位于未修改的 scripts/paperqa_smoke.py（I001）；mypy 0；schema PASS
+  limitations:
+  - 不是非实现者的GitHub Approve，不证明测试已被人工批准
+  - 未写src/，未改共享契约/依赖/CI/权限/共享fixture/共享日志
+  - 下游断言在实现前仍未验证
+  - 本条于 2026-11-19 应 reviewer 要求追加到共享日志；本披露不构成任何批准存在的证据
+- entry_id: D1-TOKEN-TESTPREP-20261122-01
+  timestamp: '2026-11-22T02:32:46Z'
+  tool: OpenCode desktop session, papertrace-build-D; author-reported test-preparation and documentation cleanup
+  model: deepseek-flash; provider deepseek; runtime label DeepSeek V4.1 Flash 1017; author-reported, not independently attested
+  purpose: Prepare behavioral regression tests for validation-time revision/digest reuse and an English design record; no source implementation
+  scope:
+  - test/offline/test_answer_validated_tokens.py
+  - docs/team/designs/module-D/20261122-d-validated-token-reuse.md
+  status: local-test-design-supervisor-reviewed-awaiting-exact-test-commit-approval
+  approvals:
+  - Student locally approved the two-file test-preparation scope on 2026-11-22 HKT; not a GitHub Approve, source implementation, publication or merge authorization
+  verification:
+  - 'Author-reported run: new test file collected 23, 12 failed and 11 passed; existing D tests 33 passed'
+  - 'Author-reported offline suite: 16 failed, 394 passed, 2 skipped; baseline excluding new file: 4 failed, 383 passed, 2 skipped'
+  - Supervisor independently reproduced 12 behavioral failures and 11 passes; separate configuration and sandbox failures are documented in the design record
+  - Final documentation cleanup was verified by the supervisor; regression test SHA256 remained d7385138a954d3f4d0c877f0681c1757093b3ec4a75ad6867de98981c8550a7c
+  limitations:
+  - Timestamp and coding-assistant provider/model are copied from the author report, not independent provider telemetry
+  - Original OpenCode session retention was not independently audited by this supervisor; this entry does not fabricate a session export or provider receipt
+  - No source implementation or product-model/live/semantic evaluation in these offline checks; coding-assistant provider requests are a separate matter
+  - Post-fix behavior NOT_MEASURED; no independent approval of the new cumulative test commit exists yet
+- entry_id: D1-TOKEN-SUPERVISOR-20261122-01
+  timestamp: '2026-11-22T02:47:04Z'
+  tool: Codex desktop supervisor; local review, offline checks and test-only publication candidate assembly
+  model: GPT-6 (session instructions; runtime identifier not independently attested)
+  purpose: Review student-agent output, preserve approved old blobs and assemble a cumulative test-only proposal candidate; no business or test code authored in this supervision pass
+  scope:
+  - test/offline/test_answer.py
+  - test/fixtures/answer/synthetic-corpus-a.txt
+  - test/fixtures/answer/synthetic-corpus-b.txt
+  - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+  - test/offline/test_answer_validated_tokens.py
+  - docs/team/designs/module-D/20261122-d-validated-token-reuse.md
+  - docs/ai-use-log.yaml
+  status: local-publication-candidate-only-not-committed-or-published
+  approvals:
+  - Student authorized two-file test preparation and local setup; supervisor review is not an independent student GitHub Approve
+  - This candidate is prepared for publication authorization; it is not a record of permission to merge or implement source
+  verification:
+  - 'Independent run on reviewed D implementation 0fa0d01: token tests 23 collected, 12 failed, 11 passed; old D tests 33 passed'
+  - 'Whole offline suite: 412 collected, 17 failed, 393 passed, 2 skipped; paired baseline: 389 collected, 5 failed, 382 passed, 2 skipped'
+  - 'Failure attribution: 12 token RED, 4 local configuration-contract mismatches, 1 sandbox ps PermissionError; digest-only value cases independently expose digest rereading'
+  - New-file Ruff PASS; full requested Ruff scope retains scripts/paperqa_smoke.py:37 I001; mypy 10 source files PASS; local schema PASS
+  - New test and protected source/test/fixture/config identities were preserved; no post-fix behavior was measured
+  - 'Clean main-based candidate: package origin matched candidate src; papertrace.answer absent; new test file exited 2 with 0 collected and one ModuleNotFoundError during collection, classified dependency BLOCKED rather than token-defect RED'
+  limitations:
+  - Local reviewed implementation evaluation and main-based test-only dependency checks are different runs; main currently contains no D source
+  - Candidate schema/allowed-path/blob checks do not prove GitHub approval, remote gate success or merge readiness
+  - Full upstream regression, real product-model/semantic evaluation and executable OpenCode E2E NOT_RUN
+  - No source fix, C adapter, generation, publication implementation or merge is included
+- entry_id: D1-TOKEN-TESTREVISION-20261122-01
+  timestamp: '2026-11-22T12:30:22+00:00'
+  tool: OpenCode desktop session, papertrace-build-D; revision report supplied to supervisor
+  model: deepseek-flash; provider deepseek; runtime label DeepSeek V4.1 Flash 1017; author-reported, not independently attested
+  purpose: 'Revise PR #15 tests to resolve missing-D collection interruption and configured Ruff I001 while preserving all 23 cases and assertions; no source repair'
+  scope:
+  - test/offline/test_answer_validated_tokens.py
+  - docs/team/designs/module-D/20261122-d-validated-token-reuse.md
+  status: authored-local-test-revision-supervisor-verified-awaiting-publication-and-independent-review
+  approvals:
+  - Existing student-authorized two-file test-preparation revision scope; not an independent GitHub Approve, source authorization or merge permission
+  verification:
+  - 'Author report: 23 collected, 12 behavioral failures and 11 passes; old D tests 33 passed; targeted configured Ruff PASS'
+  - 'Author report: full offline 16 failed / 394 passed / 2 skipped; paired baseline 4 failed / 383 passed / 2 skipped'
+  - Supervisor confirmed authored test SHA256 6b1a108f9d0ba9b58e3e72b2c18881585099af1f3a024da40b2e930aa673379b and verified the unchanged test assertions and parameterization
+  limitations:
+  - Timestamp records this supervisor disclosure, not the unverified start time of the coding session
+  - Provider/model are author-reported; original session retention was not independently audited and no session ID or provider receipt is fabricated
+  - Author no-D import-blocker diagnostic is not publication-base evidence; later supervisor real-checkout checks are separately disclosed
+  - No source repair, product-model/live/real semantic evaluation, independent student Approve or merge is claimed
+- entry_id: D1-TOKEN-REVISION-SUPERVISOR-20261122-01
+  timestamp: '2026-11-22T12:30:22+00:00'
+  tool: Codex desktop supervisor; output inspection, independent offline verification and local publication preparation
+  model: GPT-6 (session instructions; runtime identifier not independently attested)
+  purpose: 'Verify both PR #15 review corrections on D-present and actual no-D publication checkouts, copy authored revision and append truthful verification/disclosure; no business or test code authored'
+  scope:
+  - test/offline/test_answer_validated_tokens.py
+  - docs/team/designs/module-D/20261122-d-validated-token-reuse.md
+  - docs/ai-use-log.yaml
+  status: local-three-file-candidate-verified-not-committed-or-pushed
+  approvals:
+  - Supervisor verification and local preparation within the existing test-proposal task; not independent student test approval
+  - Commit/push of this revision is pending student publication confirmation; no source implementation or merge authorization
+  verification:
+  - 'D-present checkout: token tests 12 failed / 11 passed; old D tests 33 passed; full offline 17 failed / 393 passed / 2 skipped; baseline 5 failed / 382 passed / 2 skipped'
+  - D-present baseline failures are four local configuration differences and one sandbox ps PermissionError; zero collection errors
+  - 'Actual no-D publication checkout: full collection 412 and exit 0; new file 17 missing-D assertion failures / 6 parameter-table passes; full offline 50 failed / 360 passed / 2 skipped, zero errors'
+  - No-D failures classified as 32 old-D missing implementation assertions + 17 new missing-D assertions + one sandbox ps failure; no import blocker or stub used
+  - Default configured Ruff on both D test files PASS in both checkouts; full Ruff retains only the unchanged public scripts/paperqa_smoke.py:37 I001
+  - D-source mypy 10 files PASS; schema PASS on both checkouts; package origins and protected tracked file/config identities verified
+  - Five test-function ASTs/decorators and parameter tables preserved after normalizing only exact lazy public-symbol resolution
+  limitations:
+  - Unfixed token source still has twelve behavioral failures; post-fix behavior NOT_MEASURED
+  - No fresh remote CI or independent exact-head Approve; local checks do not establish merge readiness
+  - Full upstream regression, real product-model/live/semantic evaluation and executable OpenCode E2E NOT_RUN
+  - Only test-proposal files/disclosure prepared; no C adapter, generation, publication implementation or permission/CI edits
+- entry_id: D1-IMPL-20261118-01
+  timestamp: '2026-11-17T16:47:39Z'
+  tool: OpenCode desktop session, agent role papertrace-build-D (source implementation stage)
+  model: deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently
+    verified)
+  purpose: 实现模块D切片1：读取审核投影、资格校验与生成前拒答；不实现生成/发布
+  scope:
+  - src/papertrace/answer/__init__.py
+  - src/papertrace/answer/model.py
+  - src/papertrace/answer/errors.py
+  - src/papertrace/answer/eligibility.py
+  - src/papertrace/answer/service.py
+  - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+  status: implementation-complete-awaiting-pr-review-not-merged
+  student_decisions:
+  - 学生批准本模块测试准备范围（2026-11-17），随后批准 CPython 3.14 venv 与 requirements-init.lock 安装
+  - 学生确认李亚飞已批准测试提案 PR
+  - 学生批准切片1实现范围，并要求保留未提交的 .DS_Store 删除、不纳入提交
+  approvals:
+  - 测试commit批准：GitHub reviews.totalCount = 0 且 PR timeline 无 review 事件，未记录任何非作者对 29b2133 的 Approve；该说法仅来自学生口头转述
+  - 实现范围：学生2026-11-18消息；不构成 merge 批准
+  verification:
+  - .venv/bin/python -m pytest ... test/offline/test_answer.py → exit 0；33 passed
+  - .venv/bin/python -m pytest ... test/offline → exit 0；363 passed, 2 skipped（skip 为既有 OpenCode 可执行文件缺失）
+  - ruff（D 文件单独运行）→ exit 0；全局运行仍因未修改的 scripts/paperqa_smoke.py I001 失败
+  - mypy src/papertrace → exit 0，7 source files
+  - scripts/gates.py --gate schema → exit 0，PASS
+  limitations:
+  - 未调用产品模型；未新增网络调用（仅先前获批的解释器/依赖下载）
+  - 真实 C 集成未验证：C PR
+  - 生成、引用解析、freshness/token、预算与发布门均未实现
+  - 静态导入扫描只是补充观察，不证明零出站尝试
+  - 本条于 2026-11-19 应 reviewer 要求追加到共享日志；本披露不构成任何批准存在的证据
+- entry_id: D1-DELIVERY-20261121-01
+  timestamp: '2026-11-20T21:33:57+00:00'
+  tool: Codex desktop, local Git orchestration and byte-for-byte re-application
+  model: GPT-6 (session instruction; runtime identifier not independently attested)
+  purpose: Prepare the already implemented D slice 1 for re-submission after the visible test approval;
+    preserve approved blobs and historical disclosures
+  scope:
+  - src/papertrace/answer/
+  - docs/team/designs/module-D/20261121-d-slice1-delivery-supplement.md
+  - docs/ai-use-log.yaml
+  status: local-delivery-preparation-not-published-awaiting-independent-review
+  approvals:
+  - The student explicitly authorized isolated local preparation, local commits and offline verification
+    in this chat on 2026-11-21 HKT; no push, PR creation, merge, gate changes or product-model calls
+  - 'GitHub reviews API verified 537Lab APPROVED test PR #3 head 29b2133829666c25b42688ae7e5b42ac6130cbd8
+    at 2026-11-19T04:03:57Z; the old implementation predates that visible approval'
+  human_intervention:
+  - The student reviewed successive repair plans and then explicitly authorized the final limited local
+    execution
+  - Codex preserved both old D disclosures and all current-main records; old review-visibility observations
+    are not rewritten
+  verification:
+  - D slice-1 pytest exited 0 with 33 passed; full team offline pytest exited 0 with 387 passed and 2
+    skipped because OpenCode is unavailable
+  - mypy exited 0 for 10 source files; schema exited 0 PASS; AI-use-log gate exited 0 PASS with 3 additional
+    entries relative to base
+  - Full static gate exited 1 solely on inherited scripts/paperqa_smoke.py:37 I001; types, dependencies,
+    frozen baseline, architecture, contract API, secret heuristic and permissions passed
+  - Test-approval gate exited 2 BLOCKED with missing-pr-number; no new PR or independent review is claimed
+  - Five source files match c3817ae byte-for-byte; all four approved PR3 file blobs and all 12 main disclosure
+    entries were verified unchanged
+  - Real product semantic evaluation, full upstream/live regression and remote PR checks were not run;
+    the two skipped runtime cases remain unverified
+  limitations:
+  - The original source is re-applied from c3817ae676eb7c7a0ee8790b42c04232c19212e6; this does not establish
+    that it was originally written after test approval
+  - This Codex delivery repair is not a student OpenCode implementation session, D5 evidence or a human
+    Approve
+  - Applicable ADR confirmation, independent review of the new head and post-merge replay handling remain
+    outstanding
+  - No product-model calls, no new functionality and no C-to-D integration tests
+- entry_id: D1-ADR-20261121-01
+  timestamp: '2026-11-21T20:02:59+08:00'
+  tool: Codex desktop, governance evidence synchronization
+  model: Codex runtime model not independently attested
+  purpose: Record the supervising student's limited ADR-001 applicability approval for D slice 1 and the
+    C-to-D/B-to-D boundaries
+  scope:
+  - docs/architecture/adr/001-architecture.md
+  - docs/team/designs/module-D/20261121-d-slice1-delivery-supplement.md
+  - docs/ai-use-log.yaml
+  - PR
+  status: architecture-applicability-recorded-awaiting-independent-implementation-review
+  approvals:
+  - 'Student statement: 我确认并批准 ADR-001 适用于当前 D slice 1、C→D 投影及 B→D 生成边界；本确认不等于批准任何实现 PR、合并或真实模型调用。'
+  verification:
+  - The ADR records limited scope and exclusions without changing implementation source, tests, dependencies,
+    CI or contracts
+  - The delivery supplement preserves the exact statement and requires review of the resulting new head
+  limitations:
+  - This is not implementation approval, merge authorization, auto-merge authorization or product-model
+    authorization
+  - C-to-D and B-to-D integration tests remain future separately approved work
+- entry_id: D1-TOKEN-IMPL-20261122-01
+  timestamp: '2026-11-22T21:45:41+08:00'
+  tool: OpenCode desktop, papertrace-build-D; user-provided completion report and local file inspection
+  model: deepseek / deepseek-flash; runtime label DeepSeek V4.1 Flash 1017 (author-reported, not independently
+    verified)
+  purpose: Repair sequential validated revision/digest reuse while preserving the public eligibility API
+  scope:
+  - src/papertrace/answer/eligibility.py
+  - src/papertrace/answer/service.py
+  - docs/team/designs/module-D/20261122-d-validated-token-implementation.md
+  status: locally-implemented-and-supervisor-verified-not-published
+  approvals:
+  - Student authorized the local source-fix and offline-check scope before this implementation.
+  - 'PR #15 exact test head 3f624b5b2f685cd0133291d97206176fe7daa290 has independent APPROVED reviews
+    6012347031, 6012350096 and 6012350518; these approve tests, not source or merge.'
+  human_intervention:
+  - Codex restored five historical D sources and a limited-scope ADR before the coding session, restricted
+    local write permissions and preserved approved tests.
+  - Timestamp is the supervisor recording time, not an invented implementation-session start; no raw session
+    identifier was supplied.
+  verification:
+  - Author reports token tests 12 failed/11 passed before and 23 passed after; original D 33 passed.
+  - Author reports offline 2 failed/408 passed/2 skipped; independent supervisor run differs by an environment-dependent
+    sandbox ps failure.
+  - Independent inspection confirms only two source files differ from restored source blobs; three other
+    source files and all six approved test/fixture/design blobs are unchanged.
+  limitations:
+  - Independent implementation/safety review and final remote CI are outstanding.
+  - No generation, C adapter, publication or concurrency/freshness guarantee is implemented.
+  - No PaperTrace product-model, live or real semantic evaluation call; this does not deny assistant-provider
+    traffic.
+  - Raw OpenCode transcript retention remains a separate course-evidence obligation; this entry is not
+    a substitute.
+- entry_id: D1-TOKEN-IMPL-SUPERVISOR-20261122-01
+  timestamp: '2026-11-22T21:45:41+08:00'
+  tool: Codex desktop; independent local review, offline checks and publication-candidate packaging
+  model: GPT-6 (session identity; not independently attested)
+  purpose: Verify authored token repair, preserve historical attribution and prepare a local reviewable
+    implementation candidate
+  scope:
+  - src/papertrace/answer/
+  - docs/architecture/adr/001-architecture.md
+  - docs/team/designs/module-D/20261122-d-validated-token-implementation.md
+  - docs/ai-use-log.yaml
+  status: local-verification-and-packaging-no-commit-push-or-new-pr
+  approvals:
+  - Local verification and preparation authorized by the supervising student; remote implementation publication
+    is a separate pending action.
+  - Existing ADR-001 limited applicability is restored unchanged; no new ADR acceptance or human source
+    approval is asserted.
+  verification:
+  - 23 token tests and 33 original D tests independently pass.
+  - 'Full offline: 412 collected, 3 failed/407 passed/2 skipped. Exact JUnit comparison: only the 12 token
+    failures become passes; no node additions/removals or other status changes.'
+  - 'Remaining failures: two local restricted-permission configuration expectations and one sandbox ps
+    PermissionError; OpenCode executable is absent for two skipped cases.'
+  - Target Ruff, mypy (10 files), schema and whitespace checks pass; full Ruff only unchanged public scripts/paperqa_smoke.py:37
+    I001.
+  - 'All 17 existing log entries retained; three missing historical disclosures restored from PR #13 without
+    changing their parsed values.'
+  limitations:
+  - AI source review is not independent human Approve, D5 student authorship, merge permission or full
+    course acceptance.
+  - Local permission setup files are excluded from the candidate; full upstream/live/real semantic evaluation/native
+    engine E2E and new implementation Actions are NOT_RUN.
+  - No business source/test edits by Codex; authored documentation clarified separately.
