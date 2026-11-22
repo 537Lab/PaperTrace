@@ -40,3 +40,20 @@ the new test head. This is a new delivery of historical source plus scoped
 repairs, not a claim that all source was originally written after this approval.
 Independent exact-head implementation review is still required. Do not merge
 PR8, PR14 or the replacement without the team's explicit merge decision.
+
+## Final local results
+
+Final checks: 75 E tests passed, E Ruff passed, strict mypy passed (four files).
+AI-use-log and schema gates passed against main 6235c33. All approved test and
+plan files compare unchanged against 9b6629b. Final full offline regression:
+356 passed, 73 failed, two skipped in 221.26 seconds, exit 1. The full output is
+retained as Team/E-repair-full-offline.txt. E has no failed cases. Remaining
+failures include non-E Windows/platform and verification-environment issues;
+this round does not establish all remaining root causes or waive them. No full
+upstream or real-provider semantic evaluation was run.
+
+Git push failed to connect, so the remote branch was constructed through the
+authenticated GitHub Git API from the same approved test head, followed by a
+main merge and the verified file contents. Remote commit hashes differ from the
+local Git delivery commit d79a332; timestamps were not backdated. The API delivery
+did not modify approved tests. Local worktree: Team/PaperTrace-E-repair.
