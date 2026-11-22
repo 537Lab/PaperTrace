@@ -1,5 +1,30 @@
 schema_version: 1
 entries:
+- entry_id: E-TEST-REVIEW-20261122-02
+  timestamp: '2026-11-22T11:20:59+08:00'
+  tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash
+  purpose: 为PR14审查发现的嵌套路径泄露及空证据拒答历史无法保存补充正式回归测试
+  scope:
+  - test/offline/test_reports.py
+  - docs/team/designs/module-E/review-regression-plan.md
+  - docs/ai-use-log.yaml
+  status: test-revision-awaiting-independent-approval
+  approvals:
+  - 学生在本聊天转交PR14对e8ecf815的两项阻塞意见并要求修复，明确修改PR8测试后须重新取得独立批准
+  - 旧测试81e8345的批准仅作历史记录，不能批准本次新增测试
+  - 截至本记录尚无非作者对新测试head的真实Approve，未进行任何业务源码修复
+  verification:
+  - 真实OpenCode测试会话ses_dfecae4b2ffeIwKbVIEJQcj2Z4，Codex复现问题并监督测试修正
+  - 新测试共75项，对照与e8ecf815源码一致的旧实现为47 passed及28 failed，exit1
+  - 28项行为RED包含21项嵌套文本泄露和7项合法零审核历史被拒绝，无收集错误或跳过
+  - 原32项测试保留，仅追加测试及辅助函数，ruff通过，未修改src或共享契约
+  - JUnit及完整测试输出保存在Team工作区E-review-regressions-old-implementation文件中
+  limitations:
+  - 测试提案分支没有reports实现，行为RED通过显式指向被审核实现的pythonpath执行，不冒充测试分支自身已有业务实现
+  - 初稿模型属性访问、JSON转义及空事件辅助函数错误已在发布前纠正，不计作最终业务RED
+  - 本次未重跑完整上游或真实模型评估，未宣称远端CI全绿或缺陷已修复
+  - PR8及PR14保持开放不合并，等待新测试精确版本独立批准后才继续OpenCode源码修复
 - entry_id: E-TEST-REVIEW-20261121-01
   timestamp: '2026-11-21T11:27:26+08:00'
   tool: Codex desktop
