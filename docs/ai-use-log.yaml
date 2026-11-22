@@ -1,5 +1,31 @@
 schema_version: 1
 entries:
+- entry_id: E-SRC-20261122-01
+  timestamp: '2026-11-22T10:30:00+08:00'
+  tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash
+  purpose: 在PR8具体测试版本获真实Approve后实现E研究历史与导出
+  scope:
+  - src/papertrace/reports
+  - docs/team/designs/module-E/history-export-implementation.md
+  - docs/ai-use-log.yaml
+  status: implementation-awaiting-independent-review
+  approvals:
+  - 学生在本聊天批准计划并要求在测试获批后继续实现与提交
+  - PR8测试head为81e834596771cfbf5d140b2e68cb9431fcf083af，读回APPROVED时间为2026-11-22T01:48:12Z及01:49:29Z
+  - 上述是事前测试批准，不是本实现的独立批准
+  verification:
+  - OpenCode实际会话ses_dff02f043ffep3PJYXRMy43zJA完成四个源码文件，Codex监督并运行验证
+  - 最终E离线测试32 passed，模块ruff通过，模块mypy四文件通过
+  - 获批test目录与81e8345比较无差异
+  - contracts加reports为180 passed与1 failed，共享synthetic源文件在Windows检出为CRLF造成字节hash不同
+  - 原始续跑输出及真实脱敏会话导出保留在Team工作区，详情见实现记录
+  limitations:
+  - 全仓ruff仍有既存scripts/paperqa_smoke.py导入排序失败，本轮未改该文件
+  - 完整团队离线回归单独记录，不能以模块通过宣称全部CI通过
+  - 未运行真实提供商语义评估及完整上游回归，未宣称课程完成
+  - 历史发布要求支持硬链接的文件系统，不支持时失败并清理临时文件
+  - 实现仍需非作者正式Review，不合并PR8或实现PR
 - entry_id: E-TEST-REVIEW-20261121-01
   timestamp: '2026-11-21T11:27:26+08:00'
   tool: Codex desktop

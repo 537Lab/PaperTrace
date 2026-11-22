@@ -1,0 +1,55 @@
+# Module E implementation verification
+
+Implementation branch: `feat/E-history-export`.
+Test approval PR: #8
+Approved test head: `81e834596771cfbf5d140b2e68cb9431fcf083af`.
+GitHub reviews read back as APPROVED at 2026-11-22T01:48:12Z and 01:49:29Z.
+This is prior test approval, not independent approval of this implementation.
+
+## Behavior
+
+Four E-owned files implement a versioned research record, append-only UUID history,
+readback, JSON/Markdown exports and a superseded history view. Shared contracts,
+approved tests and other modules are unchanged. Record associations and review
+digests are checked. Existing record IDs cannot be overwritten. Original excerpts
+require a record/evidence/purpose-bound grant accepted by a trusted verifier;
+the application must supply that verifier. A caller-provided identity string is
+not authorization. Default exports hide excerpts and redact local paths.
+
+Publishing uses a sibling temporary file, fsync and exclusive hard linking.
+Unsupported hard links fail closed and clean the temporary file; there is no
+copy-to-final fallback that could expose partial records. This requires a local
+filesystem supporting hard links. This is not a sandbox against concurrent
+malicious replacement of directory ancestors.
+
+## Actual local validation, 2026-11-22
+
+Windows Python 3.12 with the exact `requirements-init.lock` packages installed in
+the separate verification directory. Pytest uses pytest_socket and sockets are
+disabled. Elevated execution enables Windows symlink negative tests.
+
+- `test/offline/test_reports.py`: 32 passed after the final storage and lint fixes.
+- Ruff for `src/papertrace/reports`: passed.
+- Mypy for `src/papertrace/reports`: passed, four source files.
+- Combined contracts/reports: 180 passed, one failed. The unchanged shared
+  `synthetic-paper-a.txt` is checked out as CRLF while Git stores LF; its byte
+  hash differs. No fixture or approved test was rewritten to hide that failure.
+- Full team offline regression is being checked separately. No claim of a green
+  full regression, upstream regression, CI or real-provider semantic evaluation.
+
+## Development evidence
+
+OpenCode 2.0.12, agent `papertrace-build-E`, configured school model
+`cityucs/CS5351/DeepSeek-V4-Flash`, session
+`ses_dff02f043ffep3PJYXRMy43zJA`. Codex supervised the session, supplied the
+approved scope, ran validation and identified the unsafe storage fallback.
+OpenCode wrote the source and corrected the fallback and final lint whitespace.
+Denied shell/file attempts and an output-length interruption occurred before
+the successful split implementation; these are not successful verification.
+The actual sanitized session export is retained in the enclosing Team workspace
+as `E-opencode-session-sanitized.json`; raw continuation output is also retained.
+The sanitized export is a disclosure artifact, not an unredacted transcript or
+evidence of human approval. No credentials belong in repository evidence.
+
+Remaining work: finish full regression classification, submit the implementation
+for independent human review, and verify remote CI. PR #8 stays open; do not merge.
