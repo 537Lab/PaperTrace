@@ -9,7 +9,9 @@ first (valid) values once, and the draft must be built from the same values; a
 draft that re-reads either property is the defect under test.
 
 All material is synthetic: two local corpus fixtures, contract-valid objects and a
-duck-typed projection double. No model, network, clock or human approval is used.
+duck-typed projection double. No PaperTrace product model, live/network test or real
+semantic evaluation is used. D's public surface is resolved at execution time, so a
+checkout without ``papertrace.answer`` still collects and reports ordinary failures.
 """
 
 from __future__ import annotations
@@ -17,17 +19,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
+from importlib import import_module
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-from papertrace.answer import (
-    REFUSAL_GENERATION_PATH_NOT_ENABLED,
-    REFUSAL_NO_APPROVED_EVIDENCE,
-    AnswerRequest,
-    AnswerService,
-    ProjectionShapeError,
-)
 from papertrace.contracts import (
     AnswerDraft,
     CorpusSnapshot,
@@ -56,6 +53,30 @@ DIGEST_B = sha256(b"papertrace validated-token synthetic projection B").hexdiges
 
 ELIGIBLE = "eligible"
 ABSTAINED = "abstained"
+
+MISSING_IMPLEMENTATION = (
+    "FR-D-01/INV-01: module papertrace.answer is not implemented "
+    "(expected RED during the approved test-preparation stage)"
+)
+
+
+def answer_module() -> Any:
+    """Resolve D at execution time; only the exact absent module becomes an assertion."""
+    try:
+        return import_module("papertrace.answer")
+    except ModuleNotFoundError as error:
+        if error.name != "papertrace.answer":
+            raise
+        raise AssertionError(MISSING_IMPLEMENTATION) from None
+
+
+def d_symbol(name: str) -> Any:
+    """Resolve one proposed D public attribute at execution time; absence fails clearly."""
+    module = answer_module()
+    symbol = getattr(module, name, None)
+    if symbol is None:
+        raise AssertionError(f"proposed Module D public attribute {name!r} is missing")
+    return symbol
 
 
 @dataclass(frozen=True)
@@ -158,8 +179,9 @@ def corpus_snapshot() -> tuple[CorpusSnapshot, EvidenceRecord]:
 
 def answer_request(
     snapshot: CorpusSnapshot, evidence: tuple[EvidenceRecord, ...]
-) -> AnswerRequest:
-    return AnswerRequest(
+) -> Any:
+    request_type = d_symbol("AnswerRequest")
+    return request_type(
         snapshot=snapshot,
         question_id=QUESTION_ID,
         answer_id=ANSWER_ID,
@@ -175,7 +197,8 @@ def prepare_with(
 ) -> tuple[AnswerDraft, ProjectionReader]:
     """Run one prepare call and return the draft with the reader that served it."""
     reader = ProjectionReader(projection)
-    service = AnswerService(projections=reader)
+    service_type = d_symbol("AnswerService")
+    service = service_type(projections=reader)
     return service.prepare(answer_request(snapshot, evidence)), reader
 
 
@@ -220,11 +243,11 @@ def test_static_projection_controls_preserve_the_draft_contract(
     if accepted:
         assert draft.status == "failed"
         assert draft.approved_evidence_ids == (record.evidence_id,)
-        assert draft.refusal_reason == REFUSAL_GENERATION_PATH_NOT_ENABLED
+        assert draft.refusal_reason == d_symbol("REFUSAL_GENERATION_PATH_NOT_ENABLED")
     else:
         assert draft.status == "abstained"
         assert draft.approved_evidence_ids == ()
-        assert draft.refusal_reason == REFUSAL_NO_APPROVED_EVIDENCE
+        assert draft.refusal_reason == d_symbol("REFUSAL_NO_APPROVED_EVIDENCE")
 
 
 # Both fields varying, revision-only and digest-only, for both decision outcomes.
@@ -294,11 +317,11 @@ def test_draft_uses_the_validated_first_token_values(
     if path == ELIGIBLE:
         assert draft.status == "failed"
         assert draft.approved_evidence_ids == (record.evidence_id,)
-        assert draft.refusal_reason == REFUSAL_GENERATION_PATH_NOT_ENABLED
+        assert draft.refusal_reason == d_symbol("REFUSAL_GENERATION_PATH_NOT_ENABLED")
     else:
         assert draft.status == "abstained"
         assert draft.approved_evidence_ids == ()
-        assert draft.refusal_reason == REFUSAL_NO_APPROVED_EVIDENCE
+        assert draft.refusal_reason == d_symbol("REFUSAL_NO_APPROVED_EVIDENCE")
 
 
 @pytest.mark.parametrize(TOKEN_PARAM_NAMES, TOKEN_CASES, ids=TOKEN_CASE_IDS)
@@ -347,7 +370,7 @@ def test_invalid_first_token_raises_without_using_later_valid_values(
         accepted_evidence_ids=(record.evidence_id,),
     )
 
-    with pytest.raises(ProjectionShapeError):
+    with pytest.raises(d_symbol("ProjectionShapeError")):
         prepare_with(snapshot, trap, (record,))
 
     # The failing token is read once; a later getter is not required to run.

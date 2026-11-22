@@ -312,3 +312,49 @@ entries:
   - Candidate schema/allowed-path/blob checks do not prove GitHub approval, remote gate success or merge readiness
   - Full upstream regression, real product-model/semantic evaluation and executable OpenCode E2E NOT_RUN
   - No source fix, C adapter, generation, publication implementation or merge is included
+- entry_id: D1-TOKEN-TESTREVISION-20261122-01
+  timestamp: '2026-11-22T12:30:22+00:00'
+  tool: OpenCode desktop session, papertrace-build-D; revision report supplied to supervisor
+  model: deepseek-flash; provider deepseek; runtime label DeepSeek V4.1 Flash 1017; author-reported, not independently attested
+  purpose: 'Revise PR #15 tests to resolve missing-D collection interruption and configured Ruff I001 while preserving all 23 cases and assertions; no source repair'
+  scope:
+  - test/offline/test_answer_validated_tokens.py
+  - docs/team/designs/module-D/20261122-d-validated-token-reuse.md
+  status: authored-local-test-revision-supervisor-verified-awaiting-publication-and-independent-review
+  approvals:
+  - Existing student-authorized two-file test-preparation revision scope; not an independent GitHub Approve, source authorization or merge permission
+  verification:
+  - 'Author report: 23 collected, 12 behavioral failures and 11 passes; old D tests 33 passed; targeted configured Ruff PASS'
+  - 'Author report: full offline 16 failed / 394 passed / 2 skipped; paired baseline 4 failed / 383 passed / 2 skipped'
+  - Supervisor confirmed authored test SHA256 6b1a108f9d0ba9b58e3e72b2c18881585099af1f3a024da40b2e930aa673379b and verified the unchanged test assertions and parameterization
+  limitations:
+  - Timestamp records this supervisor disclosure, not the unverified start time of the coding session
+  - Provider/model are author-reported; original session retention was not independently audited and no session ID or provider receipt is fabricated
+  - Author no-D import-blocker diagnostic is not publication-base evidence; later supervisor real-checkout checks are separately disclosed
+  - No source repair, product-model/live/real semantic evaluation, independent student Approve or merge is claimed
+- entry_id: D1-TOKEN-REVISION-SUPERVISOR-20261122-01
+  timestamp: '2026-11-22T12:30:22+00:00'
+  tool: Codex desktop supervisor; output inspection, independent offline verification and local publication preparation
+  model: GPT-6 (session instructions; runtime identifier not independently attested)
+  purpose: 'Verify both PR #15 review corrections on D-present and actual no-D publication checkouts, copy authored revision and append truthful verification/disclosure; no business or test code authored'
+  scope:
+  - test/offline/test_answer_validated_tokens.py
+  - docs/team/designs/module-D/20261122-d-validated-token-reuse.md
+  - docs/ai-use-log.yaml
+  status: local-three-file-candidate-verified-not-committed-or-pushed
+  approvals:
+  - Supervisor verification and local preparation within the existing test-proposal task; not independent student test approval
+  - Commit/push of this revision is pending student publication confirmation; no source implementation or merge authorization
+  verification:
+  - 'D-present checkout: token tests 12 failed / 11 passed; old D tests 33 passed; full offline 17 failed / 393 passed / 2 skipped; baseline 5 failed / 382 passed / 2 skipped'
+  - D-present baseline failures are four local configuration differences and one sandbox ps PermissionError; zero collection errors
+  - 'Actual no-D publication checkout: full collection 412 and exit 0; new file 17 missing-D assertion failures / 6 parameter-table passes; full offline 50 failed / 360 passed / 2 skipped, zero errors'
+  - No-D failures classified as 32 old-D missing implementation assertions + 17 new missing-D assertions + one sandbox ps failure; no import blocker or stub used
+  - Default configured Ruff on both D test files PASS in both checkouts; full Ruff retains only the unchanged public scripts/paperqa_smoke.py:37 I001
+  - D-source mypy 10 files PASS; schema PASS on both checkouts; package origins and protected tracked file/config identities verified
+  - Five test-function ASTs/decorators and parameter tables preserved after normalizing only exact lazy public-symbol resolution
+  limitations:
+  - Unfixed token source still has twelve behavioral failures; post-fix behavior NOT_MEASURED
+  - No fresh remote CI or independent exact-head Approve; local checks do not establish merge readiness
+  - Full upstream regression, real product-model/live/semantic evaluation and executable OpenCode E2E NOT_RUN
+  - Only test-proposal files/disclosure prepared; no C adapter, generation, publication implementation or permission/CI edits

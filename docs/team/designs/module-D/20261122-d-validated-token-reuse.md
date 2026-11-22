@@ -4,7 +4,7 @@
 |---|---|
 | Date | 2026-11-22 (HKT) |
 | Stage | **Test preparation / documentation cleanup only**; no `src/` was written |
-| Status | Local tests supervisor-reviewed (23 collected, 12 behavioral failures, 11 passes); design cleanup and publication preparation pending. No new test commit/PR exists; post-fix behavior is NOT_MEASURED |
+| Status | PR #15 review corrections locally supervisor-verified on both the reviewed D implementation and the real main-based no-D publication checkout; independent approval of the revised exact test head is still required. Earlier revision-session NOT_RUN statements are historical; section 9.3 records the later publication-base checks. Post-fix behavior is NOT_MEASURED |
 | Module | D `answer`, slice 1 |
 | Defect scope | `AnswerService.prepare` re-reads `projection.revision` and `projection.digest` after eligibility validation |
 | Local implementation identity | `0fa0d01e4d3ddf26ffdc8200f86c1f53e51e23a6` (this worktree); remote #13 head `287a55ca12333133d5fa094d67b1e32cfbd4f148` differs by a documentation-only extra commit and is not called the same head |
@@ -222,7 +222,7 @@ append-only entry, subject to the shared-log editor's decision:
   scope:
   - test/offline/test_answer_validated_tokens.py
   - docs/team/designs/module-D/20261122-d-validated-token-reuse.md
-  status: local-tests-supervisor-reviewed-design-cleanup-pending
+  status: local-tests-supervisor-reviewed-revised-addressing-pr15-findings
   approvals:
   - Student local approval of the two-file test-preparation plan on 2026-11-22 HKT; not a GitHub test-commit approval or source authorization
   verification:
@@ -230,6 +230,7 @@ append-only entry, subject to the shared-log editor's decision:
   - 'Coding-session run: existing test_answer.py 33 passed'
   - 'Coding-session run: full test/offline 16 failed (12 new + 4 known local configuration), 394 passed, 2 skipped'
   - 'Supervisor paired run: new file 12 failed / 11 passed; full test/offline 17 failed (12 new + 4 known local configuration + 1 sandbox ps failure), 393 passed, 2 skipped; paired baseline 5 failed / 382 passed, 2 skipped'
+  - 'Revision run (see section 9): 23 collected; 12 failed / 11 passed; configured targeted Ruff PASS; old D file 33 passed'
   - ruff on the new file: PASS; repository ruff retains the unchanged scripts/paperqa_smoke.py I001
   - mypy src/papertrace: PASS; schema gate: PASS
   limitations:
@@ -247,3 +248,133 @@ append-only entry, subject to the shared-log editor's decision:
   actual assertion reach, corrects the `EligibilityDecision` compatibility wording,
   removes host/private text, and records the sandbox failure without waiving it. No
   test, source or configuration file was changed.
+- 2026-11-22: PR #15 review requested changes for module-scope import/collection and a
+  configured Ruff I001. The test file now resolves D at execution time and imports only
+  stdlib, pytest and contracts at module scope. Section 9 records the change and the
+  new local checks; no source, assertion or configuration was changed.
+
+## 9. Revision for PR #15 review findings (2026-11-22)
+
+The public test-only proposal PR #15 (head
+`01b02a14b9eb5588a765fbe2e90b35e75c130e53`) received a changes-requested review with
+two findings. There is no independent approval for that head. This section records a
+local revision only; publication and the main-based no-D checks remain the
+supervisor's separate action.
+
+### 9.1 Findings and change
+
+1. **Collection abort on the no-D base.** The file imported `papertrace.answer` at
+   module scope. On a main-based test-only branch that module does not exist, so
+   pytest aborted collection instead of running the tests. D is now resolved at
+   execution time: module scope imports only the standard library, pytest and
+   `papertrace.contracts`, and `answer_module()`/`d_symbol()` resolve the module and
+   public attributes when a test runs.
+   - Only an exact `ModuleNotFoundError` whose `name` is `papertrace.answer` becomes
+     the explicit missing-implementation assertion.
+   - A missing parent package, a missing dependency of an existing module, and any
+     import-time error inside an existing module propagate.
+   - A missing public attribute raises a clear assertion instead of an `AttributeError`
+     traceback.
+   - No skip, `importorskip`, xfail, stub, `sys.modules` substitution, autouse skip,
+     `noqa` or configuration override is used in the test file.
+2. **Configured Ruff I001 on the new import block.** The same module-scope D import is
+   removed from the block; the file now imports only stdlib, pytest and contracts at
+   module scope. The configured targeted Ruff command passes on this checkout without
+   any Ruff or pytest configuration change. Whether the no-D base still reports any
+   import-block issue is checked by the supervisor there and is **NOT_RUN** here. The
+   unrelated `scripts/paperqa_smoke.py:37` I001 is separate and remains unchanged.
+
+All five test functions, 23 parametrized cases, case IDs, A/B token values,
+independent getter counters, invalid-first cases and draft/contract assertions are
+preserved. No assertion was weakened and no source change was made.
+
+### 9.2 Local checks actually run (2026-11-22, revision session)
+
+Interpreter: the existing project CPython 3.14.8 / pytest 9.2.0; `python` denotes it.
+
+| Check | Actual result |
+|---|---|
+| `python -m pytest -c papertrace.pytest.ini --collect-only -q test/offline/test_answer_validated_tokens.py` | exit 0; 23 tests collected |
+| `python -m pytest -c papertrace.pytest.ini -q test/offline/test_answer_validated_tokens.py` | exit 1; **12 failed, 11 passed** |
+| `python -m pytest -c papertrace.pytest.ini -q test/offline/test_answer.py` | exit 0; 33 passed |
+| `python -m pytest -c papertrace.pytest.ini -q test/offline` | exit 1; **16 failed, 394 passed, 2 skipped** |
+| `python -m pytest ... test/offline --ignore=test/offline/test_answer_validated_tokens.py` | exit 1; **4 failed, 383 passed, 2 skipped** |
+| `python -m ruff check --config papertrace.ruff.toml test/offline/test_answer.py test/offline/test_answer_validated_tokens.py` | exit 0; all checks passed |
+| `python -m ruff check --config papertrace.ruff.toml src/papertrace test/offline scripts` | exit 1; exactly the unchanged `scripts/paperqa_smoke.py:37` I001 |
+| `python -m mypy --config-file mypy.ini src/papertrace` | exit 0; 10 source files |
+| `python scripts/gates.py --gate schema` | exit 0; PASS; `remote_enforcement: NOT_DEPLOYED_OR_VERIFIED` |
+| `git diff --check` | exit 0 (tracked changes) |
+| Untracked new files, `git diff --no-index --check /dev/null <file>` | no diagnostics; exit 1 because the files differ |
+
+Failure classification for the 12: 4 revision-value cases, 2 digest-value cases and 6
+read-count cases. The read-count cases stop at `revision_reads == 1` (actual 2); the
+later `digest_reads` assertion is **NOT_REACHED** in this run. The 11 passes are 6
+parameter-table self-checks, 3 static controls and 2 invalid-first cases; the six
+self-checks do not exercise the service. The four baseline failures are the known
+local configuration-contract nodes; the delta is exactly 12 failures and 11 passes.
+No sandbox `ps` failure occurred in these runs; it is environment-dependent and is not
+relabeled as token RED.
+
+Local no-D diagnostic (**not** the publication-base check): with a temporary external
+`sys.meta_path` blocker for exactly `papertrace.answer` (the test file itself is
+unchanged and contains no such substitution), collection still succeeded (23) and
+execution produced 17 missing-implementation assertion failures and 6 instrument-control
+passes. This is diagnostic evidence that the module-scope import is gone; the
+supervisor's main-based no-D collection, execution and configured Ruff runs are
+**NOT_RUN** here.
+
+**NOT_RUN:** publication-base/no-D collection, execution and configured Ruff; full
+upstream regression beyond `test/offline`; live/network tests; PaperTrace product-model
+calls; real semantic evaluation; OpenCode executable E2E; GitHub Actions and approval;
+and post-fix behavior (NOT_MEASURED). No source fix, adapter, generation or publication
+work was attempted.
+
+### 9.3 Later independent supervisor verification (2026-11-22 HKT)
+
+The results in section 9.2 are the coding-session report. The supervisor then
+verified the authored revision and copied the two files, without changing test
+code, into the actual main-based PR #15 publication checkout. This is a later
+verification snapshot, not a claim that the coding-session checks ran there.
+The publication checkout still has no D implementation and uses main
+`6235c33d460b48d1ff11a10624d1bcd5919ea4f0` plus the test proposal.
+
+| Check / execution base | Independent result |
+|---|---|
+| Reviewed D checkout `0fa0d01`: new tests | 23 collected; 12 behavioral failures, 11 passes; zero errors/skips |
+| Reviewed D checkout: old D tests | 33 passed |
+| Reviewed D checkout: full offline | 412 collected; 17 failed, 393 passed, 2 skipped; zero errors |
+| Reviewed D checkout: baseline excluding new file | 389 collected; 5 failed, 382 passed, 2 skipped; zero errors |
+| Real no-D publication checkout: full offline collection | exit 0; all 412 tests collected, no collection errors |
+| Real no-D publication checkout: new tests | 17 missing-implementation assertion failures, 6 parameter-table passes; zero errors/skips |
+| Real no-D publication checkout: full offline execution | 50 failed, 360 passed, 2 skipped; zero errors |
+| Configured Ruff on old/new D test files, both checkouts | PASS, without first-party overrides or configuration edits |
+| Configured full-scope Ruff, both checkouts | Exactly one unchanged I001 at `scripts/paperqa_smoke.py:37`; no finding in the new test file |
+| Reviewed D source mypy | PASS, 10 source files |
+| Local schema, both checkouts | PASS; not evidence of remote enforcement |
+
+In the reviewed D checkout the five shared baseline failures are four restricted
+local configuration-contract mismatches and one sandbox `ps` PermissionError.
+They are separate from the twelve token-defect failures. The full/baseline delta
+is exactly twelve failures and eleven passes. Two skips reflect the unavailable
+OpenCode executable. The coding session did not encounter the sandbox failure;
+the supervisor did, so its result is reported separately.
+
+In the real no-D checkout, 32 failures belong to the unchanged old D proposal,
+17 to the new tests' explicit missing-D assertions, and one to the sandbox `ps`
+PermissionError. Thus the suite now executes instead of aborting collection.
+Those 49 missing-D failures do not reproduce the token defect or certify product
+behavior. The six new passes only validate the parameter table.
+
+The supervisor compared all five test-function bodies/decorators using Python ASTs,
+normalizing only the exact runtime public-symbol lookups back to their prior
+imported names: they match the published version. Parameter tables and case IDs
+also match. Source, contracts, old tests, fixtures and existing local permission
+modifications remain unchanged. The original four non-log PR #3 blobs are retained.
+Package origins were checked explicitly in each checkout. The supervisor's real
+no-D checks did not use import blockers, stubs, skips or module substitutions.
+
+The two review findings are resolved in this local candidate. This is not a
+GitHub Approve or a full CI/merge acceptance. Source repair, post-fix measurement,
+full upstream execution, live/product-model evaluation and executable OpenCode
+E2E were not performed in this verification. Publication and a fresh exact-head
+independent review remain separate actions.
