@@ -39,6 +39,18 @@ all repository CI, full upstream regression, real model quality, C/D generation
 or final end-to-end integration. The source-repair PR must receive independent
 review of its exact current head. PR8, PR14 and PR18 remain open/unmerged.
 
+Final full local offline regression: 367 passed, 75 failed, two skipped in
+208.76 seconds, exit1. All 88 E cases passed; none of the remaining failed nodes
+is in test_reports.py. Compared with the preceding reviewed-source comparison
+(358 passed, 84 failed, two skipped), the nine E security cases changed to pass.
+This aggregate difference does not establish every non-E failure's root cause.
+The remaining Windows/platform and verification-environment failures are not
+waived or labelled expected E RED. Full output: Team/E-metadata-repair-full-offline.txt.
+Local ai-log and schema gates passed against actual main 6235c33. Remote CI is
+separate and must be checked on the current source PR head.
+
+Implementation PR: https://github.com/537Lab/PaperTrace/pull/26 (open, unmerged).
+
 The local synthetic E and partial actual D.prepare->E handoff artifacts from the
 preceding round remain separately labelled; they use synthetic C/release inputs
 and are not evidence of full product integration or trusted export issuance.
