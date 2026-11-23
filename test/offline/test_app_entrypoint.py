@@ -24,7 +24,7 @@ from papertrace.contracts import CorpusSnapshot, DocumentVersion
 
 
 def app_api() -> Any:
-    """Delay loading ``papertrace.app`` so all 12 tests collect cleanly as RED."""
+    """Delay loading ``papertrace.app`` so all 14 tests collect cleanly as RED."""
     assert find_spec("papertrace.app") is not None, (
         "IMPLEMENTATION_MISSING: papertrace.app; ASSERTIONS_NOT_REACHED"
     )
@@ -96,31 +96,42 @@ class _RecordingUI:
     def json(self, payload: Any) -> None:
         self.writes.append(payload)
 
-    def button(self, label: str, *, key: str | None = None) -> bool:
-        self.buttons.append(f"{label}:{key or ''}")
+    def button(
+        self,
+        label: str,
+        *,
+        key: str | None = None,
+        disabled: bool = False,
+    ) -> bool:
+        self.buttons.append(f"{label}:{key or ''}:disabled={disabled}")
         return False
 
     def selectbox(
         self,
         label: str,
         options: list[Any],
+        index: int = 0,
         *,
         key: str | None = None,
         format_func: Any = None,
     ) -> Any:
         del label, key, format_func
-        return options[0] if options else None
+        if not options:
+            return None
+        safe_index = index if 0 <= index < len(options) else 0
+        return options[safe_index]
 
     def download_button(
         self,
         label: str,
+        data: Any = None,
+        file_name: str = "",
+        mime: str = "application/octet-stream",
         *,
-        data: Any,
-        file_name: str,
-        mime: str,
         key: str | None = None,
+        disabled: bool = False,
     ) -> bool:
-        del label, data, file_name, mime, key
+        del label, data, file_name, mime, key, disabled
         return False
 
     def rendered_text(self) -> str:
@@ -443,6 +454,7 @@ def test_entrypoint_exposes_single_navigation_and_renders_real_snapshot_without_
     assert state.snapshot_id == expected_snapshot.snapshot_id
     assert state.corpus_revision == 0
     assert state.library_error is None
+    assert expected_snapshot.snapshot_id in harness["ui"].rendered_text()
     assert harness["service"].ingest_calls == []
     assert harness["store"].save_calls == 0
 
@@ -487,6 +499,12 @@ def test_entrypoint_surfaces_partial_import_failure_without_claiming_complete(
     assert state.import_feedback.rows[1].stage == "parse"
     assert state.import_feedback.rows[1].reason_code == "PARSE_FAILED"
     assert len(harness["service"].current_snapshot().documents) == 1
+    rendered = harness["ui"].rendered_text()
+    assert harness["beta"].name in rendered
+    assert "failed" in rendered.lower()
+    assert "parse" in rendered.lower()
+    assert "PARSE_FAILED" in rendered
+    assert any(level in {"warning", "error"} for level, _ in harness["ui"].messages)
 
 
 def test_entrypoint_fails_closed_on_snapshot_freshness_mismatch_and_blocks_e_save(
@@ -551,18 +569,83 @@ def test_entrypoint_snapshot_drift_does_not_migrate_or_mutate_historical_records
 def test_entrypoint_blocks_missing_b_c_d_ports_without_synthesizing_research_record_or_release(
     harness: dict[str, Any],
 ) -> None:
-    """INV-03/04, GOV-01: absent B/C/D stages remain visibly blocked without fake outputs."""
+    """INV-03/04, GOV-01: absent B/C/D stages render explicit BLOCKED notices without fake outputs."""
     api = app_api()
     ports = _make_ports(api, harness)
     for stage in ("retrieval", "review", "answer"):
         ui = _RecordingUI()
         state = api.render_app(ui, ports=ports, selected_section=stage)
+        rendered = ui.rendered_text()
         assert stage in state.blocked_stages
         assert harness["store"].save_calls == 0
-        assert "released" not in ui.rendered_text().lower()
+        assert rendered.strip() != ""
+        assert stage in rendered.lower()
+        assert (
+            "blocked" in rendered.lower()
+            or "不可用" in rendered
+            or "未接通" in rendered
+            or "受阻" in rendered
+        )
+        assert any(level in {"warning", "info", "error"} for level, _ in ui.messages)
+        assert "released" not in rendered.lower()
 
     api.render_app(harness["ui"], ports=ports, selected_section="reports")
     assert harness["reports_panel"].calls[-1]["pending_record"] is None
+
+
+def test_entrypoint_forwards_non_none_pending_record_identically_to_reports_panel(
+    harness: dict[str, Any],
+) -> None:
+    """FR-E-01, INV-04/05: a valid synthetic pending record reaches E identically without auto-save."""
+    api = app_api()
+    synthetic_pending = {
+        "record_id": "rec-synthetic-pending-01",
+        "snapshot_id": harness["initial_snapshot_id"],
+        "release_status": "blocked",
+    }
+    ports = _make_ports(api, harness, pending_record=synthetic_pending, pending_input_error=None)
+    state = api.render_app(harness["ui"], ports=ports, selected_section="reports")
+
+    assert state.reports_invoked is True
+    assert state.snapshot_id == harness["initial_snapshot_id"]
+    assert len(harness["reports_panel"].calls) == 1
+    call = harness["reports_panel"].calls[0]
+    assert call["pending_record"] is synthetic_pending
+    assert call["current_snapshot_id"] == harness["initial_snapshot_id"]
+    assert call["input_error"] is None
+    assert harness["store"].save_calls == 0
+
+
+def test_entrypoint_forwards_upstream_input_error_when_library_healthy_without_leaking_raw_value(
+    harness: dict[str, Any],
+) -> None:
+    """FR-E-01, SEC-01, INV-04: healthy A still forwards upstream error neutrally without raw leak."""
+    api = app_api()
+    raw_secret_error = RuntimeError(
+        "UPSTREAM_ERROR: /Users/private/secret.pdf token=sk-secret-upstream-99"
+    )
+    ports = _make_ports(
+        api,
+        harness,
+        pending_record=None,
+        pending_input_error=raw_secret_error,
+    )
+    state = api.render_app(harness["ui"], ports=ports, selected_section="reports")
+
+    assert state.library_error is None
+    assert state.snapshot_id == harness["initial_snapshot_id"]
+    assert state.reports_invoked is True
+    assert len(harness["reports_panel"].calls) == 1
+    call = harness["reports_panel"].calls[0]
+    assert call["current_snapshot_id"] == harness["initial_snapshot_id"]
+    assert call["input_error"] is not None
+    assert isinstance(call["input_error"], str) and call["input_error"].strip() != ""
+    assert "/Users/private/secret.pdf" not in call["input_error"]
+    assert "sk-secret-upstream-99" not in call["input_error"]
+    rendered = harness["ui"].rendered_text()
+    assert "/Users/private/secret.pdf" not in rendered
+    assert "sk-secret-upstream-99" not in rendered
+    assert harness["store"].save_calls == 0
 
 
 def test_entrypoint_redacts_private_paths_and_source_bytes_from_ui_and_errors(

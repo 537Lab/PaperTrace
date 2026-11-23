@@ -258,3 +258,21 @@ entries:
   limitations:
   - This is a tests-only RED proposal authored with AI assistance under 537Lab authorization, not an independent non-author human Approve and not a student-supervised OpenCode D5 implementation transcript
   - No src/papertrace/app.py implementation, no new dependencies, no PaperQA2/provider/network calls, and no edits to other modules
+- entry_id: SHARED-APP-TEST-REVIEW-FIX-20261123-01
+  timestamp: '2026-11-23T12:51:00+00:00'
+  tool: Antigravity (local verified review-fix drafting with user-authorized GitHub push)
+  model: Gemini 4
+  purpose: Address independent reviewer ziqilin669 CHANGES_REQUESTED on PR #39 head c0fd8ce4 by adding pending_record/upstream-error forwarding controls, positive UI visibility assertions, and real-E UI facade signature alignment
+  scope:
+  - docs/team/designs/shared-app/entrypoint-plan-v1.md
+  - test/offline/test_app_entrypoint.py
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - Preserved all original 12 test nodes and added 2 focused controls (14 total collected, zero collection errors, 14 explicit IMPLEMENTATION_MISSING RED failures)
+  - Verified Ruff passes cleanly on test/offline/test_app_entrypoint.py with papertrace.ruff.toml
+  - Verified local schema, ai-use-log and semantic gates pass against origin/main
+  limitations:
+  - Still a tests-only RED proposal awaiting independent non-author Approve on the new exact HEAD; no src/papertrace/app.py implementation exists yet
+  - Offline stubs validate unit/wiring contracts only and do not substitute for real A/E component integration or live Streamlit click acceptance
