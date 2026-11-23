@@ -1268,6 +1268,58 @@ def test_generation_returns_raw_output_and_one_to_one_alias_map():
     }
 
 
+@pytest.mark.parametrize(
+    "scenario",
+    ("valid", "mixed-unknown", "mixed-unselected", "all-invalid"),
+)
+def test_generation_validates_reported_sent_before_resolving_citations(scenario: str):
+    fake = fake_module()
+    gateway = gateway_module()
+    records = generation_records()
+    selected_id = records.ev_a.evidence_id
+    unselected_id = records.ev_b.evidence_id
+    unknown_id = "ev-outside-synthetic"
+    reported, invalid = {
+        "valid": ((selected_id,), ()),
+        "mixed-unknown": ((selected_id, unknown_id), (unknown_id,)),
+        "mixed-unselected": ((selected_id, unselected_id), (unselected_id,)),
+        "all-invalid": ((unknown_id, unselected_id), (unknown_id, unselected_id)),
+    }[scenario]
+    raw = "Synthetic answer (b1) (b999)."
+    factory = fake.FakeModelFactory(
+        scripted=[
+            fake.FakeGenerationOutput(
+                raw_output=raw,
+                citations=(
+                    fake.FakeCitationClaim("b1", (selected_id,)),
+                    fake.FakeCitationClaim("b999", ()),
+                ),
+                sent_evidence_ids=reported,
+            )
+        ]
+    )
+    result = make_gateway(factory=factory).generate(
+        generation_request(
+            gateway,
+            approved=(records.ev_a, records.ev_b),
+            selected=(selected_id,),
+            policy=generation_policy(gateway),
+        )
+    )
+
+    assert factory.create_calls == 1
+    if invalid:
+        assert result.status.value == "INVALID_SENT_EVIDENCE"
+        assert result.invalid_sent_evidence_ids == invalid
+        assert result.citation_aliases == ()
+    else:
+        assert result.status is gateway.GenerationStatus.SUCCESS
+        assert result.raw_output == raw
+        assert result.sent_evidence_ids == (selected_id,)
+        assert dict(result.citation_aliases) == {"b1": selected_id}
+        assert result.unknown_citation_keys == ("b999",)
+
+
 def test_generation_preserves_unknown_citation_keys_without_silent_mapping():
     """FR-D-03: unknown keys stay visible to D; they are never deleted or mapped."""
     fake = fake_module()
@@ -1448,7 +1500,7 @@ def test_concrete_paperqa2_adapter_calls_aadd_aget_evidence_and_aquery(
             self.query_calls.append({"session": session, **kwargs})
             key = session.contexts[0].id
             return types.SimpleNamespace(
-                raw_answer=f"Synthetic grounded draft ({key}).",
+                raw_answer=f"Synthetic grounded draft ({key}) (b999).",
                 answer="",
                 contexts=session.contexts,
             )
@@ -1549,10 +1601,9 @@ def test_concrete_paperqa2_adapter_calls_aadd_aget_evidence_and_aquery(
     )
     assert generation.status is gateway.GenerationStatus.SUCCESS
     assert generation.sent_evidence_ids == (records.ev_a.evidence_id,)
-    assert generation.raw_output.startswith("Synthetic grounded draft")
-    assert tuple(dict(generation.citation_aliases).values()) == (
-        records.ev_a.evidence_id,
-    )
+    assert generation.raw_output == "Synthetic grounded draft (b1) (b999)."
+    assert dict(generation.citation_aliases) == {"b1": records.ev_a.evidence_id}
+    assert generation.unknown_citation_keys == ("b999",)
     generation_docs = docs_instances[1]
     assert len(generation_docs.query_calls) == 1
     query = generation_docs.query_calls[0]
