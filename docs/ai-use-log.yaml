@@ -1,5 +1,28 @@
 schema_version: 1
 entries:
+- entry_id: E-SRC-METADATA-20261123-01
+  timestamp: '2026-11-23T12:43:36+08:00'
+  tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash
+  purpose: 新测试获批后递归拒绝敏感元数据，并在写入前验证准确序列化字节
+  scope:
+  - src/papertrace/reports
+  - docs/team/designs/module-E/metadata-repair-verification.md
+  - docs/architecture/adr/004-history-export.md
+  - docs/ai-use-log.yaml
+  status: implementation-awaiting-independent-review
+  approvals:
+  - ldk13856478627-cell在2026-11-23T04:24:10Z正式批准PR8测试1506de96a8da396d2e6852c7abccd8a8ecde8b25，已由API读回
+  - 学生在本聊天确认获批后要求继续E源码修复及提交，不授权合并
+  verification:
+  - 真实OpenCode源码会话ses_df9493997ffeBGC203oMrwiotM仅修改record.py及store.py，Codex监督并运行验证
+  - 88项E测试全部通过，模块Ruff和四文件mypy通过，原9项安全RED已转绿
+  - 获批测试、fixtures及计划未修改，旧PR18源码带回并保留真实历史归因
+  - 完整团队离线回归及最终门禁单独记录，详情见metadata-repair-verification.md
+  limitations:
+  - 不将内存浅冻结冒称深层不可变，写盘前校验保证拒绝污染后的敏感数据
+  - 未修改共享契约、其他模块、CI或依赖，未进行产品模型调用或完整上游评估
+  - 独立实现审核及远端CI仍待完成，不宣称全组联调、真实授权或课程验收通过
 - entry_id: E-METADATA-TEST-20261123-01
   timestamp: '2026-11-23T11:38:01+08:00'
   tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
