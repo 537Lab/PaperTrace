@@ -2239,3 +2239,34 @@ def test_generation_accounting_counts_entry_into_answer_model(
     assert accounting.provider == policy.provider
     assert accounting.model == policy.model
     assert accounting.answer_model_attempts == 1
+
+
+def test_generation_accounting_records_zero_when_aquery_skips_answer_model(
+    monkeypatch, tmp_path
+):
+    model_entries = []
+
+    async def call_single(model, *args, **kwargs):
+        model_entries.append(model)
+        pytest.fail("aquery must leave the answer-model entry untouched")
+
+    monkeypatch.setattr(_RecordingAnswerModel, "call_single", call_single, raising=False)
+    gateway, port, docs_instances = _concrete_generation_port(monkeypatch, tmp_path)
+    evidence_id = generation_records().ev_a.evidence_id
+    policy = generation_policy(gateway)
+    result = port.generate(
+        generation_request(
+            gateway,
+            approved=(generation_records().ev_a,),
+            selected=(evidence_id,),
+            policy=policy,
+        )
+    )
+
+    assert len(docs_instances) == 1
+    assert len(docs_instances[0].query_calls) == 1
+    assert model_entries == []
+    assert result.status is gateway.GenerationStatus.SUCCESS
+    assert result.accounting.provider == policy.provider
+    assert result.accounting.model == policy.model
+    assert result.accounting.answer_model_attempts == 0

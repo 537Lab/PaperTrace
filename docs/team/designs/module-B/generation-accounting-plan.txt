@@ -25,3 +25,6 @@ GenerationPolicy 包含配置的 provider/model。发送前 count_tokens 用于�
 D 已确认的首轮范围
 首轮仅返回配置的 provider/model 与回答模型调用边界的尝试次数。进入边界即计一次，包括随后抛出异常的情况。异常路径也要让 D 读取已观测次数。确定未进入时为 0，无法观测时为 None（未知）。request ID、实际 token 用量与费用延后。
 拟将调用账目作为 B 的结构化结果数据。对已有异常传播路径，拟通过携带账目的 B 异常保留原异常作为 cause。D 的接线可在 B 契约确定后并行处理。测试应覆盖 0、1、异常保留 1、未知，以及调用计数不混入 token 估算。
+
+独立零次调用对照
+通过真实 PaperQA2Adapter 进入合成 Docs.aquery。用 query_calls 确认 aquery 执行一次，在回答模型的 call_single 单独安装入口探针。探针保持空且账目为 0，验证会话执行与模型尝试次数的区别。

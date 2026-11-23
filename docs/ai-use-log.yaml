@@ -417,3 +417,21 @@ entries:
   limitations:
   - 本轮仅准备测试与计划，未实现调用账目源码
   - 真实产品模型调用为零；测试基于尚待实现审查的 PR 25
+- entry_id: B-TEST-20261123-ACCOUNTING-ZERO-CONTROL
+  timestamp: '2026-11-23T13:42:27+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 根据 PR 27 的审查反馈补充真实 B 适配器进入 aquery 后的零次回答模型调用对照
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/generation-accounting-plan.txt
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户提供队友对 10ef7a82 的审查反馈，要求补对照后复核
+  verification:
+  - aquery 执行一次，独立 call_single 探针记录零次；新增用例在缺少 accounting 字段处按预期失败
+  - B 离线测试 65 项通过、5 项预期失败；Ruff 与 git diff --check 通过
+  limitations:
+  - 使用真实 B 适配器和合成上游，真实产品模型调用为零
+  - 仅追加测试、计划与披露，等待本次测试提交的正式独立审批
