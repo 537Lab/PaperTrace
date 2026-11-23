@@ -404,3 +404,23 @@ entries:
   - Two skips concern unavailable OpenCode executable checks; remote unknown regression failures are not relabeled local sandbox failures
   - No full upstream/live/real semantic/native-engine E2E or remote candidate CI; scoped local PASS does not certify merge readiness
   - Original author design is preserved; candidate design adds dated measured supervisor evidence; complete raw coding-session retention is not independently audited
+- entry_id: "D-RELEASE-TESTPREP-20261123-01"
+  timestamp: "2026-11-23T11:00:36+08:00"
+  tool: "OpenCode, papertrace-build-D"
+  model: "deepseek/deepseek-flash (runtime-reported), max"
+  purpose: "Prepare deterministic D release-check tests and design"
+  scope: ["test/offline/test_answer_release.py", "docs/team/designs/module-D/20261123-d-release-gate-plan.md"]
+  status: "local test proposal awaiting independent approval of the exact GitHub commit"
+  approvals: ["Student authorized local preparation of the two test and design files."]
+  verification: ["OpenCode reported file edits. Supervisor measured the missing-module prerequisite separately."]
+  limitations: ["Release behavior is unmeasured.", "The authorization covers test preparation. Independent approval of this test proposal is pending."]
+- entry_id: "D-RELEASE-TESTPREP-SUPERVISOR-20261123-01"
+  timestamp: "2026-11-23T11:55:33+08:00"
+  tool: "OpenAI Codex desktop"
+  model: "GPT-6 (system-reported family)"
+  purpose: "Verify local D release tests and assemble isolated test proposal"
+  scope: ["test/offline/test_answer_release.py", "docs/team/designs/module-D/20261123-d-release-gate-plan.md", "docs/ai-use-log.yaml"]
+  status: "test proposal candidate awaiting publication and independent review"
+  approvals: []
+  verification: ["Earlier supervisor run collected 456 cases on each base. All 29 new cases reached the missing release module prerequisite, and the 427 original assembled-baseline node outcomes matched.", "The candidate uses the prior PR #20 test head and preserves the authored test and design bytes."]
+  limitations: ["Release implementation and product model evaluation remain outside this proposal.", "The disclosure records local verification. GitHub review is pending."]
