@@ -240,3 +240,24 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: SHARED-CI-SMOKE-LINT-TEST-20261124-01
+  timestamp: '2026-11-23T17:58:29Z'
+  tool: Codex
+  model: GPT-6
+  purpose: 为共享 CI 的 smoke 脚本既有 I001 准备独立 tests-only RED 提案
+  scope:
+  - docs/team/designs/shared-ci/smoke-lint-fix-plan.md
+  - test/offline/test_smoke_lint_baseline.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  approvals:
+  - 用户在本会话明确批准精确计划及离线验证范围
+  verification:
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/python -m ruff --version → 0，ruff 0.17.5'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/ruff check --config papertrace.ruff.toml test/offline/test_smoke_lint_baseline.py → 0，All checks passed!'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini --collect-only test/offline/test_smoke_lint_baseline.py → 0，2 tests collected'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini test/offline/test_smoke_lint_baseline.py -vv → 1，1 failed, 1 passed。第一项的 Ruff 子进程退出码为 1，stdout 报 scripts/paperqa_smoke.py:37:1 I001，stderr 为空。第二项 AST 顺序检查通过。'
+  - 'git diff --check → 0，无输出。git status --short --untracked-files=all → 仅日志和两个新增提案文件。'
+  limitations:
+  - 验证只覆盖本地提案，未运行完整回归、真实模型或 GitHub CI
+  - 未修改 smoke 脚本，未提交或推送，尚无独立 GitHub 审批
