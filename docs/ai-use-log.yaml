@@ -307,3 +307,23 @@ entries:
   - This is ChatGPT-assisted test drafting and GitHub publishing, not an OpenCode student-supervised implementation session, course D5 transcript, or independent student test approval
   - No live provider/model evaluation, private paper access, additional dependencies, public UI code or cross-module business edits
   - A application navigation, B ingest receipt and E publishing/export permission require separate interface confirmation and applicable approval
+
+- entry_id: A-VIEW-REVIEW-FIX-20261123-01
+  timestamp: '2026-11-23T06:49:29Z'
+  tool: ChatGPT with connected GitHub review workflow and isolated local Python collection
+  model: GPT-6
+  purpose: Address independent reviewer changes requested for A view test proposal PR 30 at head 73adbac1
+  scope:
+  - test/offline/test_library_view.py
+  - docs/team/designs/module-A/view-plan-v1.md
+  status: revised-test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Preserved the 15 original tests and added one negative test requiring ValueError FRESHNESS_MISMATCH when current_snapshot and freshness token carry different snapshot identities
+  - Fixed the test file import grouping reported as Ruff I001
+  - Python syntax and isolated pytest collection with real shared contract module returned 16 collected and zero collection errors
+  limitations:
+  - No A view product implementation exists; behavioral assertions do not run, and collection is not evidence of functional PASS
+  - Isolated environment does not have Ruff installed; any lint pass must be confirmed by actual remote checks on the new head
+  - This ChatGPT review change is not a supervised OpenCode course transcript or human Approve
+  - No provider/model experiment, private source corpus, public UI or other-module code changes
