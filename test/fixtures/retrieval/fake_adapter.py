@@ -140,6 +140,7 @@ class FakeGenerationOutput:
     raw_output: str
     citations: tuple[FakeCitationClaim, ...] = ()
     usage_tokens: int = 0
+    sent_evidence_ids: tuple[str, ...] | None = None
 
 
 @dataclass
