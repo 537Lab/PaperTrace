@@ -182,6 +182,15 @@ class GenerationRequest:
 
 
 @dataclass(frozen=True)
+class GenerationAccounting:
+    """Observable generation accounting at B's answer-model boundary."""
+
+    provider: str
+    model: str
+    answer_model_attempts: int | None = None
+
+
+@dataclass(frozen=True)
 class GenerationResult:
     """Raw output plus actual-sent set and alias map; never a decision."""
 
@@ -193,6 +202,16 @@ class GenerationResult:
     ambiguous_citation_keys: tuple[str, ...] = ()
     refusal_reason: str | None = None
     invalid_sent_evidence_ids: tuple[str, ...] = ()
+    accounting: GenerationAccounting | None = None
+
+
+class GenerationAccountingError(RuntimeError):
+    """Failure after B observed attempts, preserving the original cause."""
+
+    def __init__(self, accounting: GenerationAccounting, cause: BaseException) -> None:
+        super().__init__(str(cause))
+        self.accounting = accounting
+        self.cause = cause
 
 
 # --------------------------------------------------------------------------- #
@@ -804,6 +823,41 @@ def _copy_answer_model(
     return outbound
 
 
+def _instrument_answer_model(
+    model: Any, on_entry: Callable[[], None]
+) -> Callable[[], None] | None:
+    """Wrap ``call_single`` so B counts actual answer-model entries.
+
+    Returns a restore callback, or ``None`` when the boundary is unobservable.
+    """
+    original = getattr(model, "call_single", None)
+    if not callable(original):
+        return None
+
+    model_dict = getattr(model, "__dict__", None)
+    had_instance_attr = isinstance(model_dict, dict) and "call_single" in model_dict
+
+    async def counted_call_single(*args: Any, **kwargs: Any) -> Any:
+        on_entry()
+        return await original(*args, **kwargs)
+
+    try:
+        model.call_single = counted_call_single
+    except Exception:
+        try:
+            object.__setattr__(model, "call_single", counted_call_single)
+        except Exception:
+            return None
+
+    def restore() -> None:
+        if had_instance_attr:
+            object.__setattr__(model, "call_single", original)
+        else:
+            object.__delattr__(model, "call_single")
+
+    return restore
+
+
 def _default_serialized_aliases(settings: Any, contexts: Sequence[Any]) -> tuple[str, ...]:
     """Mirror PaperQA's bounded score filter when no ID trace is exposed."""
     answer = getattr(settings, "answer", None)
@@ -887,6 +941,15 @@ class _PaperQAGenerationSession:
     policy: _SessionPolicy
     contexts: tuple[_SessionContext, ...]
     _asked: bool = False
+    _answer_model_attempts: int | None = None
+
+    @property
+    def accounting(self) -> GenerationAccounting:
+        return GenerationAccounting(
+            provider=self.policy.provider,
+            model=self.policy.model,
+            answer_model_attempts=self._answer_model_attempts,
+        )
 
     def ask(self, question: str) -> _PaperQAGenerationOutput:
         if self._asked:
@@ -898,6 +961,7 @@ class _PaperQAGenerationSession:
         return asyncio.run(coroutine)
 
     async def _ask(self, question: str) -> _PaperQAGenerationOutput:
+        self._answer_model_attempts = 0
         paperqa_types = importlib.import_module("paperqa.types")
         docs = self.bridge._new_docs(name="papertrace-approved-generation")
         settings = self.bridge._settings.model_copy(deep=True)
@@ -969,8 +1033,9 @@ class _PaperQAGenerationSession:
             # Older PaperQA settings expose no serializer method and expect the
             # exact injected model object.  Modern settings are copied so the
             # bridge never mutates the caller's reusable model configuration.
-            preserve_legacy_identity=not callable(
-                getattr(settings, "context_serializer", None)
+            preserve_legacy_identity=(
+                not callable(getattr(settings, "context_serializer", None))
+                and not callable(getattr(self.bridge._answer_llm_model, "call_single", None))
             ),
         )
         counter = getattr(outbound_model, "count_tokens", None)
@@ -996,13 +1061,26 @@ class _PaperQAGenerationSession:
                 refusal_reason=REFUSAL_INPUT_BUDGET_EXCEEDED,
             )
 
-        answered = await docs.aquery(
-            session,
-            settings=settings,
-            llm_model=outbound_model,
-            summary_llm_model=self.bridge._summary_llm_model,
-            embedding_model=self.bridge._embedding_model,
-        )
+        def count_entry() -> None:
+            if self._answer_model_attempts is None:
+                self._answer_model_attempts = 0
+            self._answer_model_attempts += 1
+
+        restore_call_single = _instrument_answer_model(outbound_model, count_entry)
+        if restore_call_single is None:
+            # The port may still call the model, but B cannot observe entries.
+            self._answer_model_attempts = None
+        try:
+            answered = await docs.aquery(
+                session,
+                settings=settings,
+                llm_model=outbound_model,
+                summary_llm_model=self.bridge._summary_llm_model,
+                embedding_model=self.bridge._embedding_model,
+            )
+        finally:
+            if restore_call_single is not None:
+                restore_call_single()
         post_serialized_aliases = getattr(settings, "serialized_context_ids", None)
         if isinstance(post_serialized_aliases, (tuple, list)):
             actual_aliases = tuple(
@@ -1079,9 +1157,41 @@ def _select_evidence(
     return selected, None
 
 
-def _refusal(reason: str) -> GenerationResult:
-    """A refusal that performed zero outbound calls."""
-    return GenerationResult(status=GenerationStatus.REFUSED, refusal_reason=reason)
+def _zero_accounting(policy: GenerationPolicy) -> GenerationAccounting:
+    """Accounting for a path that definitely made no answer-model call."""
+    return GenerationAccounting(
+        provider=policy.provider,
+        model=policy.model,
+        answer_model_attempts=0,
+    )
+
+
+def _observed_accounting(
+    session: Any | None, policy: GenerationPolicy
+) -> GenerationAccounting:
+    """Use the session's observed count, or ``None`` when unobservable."""
+    if session is not None:
+        observed = getattr(session, "accounting", None)
+        if isinstance(observed, GenerationAccounting):
+            return GenerationAccounting(
+                provider=policy.provider,
+                model=policy.model,
+                answer_model_attempts=observed.answer_model_attempts,
+            )
+    return GenerationAccounting(
+        provider=policy.provider,
+        model=policy.model,
+        answer_model_attempts=None,
+    )
+
+
+def _refusal(reason: str, accounting: GenerationAccounting) -> GenerationResult:
+    """A fail-closed refusal carrying accounting for its exact path."""
+    return GenerationResult(
+        status=GenerationStatus.REFUSED,
+        refusal_reason=reason,
+        accounting=accounting,
+    )
 
 
 def _read_citation_fields(output: Any) -> tuple[str, tuple[Any, ...]]:
@@ -1124,23 +1234,24 @@ def run_generation(
 ) -> GenerationResult:
     """Mechanically execute D's approved generation request (FR-D-03)."""
     policy = request.policy
+    zero_accounting = _zero_accounting(policy)
 
     if not request.approved_evidence:
-        return _refusal(REFUSAL_EMPTY_APPROVED)
+        return _refusal(REFUSAL_EMPTY_APPROVED, zero_accounting)
 
     budget_reason = _validate_policy(policy)
     if budget_reason is not None:
-        return _refusal(budget_reason)
+        return _refusal(budget_reason, zero_accounting)
 
     session_reason = _validate_session_policy(policy)
     if session_reason is not None:
-        return _refusal(session_reason)
+        return _refusal(session_reason, zero_accounting)
 
     selected, provenance_reason = _select_evidence(request)
     if provenance_reason is not None:
-        return _refusal(provenance_reason)
+        return _refusal(provenance_reason, zero_accounting)
     if not selected:
-        return _refusal(REFUSAL_EMPTY_SENT)
+        return _refusal(REFUSAL_EMPTY_SENT, zero_accounting)
 
     sanitized = _SessionPolicy(
         provider=policy.provider,
@@ -1161,13 +1272,26 @@ def run_generation(
 
     try:
         session = factory.create(policy=sanitized, contexts=contexts)
+    except _GenerationRefusal as refusal:
+        return _refusal(refusal.reason, _zero_accounting(policy))
+    except Exception as error:
+        raise GenerationAccountingError(
+            _observed_accounting(None, policy), error
+        ) from error
+
+    try:
         output = session.ask(request.question)
     except _GenerationRefusal as refusal:
-        return _refusal(refusal.reason)
+        return _refusal(refusal.reason, _observed_accounting(session, policy))
+    except Exception as error:
+        raise GenerationAccountingError(
+            _observed_accounting(session, policy), error
+        ) from error
 
+    accounting = _observed_accounting(session, policy)
     output_refusal = getattr(output, "refusal_reason", None)
     if isinstance(output_refusal, str):
-        return _refusal(output_refusal)
+        return _refusal(output_refusal, accounting)
 
     reported_sent = getattr(output, "sent_evidence_ids", None)
     selected_ids = tuple(record.evidence_id for record in selected)
@@ -1183,9 +1307,10 @@ def run_generation(
             return GenerationResult(
                 status=GenerationStatus.INVALID_SENT_EVIDENCE,
                 invalid_sent_evidence_ids=invalid_ids,
+                accounting=accounting,
             )
     if not final_sent:
-        return _refusal(REFUSAL_EMPTY_SENT)
+        return _refusal(REFUSAL_EMPTY_SENT, accounting)
     raw, claims = _read_citation_fields(output)
     sent_ids = set(final_sent)
     aliases, unknown, ambiguous = _resolve_citations(claims, sent_ids)
@@ -1201,4 +1326,5 @@ def run_generation(
         citation_aliases=aliases,
         unknown_citation_keys=unknown,
         ambiguous_citation_keys=ambiguous,
+        accounting=accounting,
     )

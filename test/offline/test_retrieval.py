@@ -2152,3 +2152,121 @@ def test_retrieval_view_projects_status_without_authority():
         assert forbidden not in projection
     assert not hasattr(item, "accepted")
     assert not hasattr(item, "released")
+
+
+def test_generation_accounting_records_zero_for_preflight_refusal():
+    gateway = gateway_module()
+    factory = fake_module().FakeModelFactory()
+    policy = generation_policy(gateway)
+    result = make_gateway(factory=factory).generate(
+        generation_request(gateway, approved=(), selected=(), policy=policy)
+    )
+
+    assert result.status is gateway.GenerationStatus.REFUSED
+    assert factory.create_calls == 0
+    assert result.accounting.provider == policy.provider
+    assert result.accounting.model == policy.model
+    assert result.accounting.answer_model_attempts == 0
+
+
+def test_generation_accounting_preserves_unknown_at_uninstrumented_port():
+    gateway = gateway_module()
+    fake = fake_module()
+    evidence_id = generation_records().ev_a.evidence_id
+    factory = fake.FakeModelFactory(
+        scripted=[fake.FakeGenerationOutput(raw_output="Synthetic answer.")]
+    )
+    policy = generation_policy(gateway)
+    result = make_gateway(factory=factory).generate(
+        generation_request(
+            gateway,
+            approved=(generation_records().ev_a,),
+            selected=(evidence_id,),
+            policy=policy,
+        )
+    )
+
+    assert result.status is gateway.GenerationStatus.SUCCESS
+    assert factory.sessions[0].ask_calls == 1
+    assert result.accounting.provider == policy.provider
+    assert result.accounting.model == policy.model
+    assert result.accounting.answer_model_attempts is None
+
+
+@pytest.mark.parametrize("raises", (False, True), ids=("success", "model-error"))
+def test_generation_accounting_counts_entry_into_answer_model(
+    monkeypatch, tmp_path, raises
+):
+    calls = []
+    failure = RuntimeError("Synthetic answer model failure")
+
+    async def call_single(model, *args, **kwargs):
+        calls.append(model)
+        if raises:
+            raise failure
+
+    original_query = _SerializerRecordingDocs.aquery
+
+    async def query(docs, session, **kwargs):
+        answered = await original_query(docs, session, **kwargs)
+        await kwargs["llm_model"].call_single("Synthetic answer prompt")
+        return answered
+
+    monkeypatch.setattr(_RecordingAnswerModel, "call_single", call_single, raising=False)
+    monkeypatch.setattr(_SerializerRecordingDocs, "aquery", query)
+    gateway, port, _ = _concrete_generation_port(monkeypatch, tmp_path)
+    evidence = generation_records().ev_a
+    policy = generation_policy(gateway)
+    request = generation_request(
+        gateway,
+        approved=(evidence,),
+        selected=(evidence.evidence_id,),
+        policy=policy,
+    )
+
+    if raises:
+        with pytest.raises(Exception) as captured:
+            port.generate(request)
+        assert len(calls) == 1
+        assert captured.value.__cause__ is failure
+        accounting = captured.value.accounting
+    else:
+        result = port.generate(request)
+        assert len(calls) == 1
+        assert result.status is gateway.GenerationStatus.SUCCESS
+        accounting = result.accounting
+
+    assert accounting.provider == policy.provider
+    assert accounting.model == policy.model
+    assert accounting.answer_model_attempts == 1
+
+
+def test_generation_accounting_records_zero_when_aquery_skips_answer_model(
+    monkeypatch, tmp_path
+):
+    model_entries = []
+
+    async def call_single(model, *args, **kwargs):
+        model_entries.append(model)
+        pytest.fail("aquery must leave the answer-model entry untouched")
+
+    monkeypatch.setattr(_RecordingAnswerModel, "call_single", call_single, raising=False)
+    gateway, port, docs_instances = _concrete_generation_port(monkeypatch, tmp_path)
+    evidence_id = generation_records().ev_a.evidence_id
+    policy = generation_policy(gateway)
+    result = port.generate(
+        generation_request(
+            gateway,
+            approved=(generation_records().ev_a,),
+            selected=(evidence_id,),
+            policy=policy,
+        )
+    )
+
+    assert len(docs_instances) == 1
+    assert len(docs_instances[0].query_calls) == 1
+    assert model_entries == []
+    assert result.status is gateway.GenerationStatus.SUCCESS
+    assert result.accounting.provider == policy.provider
+    assert result.accounting.model == policy.model
+    assert result.accounting.answer_model_attempts == 0
