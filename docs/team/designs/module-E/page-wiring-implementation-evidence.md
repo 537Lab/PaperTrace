@@ -24,4 +24,20 @@ OpenCode session ses_df7c7c083ffenVDR4zsgPomRg5 was interrupted on a directory
 read refusal and later stopped without writes requesting persisted evidence.
 Supervisor supplies this observed evidence without relaxing native permissions.
 Any shell call it reported must be evaluated against raw transcript, not assumed
-successful because the model described it. Final verification remains pending.
+successful because the model described it.
+
+## Approved correction and formal delivery
+
+On 2026-11-23 supervisor read live GitHub review 6021393820 by
+ldk13856478627-cell: APPROVED exact test head
+7e70e139048f17cdcf5b04b95974ec360fa19552, submitted at 12:06:22Z.
+Delivery branch feat/E-page-wiring-delivery was created from that exact head.
+The prior OpenCode source history was locally integrated without source changes;
+both test-correction and source disclosure entries were retained when resolving
+the log conflict. Approved test and plan blobs are unchanged from 7e70e13.
+
+Formal E tests: 117 passed. Targeted reports/test Ruff passed. Actual Streamlit
+AppTest with the supplied synthetic handoff passed no-save-on-open/refresh,
+explicit save/history, blocked reopen, duplicate immutability and second new
+record save. This updates the earlier historical pending-approval state; it
+does not certify public application assembly, full CI or real model evaluation.
