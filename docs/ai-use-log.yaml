@@ -399,3 +399,39 @@ entries:
   limitations:
   - 本轮未修改获批测试、共享契约或 D 模块
   - 使用合成数据，真实模型调用为零，本轮未重跑完整团队回归
+- entry_id: B-TEST-20261123-ACCOUNTING
+  timestamp: '2026-11-23T13:30:00+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按用户已确认计划准备 B 生成调用账目四项离线测试
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/generation-accounting-plan.txt
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户明确确认本轮调用账目计划，并要求提交可审核测试
+  verification:
+  - 在 B 越界 sent 修复源码上运行，65 项通过、4 项预期失败；Ruff 通过
+  - fake 回答模型分别验证未调用、未知、调用一次、调用后异常的账目要求
+  limitations:
+  - 本轮仅准备测试与计划，未实现调用账目源码
+  - 真实产品模型调用为零；测试基于尚待实现审查的 PR 25
+- entry_id: B-TEST-20261123-ACCOUNTING-ZERO-CONTROL
+  timestamp: '2026-11-23T13:42:27+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 根据 PR 27 的审查反馈补充真实 B 适配器进入 aquery 后的零次回答模型调用对照
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/generation-accounting-plan.txt
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户提供队友对 10ef7a82 的审查反馈，要求补对照后复核
+  verification:
+  - aquery 执行一次，独立 call_single 探针记录零次；新增用例在缺少 accounting 字段处按预期失败
+  - B 离线测试 65 项通过、5 项预期失败；Ruff 与 git diff --check 通过
+  limitations:
+  - 使用真实 B 适配器和合成上游，真实产品模型调用为零
+  - 仅追加测试、计划与披露，等待本次测试提交的正式独立审批
