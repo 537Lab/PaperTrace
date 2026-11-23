@@ -8,6 +8,7 @@ No PaperQA2, provider, network, global page/entrypoint or other-module writes.
 
 from importlib import import_module
 from importlib.util import find_spec
+
 import pytest
 
 from papertrace.contracts import CorpusSnapshot
@@ -106,6 +107,25 @@ def test_overview_reads_ready_only_current_snapshot(library):
         member.document_id, member.version_sha256
     )
     assert row.status == "ready"
+
+
+
+def test_overview_refuses_snapshot_freshness_token_mismatch(library, monkeypatch):
+    """INV-02/05: inconsistent snapshot and freshness token must fail closed."""
+    service, paths, calls, _ = library
+    service.import_files((paths[0],))
+    snapshot = service.current_snapshot()
+    snapshot_id, revision = service.freshness()
+    assert snapshot_id == snapshot.snapshot_id
+    wrong_snapshot_id = "snap-" + "0" * 64
+    if wrong_snapshot_id == snapshot_id:
+        wrong_snapshot_id = "snap-" + "1" * 64
+    monkeypatch.setattr(service, "freshness", lambda: (wrong_snapshot_id, revision))
+
+    with pytest.raises(ValueError, match="FRESHNESS_MISMATCH"):
+        view_api().library_overview(service)
+    assert service.current_snapshot() == snapshot
+    assert len(calls) == 1
 
 
 def test_unselected_in_root_rejected_without_import_or_record(library):
