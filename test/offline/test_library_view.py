@@ -8,8 +8,6 @@ No PaperQA2, provider, network, global page/entrypoint or other-module writes.
 
 from importlib import import_module
 from importlib.util import find_spec
-from pathlib import Path
-
 import pytest
 
 from papertrace.contracts import CorpusSnapshot
