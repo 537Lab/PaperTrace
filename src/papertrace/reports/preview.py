@@ -17,10 +17,11 @@ Run only on loopback, e.g.::
 from __future__ import annotations
 
 import argparse
+import importlib
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from papertrace.reports import HistoryStore, InvalidRecord, ResearchRecord, parse_record
 from papertrace.reports.view import render_reports_panel
@@ -67,17 +68,11 @@ def _streamlit() -> Any:
     """Import Streamlit for local runtime use, or raise :class:`ImportError`.
 
     Streamlit is an optional local-only convenience and is not a pinned CI
-    dependency. Under type checking the module is treated as an ``Any``-typed
-    facade so this core package never needs a stub or ignore; at runtime the
-    ordinary explicit :mod:`streamlit` import is performed here. Callers guard
+    dependency. A runtime-only import keeps optional Streamlit out of static import checks;
+    this core package needs neither a Streamlit stub nor a missing-import ignore. Callers guard
     this and fail closed when the package is missing.
     """
-    if TYPE_CHECKING:
-        st: Any = None
-        return st
-    import streamlit as st
-
-    return st
+    return importlib.import_module("streamlit")
 
 
 def _configured_server_address() -> str | None:
