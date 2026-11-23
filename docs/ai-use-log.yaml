@@ -352,6 +352,37 @@ entries:
   limitations:
   - This is a test harness correction, not a source fix; original page source first check was 113 passed and 4 failed
   - Existing storage skip semantics and approved plan remain unchanged; no directory scanning or test-specific source workaround added
+- entry_id: E-SRC-20261123-PAGE-WIRING
+  timestamp: '2026-11-23T11:55:05+00:00'
+  tool: OpenCode 2.0.12 papertrace-build-E; Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash; Codex supervisor
+  purpose: Implement the independently approved injectable E save/history/download panel and local synthetic preview
+  scope:
+  - src/papertrace/reports/view.py
+  - src/papertrace/reports/preview.py
+  - docs/team/designs/module-E/page-wiring-implementation-evidence.md
+  - docs/ai-use-log.yaml
+  status: local-implementation-awaiting-corrected-test-approval-and-independent-source-review
+  approvals:
+  - Student approved exact page plan and instructed continued E work
+  - Supervisor observed GitHub review 6018715777 by 537Lab APPROVED test PR31 commit f64986ed667082d5df8bbb2eefe9c445274ef7d5
+  - This source branch starts at that approved commit and retains its test/plan blobs; corrected test head 7e70e139048f17cdcf5b04b95974ec360fa19552 is not yet approved or adopted here
+  verification:
+  - OpenCode source session ses_df7c7c083ffenVDR4zsgPomRg5; raw transcript Team/E-opencode-page-implementation.jsonl retained
+  - Supervisor supplied persisted live approval evidence after the model refused to rely on prompt assertions; initial unverified numeric review ID was corrected from actual API, never used as approval evidence
+  - First source check 113 passed / 4 failed; old approved tests after source fixes 116 passed / 1 failed at defective selected-load test setup
+  - Corrected test file from separate proposal run diagnostically against this source produced 117 passed; not a claim of new exact-head approval or formal CI success
+  - Targeted reports Ruff passed; mypy passed for all six reports source files
+  - Actual Streamlit AppTest with supplied synthetic handoff verified initial/refresh no-save, explicit save/history, blocked reopen, duplicate immutable save and second new record save
+  - Supervisor found real DuplicateWidgetID after second new save; OpenCode fixed the rerun behavior, and AppTest passed afterwards
+  - Synthetic handoff saved/reopened and default JSON/Markdown exactly matched package reference exports; excerpts omitted
+  - Other team offline tests completed separately with 279 passed, 75 failed and 2 skipped in 216.27 seconds; no full-regression success claimed
+  limitations:
+  - Directory read was denied without widening permission; subsequent calls used explicit files. Model reported a shell reflex; raw transcript is authoritative, not its self-report
+  - All source edits made through restricted OpenCode; supervisor authored approval evidence, external diagnostic scripts and truthful disclosure
+  - Corrected test setup needs a new independent exact-head approval before adoption and formal implementation delivery
+  - Local loopback preview and synthetic AppTest do not certify public navigation, real model quality, real paper export permission or complete C/B/D/E assembly
+  - No source/test merge, provider fallback, new dependencies, shared contracts or CI changes
 - entry_id: E-TEST-20261123-PAGE-WIRING
   timestamp: '2026-11-23T16:10:59+08:00'
   tool: OpenCode 2.0.12 papertrace-build-E; Codex supervision
@@ -397,3 +428,50 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+
+- entry_id: E-DELIVERY-20261123-PAGE
+  timestamp: '2026-11-23T12:08:48+00:00'
+  tool: Codex supervisor; existing restricted OpenCode implementation
+  model: cityucs/CS5351/DeepSeek-V4-Flash (source session); Codex supervisor
+  purpose: Integrate unchanged E page implementation with independently approved corrected tests
+  scope:
+  - src/papertrace/reports/view.py
+  - src/papertrace/reports/preview.py
+  - docs/team/designs/module-E/page-wiring-implementation-evidence.md
+  - docs/ai-use-log.yaml
+  status: implementation-awaiting-independent-source-review
+  approvals:
+  - Live GitHub review 6021393820 by ldk13856478627-cell APPROVED test PR31 exact 7e70e139048f17cdcf5b04b95974ec360fa19552
+  - User instructed continuation after that approval; this is not an implementation approval
+  verification:
+  - Delivery branch created from exact approved test head; prior OpenCode source history retained without source changes
+  - Approved test and plan blobs unchanged; conflicting disclosure insertions resolved by preserving both entries
+  - Formal E suite 117 passed; targeted Ruff passed; actual Streamlit synthetic AppTest passed
+  limitations:
+  - Historical pending-approval entries describe the earlier stage and are superseded by this observed review
+  - No new OpenCode generation claimed for this integration; original session ses_df7c7c083ffenVDR4zsgPomRg5 retained
+  - Public assembly, real models, real paper export authorization and merge readiness are not certified
+
+- entry_id: E-DELIVERY-20261123-CI-REPLAY
+  timestamp: '2026-11-23T12:15:54.627554+00:00'
+  tool: OpenCode restricted source fix; Codex supervised replay
+  model: cityucs/CS5351/DeepSeek-V4-Flash; Codex supervisor
+  purpose: Replay actual prior implementation after newest test approval and fix optional preview CI imports
+  scope:
+  - src/papertrace/reports/view.py
+  - src/papertrace/reports/preview.py
+  - docs/team/designs/module-E/page-wiring-implementation-evidence.md
+  - docs/ai-use-log.yaml
+  status: implementation-awaiting-independent-source-review
+  approvals:
+  - Verified review6021393820 APPROVED PR31 exact7e70e139048f17cdcf5b04b95974ec360fa19552 by ldk13856478627-cell at2026-11-23T12:06:22Z
+  verification:
+  - Initial merge-based PR35 failed implementation-commit-predates-test-approval because old originally approved source commits preceded the newer corrected test review
+  - Preserved original history at archive/E-page-delivery-645e054; recreated delivery from exact latest test head with genuine new commit times, without changing the verifier or fabricating generation dates
+  - Raw new OpenCode session ses_df7abaacfffexEx2yuhdb9BWAR retained in E-opencode-page-replay-fix.jsonl; optional runtime import and nullable annotation only
+  - Reverified117 E passes, actual Streamlit AppTest passes, targeted Ruff passes; approved test and plan unchanged
+  - Full offline regression on preceding integrated source completed397 passed,74 failed,2 skipped; failures are separate shared issues, no full-green claim
+  limitations:
+  - Source is reused from genuine prior restricted OpenCode output, not claimed newly generated in entirety after latest approval
+  - Old session refused external directory, fresh session used the actual new workspace without widening tool permissions
+  - Shared lint, full CI, public assembly, real models and paper permissions remain separately tracked
