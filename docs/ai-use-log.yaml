@@ -327,3 +327,23 @@ entries:
   - Isolated environment does not have Ruff installed; any lint pass must be confirmed by actual remote checks on the new head
   - This ChatGPT review change is not a supervised OpenCode course transcript or human Approve
   - No provider/model experiment, private source corpus, public UI or other-module code changes
+- entry_id: A-VIEW-SRC-20261123-01
+  timestamp: '2026-11-23T12:13:34.216Z'
+  tool: ChatGPT with connected GitHub repository tools
+  model: GPT-6
+  purpose: Create an A-only framework-neutral library view adapter candidate after independent approval of PR 30 tests
+  scope:
+  - src/papertrace/library/view.py
+  - docs/ai-use-log.yaml
+  status: AI-authored-implementation-candidate-not-supervised-OpenCode
+  approvals:
+  - PR 30 exact head b4648da3ab962612a832b209ac35029713bdcda9 independently approved by ziqilin669
+  - Student owner requested urgent work in ChatGPT; PR 30 comment 7100609902 was AI-posted on their behalf and is not independent student review
+  verification:
+  - The proposed adapter delegates authorization and writes to existing CorpusService, preserves immutable snapshot/source identity, and rejects mismatched freshness tokens
+  - Code was reviewed statically in the authoring conversation, not executed against the actual project Python environment
+  - No claim of passing the 16 A view tests, full offline regression, Ruff, mypy, GitHub CI, or student-supervised OpenCode work
+  limitations:
+  - This direct GitHub-generated candidate is NOT a student-supervised OpenCode implementation session or course D5 transcript; it must not be used as such
+  - No public application entrypoint, E page, real A-to-E E2E acceptance, provider call, paid API call or private source access
+  - Draft PR must stay open and unmerged until verified by the course-compliant supervised workflow and independently reviewed
