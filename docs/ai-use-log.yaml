@@ -461,3 +461,21 @@ entries:
   limitations:
   - 'PR #27 describes provisional B accounting behavior. The 118 cases do not include
     that follow-up. Independent approval of the generation test commit is pending.'
+- entry_id: D-GENERATION-ACCOUNTING-TEST-PREP-20261123-01
+  timestamp: '2026-11-23T22:16:47+08:00'
+  tool: OpenAI Codex desktop
+  model: GPT-6 (session-instructed family)
+  purpose: Prepare and verify a D test proposal for carrying observed B generation accounting
+  scope:
+  - test/offline/test_d_generation_accounting.py
+  - docs/team/designs/module-D/20261123-d-generation-accounting-tests.md
+  - docs/ai-use-log.yaml
+  status: local test proposal candidate
+  approvals:
+  - The supervising student authorized the two-file test preparation in chat.
+  verification:
+  - OpenCode API dispatch returned Agent not found. Codex prepared the tests and design.
+  - Prior isolated verification with B PR 34 and the local D generation candidate measured seven expected behavior failures and four passing controls.
+  limitations:
+  - Independent approval of the precise test commit is pending.
+  - Exceptions from the real B gateway require confirmation of a public accounting error contract. No product model was called in offline verification.
