@@ -399,6 +399,66 @@ entries:
   limitations:
   - 本轮未修改获批测试、共享契约或 D 模块
   - 使用合成数据，真实模型调用为零，本轮未重跑完整团队回归
+- entry_id: B-TEST-20261123-ACCOUNTING
+  timestamp: '2026-11-23T13:30:00+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按用户已确认计划准备 B 生成调用账目四项离线测试
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/generation-accounting-plan.txt
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户明确确认本轮调用账目计划，并要求提交可审核测试
+  verification:
+  - 在 B 越界 sent 修复源码上运行，65 项通过、4 项预期失败；Ruff 通过
+  - fake 回答模型分别验证未调用、未知、调用一次、调用后异常的账目要求
+  limitations:
+  - 本轮仅准备测试与计划，未实现调用账目源码
+  - 真实产品模型调用为零；测试基于尚待实现审查的 PR 25
+- entry_id: B-TEST-20261123-ACCOUNTING-ZERO-CONTROL
+  timestamp: '2026-11-23T13:42:27+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 根据 PR 27 的审查反馈补充真实 B 适配器进入 aquery 后的零次回答模型调用对照
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/generation-accounting-plan.txt
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户提供队友对 10ef7a82 的审查反馈，要求补对照后复核
+  verification:
+  - aquery 执行一次，独立 call_single 探针记录零次；新增用例在缺少 accounting 字段处按预期失败
+  - B 离线测试 65 项通过、5 项预期失败；Ruff 与 git diff --check 通过
+  limitations:
+  - 使用真实 B 适配器和合成上游，真实产品模型调用为零
+  - 仅追加测试、计划与披露，等待本次测试提交的正式独立审批
+- entry_id: B-OPENCODE-20261123-PR27
+  timestamp: '2026-11-23T18:45:45+08:00'
+  tool: OpenCode v2.0.12 + Codex Desktop supervisor
+  model: cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 实现获批的回答模型调用账目
+  scope:
+  - src/papertrace/retrieval/service.py
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-independent-review
+  approvals:
+  - 用户明确授权该模型、所需仓库上下文和两个临时工作副本内的 B 源码修改。
+  - 沿用本会话此前已核实的精确测试批准 PR27 / 0d08f14f；本轮未新增真人批准。
+  verification:
+  - B 离线测试 70 项通过；模块 Ruff 和 mypy 通过。
+  - 获批测试未修改。
+  limitations:
+  - OpenCode 会话 ses_df858eafaffem3Ps1cja7T2b9e
+  - 多轮尝试因 reasoning_text HTTP400 中断，改用同模型附件单轮输出补丁。
+  - Codex 按唯一旧文本匹配应用模型补丁，修正无上下文 hunk 的行号问题。
+  - Codex 修正静态规则、移除静默恢复失败，并让可观测模型在私有副本上计数，避免修改复用模型。
+  - 开发助手模型实际已调用；产品模型与论文质量评估未运行。
+  - 全量离线回归 419 passed、7 failed，退出码 1。失败节点涉及 contracts、full_regression、gates、opencode_workflow、semantic_evidence，未判定其因果归属。
+  - 对获批测试提交重放这 7 个失败节点，7 项均复现；证据与全量回归在相同本地验证环境运行。
+  - 远端门禁、本次实现独立人审和最终合并待完成。
 - entry_id: B-OPENCODE-20261123-PR25
   timestamp: '2026-11-23T18:45:45+08:00'
   tool: OpenCode v2.0.12 + Codex Desktop supervisor
