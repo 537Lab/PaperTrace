@@ -6,7 +6,7 @@
 
 - A 实现 PR #17 的精确 HEAD 是 02357afe90f39b7bbd40ddd9adf9da50f5043a5f；核心 CorpusService 已获独立源码 Approve，但远端 static-analysis 和 regression 尚失败，不能合并。
 - A 以前的 plan-v1.md 明确排除 A view 和公共装配。此前 PR #5 的测试批准不能替代本次新功能的测试批准。
-- 新测试文件 test/offline/test_library_view.py 共 15 个合成测试。本提案 PR 以 feat/A-library-implementation 为 base；没有修改已批准 A 核心测试或业务源码，也不修改 C/D/E、共享契约、入口或 CI。
+- 新测试文件 test/offline/test_library_view.py 共 16 个合成测试。本提案 PR 以 feat/A-library-implementation 为 base；没有修改已批准 A 核心测试或业务源码，也不修改 C/D/E、共享契约、入口或 CI。
 - E 交接包（PR #26，HEAD 871ecd0a456fa7cf99138a81171adc6ae7bbfa84）需要真实的历史 CorpusSnapshot 和原版本关联；A 不得用当前快照回填历史，也不负责判断全文导出许可。
 
 ## A 已实现、可直接提供的端口
@@ -22,7 +22,7 @@ A→B 的摄取回执仍标记 PROPOSED_INTEGRATION，正式公共注入端口�
 
 待批准测试通过后，**单独实现** src/papertrace/library/view.py。它只依赖现有 CorpusService 和共享模型，不直接 import PaperQA2 或其他模块源码、不自造授权状态、不增加 Streamlit 或其他新依赖。公共 UI 以后只调用它的中立输入/命令：
 
-- library_overview(service) 返回不可变 LibraryOverview：snapshot_id、corpus_revision、rows。行包含 document_id、title、source_name、version_sha256、status=ready；只从 current_snapshot/freshness 读取，不携带源字节或外部绝对路径；若两个 token 不一致，必须 fail closed。
+- library_overview(service) 返回不可变 LibraryOverview：snapshot_id、corpus_revision、rows。行包含 document_id、title、source_name、version_sha256、status=ready；只从 current_snapshot/freshness 读取，不携带源字节或外部绝对路径；若真实 CorpusSnapshot.snapshot_id 与 freshness() 返回的 snapshot_id 不一致，必须抛 ValueError("FRESHNESS_MISMATCH")、拒绝返回 overview；不可继续显示可能混杂版本的 rows。
 - import_selected(service, paths, replacements=None) 返回 ImportFeedback：snapshot_id、complete、rows，每行包含 document_id、source_name、version_sha256、status、stage、reason_code。只将用户明确选择文件转交 A 服务，所有路径校验仍由服务完成；不扫描目录、吞错或替失败伪造成功。
 - retry_selected(service, document_ids) 返回 ImportFeedback：只重试失败项，ready 项拒绝。
 - remove_selected(service, document_ids) 和 restore_selected(...) 返回 LibraryOverview：通过已有 A 服务接口改变当前成员，保留历史，重新读取 snapshot/revision；不得静默重新摄取。
@@ -31,13 +31,13 @@ A→B 的摄取回执仍标记 PROPOSED_INTEGRATION，正式公共注入端口�
 
 ## 验证与不变量
 
-测试：test/offline/test_library_view.py（15 test nodes），真实 A CorpusService + synthetic TXT + fake B ingest；不造假的 A 结果，不调用模型或网络。
+测试：test/offline/test_library_view.py（16 test nodes），真实 A CorpusService + synthetic TXT + fake B ingest；不造假的 A 结果，不调用模型或网络。
 
-覆盖：空库、ready-only 页面行、实际快照 SHA/revision、批次部分失败、未选中和越界文件在整批授权时零摄取、重复导入不重复调用、显式失败重试、ready 重试拒绝、移除恢复不覆盖历史、同 logical ID 换版旧字节保留、未知对象 fail closed、页面不泄露原文或外部路径。映射 FR-A-01/02、INV-02/05/06、QA-01、SEC-01、COST-01。
+覆盖：空库、ready-only 页面行、实际快照 SHA/revision、快照与 freshness token 不一致时强制拒绝的负例（real A service + monkeypatch 篡改 token，断言明确错误且无额外摄取）、批次部分失败、未选中和越界文件在整批授权时零摄取、重复导入不重复调用、显式失败重试、ready 重试拒绝、移除恢复不覆盖历史、同 logical ID 换版旧字节保留、未知对象 fail closed、页面不泄露原文或外部路径。映射 FR-A-01/02、INV-02/05/06、QA-01、SEC-01、COST-01。
 
-独立隔离环境使用 E 合成包中的真实共享 contracts.py 已验证 Python 语法和 pytest collection：15 collected，0 collection error。由于该环境没有 A checkout，未实际执行 A 行为断言、Ruff/mypy、完整 regression 或远端 CI；**不得称行为测试通过**。当前 view.py 不存在，预期 14 个新行为用例首先达到 IMPLEMENTATION_MISSING 前置条件，这不是业务行为 RED 的证明。
+独立隔离环境使用 E 合成包中的真实共享 contracts.py 已验证 Python 语法和 pytest collection：原提案 15 collected；此次补测在同一隔离 shared contracts 环境中已验证 16 collected、0 collection error。由于该环境没有 A checkout，未实际执行 A 行为断言、Ruff/mypy 或完整 regression；新提交的远端 CI 以 GitHub Actions 真实结果为准；**不得称行为测试通过**。当前 view.py 不存在，预期 15 个行为用例首先达到 IMPLEMENTATION_MISSING 前置条件，这不是业务行为 RED 的证明。
 
-## 人工审核与停止点
+此次修订针对非作者审查对 73adbac1 的意见：仅修复新测试的导入分组 Ruff I001，保留原 15 个测试函数并增加 1 个上述 freshness 负测。新测试版需以最新 SHA 重新独立审核，旧提交上的审查结论不作为新测试的 Approve。\n\n## 人工审核与停止点
 
 本轮测试及设计由 ChatGPT GPT-6 协助起草/发布，并不冒称 OpenCode 学生监督会话、D5 原始 transcript 或学生批准。仅使用合成数据，无真实私人论文、产品 LLM、模型调用或新依赖。
 
