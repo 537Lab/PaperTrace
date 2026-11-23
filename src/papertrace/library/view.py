@@ -1,20 +1,18 @@
-"""Safe, framework-neutral projections and commands for the A document library.
-
-This module is an A-only adapter. It neither assigns review/publication
-authority nor exposes source bytes or installs shared application navigation.
-"""
+"""A-only framework-neutral library view adapter delegating to CorpusService."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from papertrace.contracts import CorpusSnapshot
+
 from .service import CorpusService
 
 
 @dataclass(frozen=True, slots=True)
 class LibraryRow:
-    """Ready document from the current immutable corpus snapshot."""
+    """Ready-library row; carries no source bytes or external absolute paths."""
 
     document_id: str
     title: str
@@ -25,7 +23,7 @@ class LibraryRow:
 
 @dataclass(frozen=True, slots=True)
 class LibraryOverview:
-    """Snapshot-bound projection containing no source bytes or external paths."""
+    """Immutable ready-only library page state."""
 
     snapshot_id: str
     corpus_revision: int
@@ -34,7 +32,7 @@ class LibraryOverview:
 
 @dataclass(frozen=True, slots=True)
 class ImportRow:
-    """Authoritative status of a single selected import or retry."""
+    """Immutable per-file import outcome."""
 
     document_id: str
     source_name: str
@@ -46,52 +44,51 @@ class ImportRow:
 
 @dataclass(frozen=True, slots=True)
 class ImportFeedback:
-    """Result of an explicit batch, including each failure separately."""
+    """Immutable import batch receipt."""
 
     snapshot_id: str
     complete: bool
     rows: tuple[ImportRow, ...]
 
 
-def library_overview(service: CorpusService) -> LibraryOverview:
-    """Fail closed when snapshot identity and freshness disagree."""
-    snapshot = service.current_snapshot()
-    freshness_snapshot_id, revision = service.freshness()
-    if freshness_snapshot_id != snapshot.snapshot_id:
-        raise ValueError("FRESHNESS_MISMATCH")
-    return LibraryOverview(
-        snapshot_id=snapshot.snapshot_id,
-        corpus_revision=revision,
-        rows=tuple(
-            LibraryRow(
-                document_id=member.document_id,
-                title=member.title,
-                source_name=member.source_name,
-                version_sha256=member.version_sha256,
-                status=member.status,
-            )
-            for member in snapshot.documents
-        ),
+def _feedback(batch: dict[str, Any]) -> ImportFeedback:
+    """Map a service import/retry batch receipt to ImportFeedback."""
+    snapshot: CorpusSnapshot = batch["snapshot"]
+    rows = tuple(
+        ImportRow(
+            document_id=item["document_id"],
+            source_name=item["source_name"],
+            version_sha256=item["version_sha256"],
+            status=item["status"],
+            stage=item["stage"],
+            reason_code=item["reason_code"],
+        )
+        for item in batch["items"]
+    )
+    return ImportFeedback(
+        snapshot_id=snapshot.snapshot_id, complete=batch["complete"], rows=rows
     )
 
 
-def _feedback(batch: dict[str, Any]) -> ImportFeedback:
-    """Project the validated A service result without paths or raw payloads."""
-    snapshot = batch["snapshot"]
-    return ImportFeedback(
-        snapshot_id=snapshot.snapshot_id,
-        complete=batch["complete"],
-        rows=tuple(
-            ImportRow(
-                document_id=item["document_id"],
-                source_name=item["source_name"],
-                version_sha256=item["version_sha256"],
-                status=item["status"],
-                stage=item["stage"],
-                reason_code=item["reason_code"],
-            )
-            for item in batch["items"]
-        ),
+def library_overview(service: CorpusService) -> LibraryOverview:
+    """Ready rows from current_snapshot; ValueError on FRESHNESS_MISMATCH."""
+    snapshot: CorpusSnapshot = service.current_snapshot()
+    snapshot_id, corpus_revision = service.freshness()
+    if snapshot_id != snapshot.snapshot_id:
+        raise ValueError("FRESHNESS_MISMATCH")
+    rows = tuple(
+        LibraryRow(
+            document_id=doc.document_id,
+            title=doc.title,
+            source_name=doc.source_name,
+            version_sha256=doc.version_sha256,
+            status=doc.status,
+        )
+        for doc in snapshot.documents
+        if doc.status == "ready"
+    )
+    return LibraryOverview(
+        snapshot_id=snapshot_id, corpus_revision=corpus_revision, rows=rows
     )
 
 
@@ -100,28 +97,28 @@ def import_selected(
     paths: Sequence[Path],
     replacements: dict[Path, str] | None = None,
 ) -> ImportFeedback:
-    """Let A authorize the whole selected batch before any ingest side effect."""
-    return _feedback(service.import_files(tuple(paths), replacements=replacements))
+    """Delegate the explicitly selected files to CorpusService.import_files."""
+    return _feedback(service.import_files(paths, replacements))
 
 
 def retry_selected(
     service: CorpusService, document_ids: Sequence[str]
 ) -> ImportFeedback:
-    """Retry previously failed items; ready or unknown IDs remain forbidden."""
-    return _feedback(service.retry_failed(tuple(document_ids)))
+    """Delegate the explicit retry request to CorpusService.retry_failed."""
+    return _feedback(service.retry_failed(document_ids))
 
 
 def remove_selected(
     service: CorpusService, document_ids: Sequence[str]
 ) -> LibraryOverview:
-    """Remove current membership without deleting immutable history."""
-    service.remove(tuple(document_ids))
+    """Delegate removal to CorpusService.remove, then re-read snapshot/revision."""
+    service.remove(document_ids)
     return library_overview(service)
 
 
 def restore_selected(
     service: CorpusService, document_ids: Sequence[str]
 ) -> LibraryOverview:
-    """Restore an already ready version without re-ingesting the source."""
-    service.restore(tuple(document_ids))
+    """Delegate restore to CorpusService.restore, then re-read snapshot/revision."""
+    service.restore(document_ids)
     return library_overview(service)
