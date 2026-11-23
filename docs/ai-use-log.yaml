@@ -348,7 +348,7 @@ entries:
   approvals:
   - Student approved exact page plan and instructed continued E work
   - Supervisor observed GitHub review 6018715777 by 537Lab APPROVED test PR31 commit f64986ed667082d5df8bbb2eefe9c445274ef7d5
-  - This source branch starts at that approved commit and retains its test/plan blobs; corrected test head f7c4752f744120aba8f29b1cc36e53945858f9fa is not yet approved or adopted here
+  - This source branch starts at that approved commit and retains its test/plan blobs; corrected test head 7e70e139048f17cdcf5b04b95974ec360fa19552 is not yet approved or adopted here
   verification:
   - OpenCode source session ses_df7c7c083ffenVDR4zsgPomRg5; raw transcript Team/E-opencode-page-implementation.jsonl retained
   - Supervisor supplied persisted live approval evidence after the model refused to rely on prompt assertions; initial unverified numeric review ID was corrected from actual API, never used as approval evidence
@@ -358,6 +358,7 @@ entries:
   - Actual Streamlit AppTest with supplied synthetic handoff verified initial/refresh no-save, explicit save/history, blocked reopen, duplicate immutable save and second new record save
   - Supervisor found real DuplicateWidgetID after second new save; OpenCode fixed the rerun behavior, and AppTest passed afterwards
   - Synthetic handoff saved/reopened and default JSON/Markdown exactly matched package reference exports; excerpts omitted
+  - Other team offline tests completed separately with 279 passed, 75 failed and 2 skipped in 216.27 seconds; no full-regression success claimed
   limitations:
   - Directory read was denied without widening permission; subsequent calls used explicit files. Model reported a shell reflex; raw transcript is authoritative, not its self-report
   - All source edits made through restricted OpenCode; supervisor authored approval evidence, external diagnostic scripts and truthful disclosure
