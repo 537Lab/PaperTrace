@@ -381,3 +381,21 @@ entries:
   limitations:
   - 使用合成数据和 fake 上游，真实模型调用为零
   - 本次披露提交仅追加日志，源码实现待独立审核批准后推进
+- entry_id: B-SRC-20261123-SENT
+  timestamp: '2026-11-23T12:00:26+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 实现已获独立批准的 B 生成端口越界 sent 拒绝契约
+  scope:
+  - src/papertrace/retrieval/service.py
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-independent-review
+  approvals:
+  - GitHub 审核人 ziqilin669 正式批准 PR 23 的精确测试提交 8411f8b2a74e71b1c4fe93ab5f4f5a453664f944
+  - 用户在获得测试审批后要求继续实现
+  verification:
+  - B 模块离线测试 65 项通过，包含三项原预期失败
+  - B 目录和对应测试的 Ruff 检查通过，src/papertrace 的 mypy 检查通过
+  limitations:
+  - 本轮未修改获批测试、共享契约或 D 模块
+  - 使用合成数据，真实模型调用为零，本轮未重跑完整团队回归

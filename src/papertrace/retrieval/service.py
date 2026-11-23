@@ -53,6 +53,7 @@ class GenerationStatus(Enum):
     REFUSED = "REFUSED"
     SUCCESS = "SUCCESS"
     AMBIGUOUS_CITATIONS = "AMBIGUOUS_CITATIONS"
+    INVALID_SENT_EVIDENCE = "INVALID_SENT_EVIDENCE"
 
 
 REFUSAL_EMPTY_APPROVED = "EMPTY_APPROVED"
@@ -191,6 +192,7 @@ class GenerationResult:
     unknown_citation_keys: tuple[str, ...] = ()
     ambiguous_citation_keys: tuple[str, ...] = ()
     refusal_reason: str | None = None
+    invalid_sent_evidence_ids: tuple[str, ...] = ()
 
 
 # --------------------------------------------------------------------------- #
@@ -1167,20 +1169,24 @@ def run_generation(
     if isinstance(output_refusal, str):
         return _refusal(output_refusal)
 
-    raw, claims = _read_citation_fields(output)
     reported_sent = getattr(output, "sent_evidence_ids", None)
     selected_ids = tuple(record.evidence_id for record in selected)
     if reported_sent is None:
         final_sent = selected_ids
     else:
         selected_set = set(selected_ids)
-        final_sent = tuple(
-            evidence_id
-            for evidence_id in tuple(reported_sent)
-            if evidence_id in selected_set
+        final_sent = tuple(reported_sent)
+        invalid_ids = tuple(
+            evidence_id for evidence_id in final_sent if evidence_id not in selected_set
         )
+        if invalid_ids:
+            return GenerationResult(
+                status=GenerationStatus.INVALID_SENT_EVIDENCE,
+                invalid_sent_evidence_ids=invalid_ids,
+            )
     if not final_sent:
         return _refusal(REFUSAL_EMPTY_SENT)
+    raw, claims = _read_citation_fields(output)
     sent_ids = set(final_sent)
     aliases, unknown, ambiguous = _resolve_citations(claims, sent_ids)
 
