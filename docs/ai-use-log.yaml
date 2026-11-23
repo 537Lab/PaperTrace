@@ -424,3 +424,40 @@ entries:
   approvals: []
   verification: ["Earlier supervisor run collected 456 cases on each base. All 29 new cases reached the missing release module prerequisite, and the 427 original assembled-baseline node outcomes matched.", "The candidate uses the prior PR #20 test head and preserves the authored test and design bytes."]
   limitations: ["Release implementation and product model evaluation remain outside this proposal.", "The disclosure records local verification. GitHub review is pending."]
+- entry_id: D-GENERATION-TEST-PREP-20261123-01
+  timestamp: '2026-11-23T11:09:39+08:00'
+  tool: OpenCode, papertrace-build-D
+  model: deepseek/deepseek-flash (API-reported), max
+  purpose: Prepare the D generation collaborator test proposal and revise invalid-sent
+    coverage
+  scope:
+  - test/offline/test_answer_generation.py
+  - docs/team/designs/module-D/20261123-d-generation-collaborator-plan.md
+  status: test proposal ready for review
+  approvals:
+  - The supervising student authorized test and design preparation.
+  verification:
+  - The OpenCode prompt and raw response were retained privately. The supervisor replayed
+    the final 118 cases on source-free and local assembled bases.
+  limitations:
+  - The source-free run exercises collection and missing prerequisites. The product-model
+    path and the new D behavior remain unmeasured.
+- entry_id: D-GENERATION-TEST-CANDIDATE-20261123-01
+  timestamp: '2026-11-23T13:34:06+08:00'
+  tool: OpenAI Codex desktop
+  model: GPT-6 (session-reported family)
+  purpose: Verify and package the generation tests on the approved cumulative test
+    base
+  scope:
+  - test/offline/test_answer_generation.py
+  - docs/team/designs/module-D/20261123-d-generation-collaborator-plan.md
+  - docs/ai-use-log.yaml
+  status: local test proposal candidate
+  approvals: []
+  verification:
+  - All 118 new cases collected. One passed, 114 reached module prerequisites, and
+    three were blocked by the absent lmi import. All 456 baseline node outcomes matched.
+    Configured Ruff passed for the test.
+  limitations:
+  - 'PR #27 describes provisional B accounting behavior. The 118 cases do not include
+    that follow-up. Independent approval of the generation test commit is pending.'
