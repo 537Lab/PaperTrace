@@ -240,3 +240,21 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: SHARED-APP-TEST-20261123-01
+  timestamp: '2026-11-23T12:38:00+00:00'
+  tool: Antigravity (local verified test/plan drafting with user-authorized GitHub publication)
+  model: Gemini 4
+  purpose: Propose the single shared public application entrypoint plan and 12 offline RED tests for Issue #37 connecting A library view and E reports panel while explicitly blocking absent B/C/D ports
+  scope:
+  - docs/team/designs/shared-app/entrypoint-plan-v1.md
+  - test/offline/test_app_entrypoint.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - Verified Ruff check passes on test/offline/test_app_entrypoint.py with papertrace.ruff.toml
+  - Verified pytest collection collects all 12 offline test nodes with zero collection errors and fails cleanly at IMPLEMENTATION_MISSING before implementation
+  - Verified schema, ai-use-log and semantic gates pass locally against origin/main
+  limitations:
+  - This is a tests-only RED proposal authored with AI assistance under 537Lab authorization, not an independent non-author human Approve and not a student-supervised OpenCode D5 implementation transcript
+  - No src/papertrace/app.py implementation, no new dependencies, no PaperQA2/provider/network calls, and no edits to other modules
