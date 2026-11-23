@@ -334,6 +334,24 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: E-TEST-20261123-PAGE-LOAD-ISOLATION
+  timestamp: '2026-11-23T20:00:00+08:00'
+  tool: Codex supervisor
+  model: Codex session model; runtime identifier not independently verified
+  purpose: Correct the selected-record load failure test setup without weakening assertions
+  scope:
+  - test/offline/test_reports.py
+  - docs/ai-use-log.yaml
+  status: corrected-test-head-awaiting-independent-approval
+  approvals:
+  - Student approved E page plan and continued implementation; 537Lab approved prior test head f64986ed667082d5df8bbb2eefe9c445274ef7d5, review 6018715777
+  - Prior approval does not cover this correction; a new exact-head independent review is required
+  verification:
+  - Supervisor discovered real list_records calls load internally and skips InvalidRecord; patching load before listing made the original test exercise an empty list rather than selected-load failure
+  - Capture the real list before injection and reuse it only for the load-boundary variant; retain both variants and every original failure, no-success and no-leak assertion
+  limitations:
+  - This is a test harness correction, not a source fix; original page source first check was 113 passed and 4 failed
+  - Existing storage skip semantics and approved plan remain unchanged; no directory scanning or test-specific source workaround added
 - entry_id: E-TEST-20261123-PAGE-WIRING
   timestamp: '2026-11-23T16:10:59+08:00'
   tool: OpenCode 2.0.12 papertrace-build-E; Codex supervision

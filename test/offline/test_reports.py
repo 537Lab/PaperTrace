@@ -1651,6 +1651,13 @@ def test_page_storage_failure_shows_generic_safe_error(tmp_path, monkeypatch, me
     store.save(second)
     ui = FakeUI()
 
+    # Preserve a real, readable list before injecting a selected-record failure.
+    # Otherwise list_records internally calls the patched load, skips both
+    # entries, and never reaches the selected-record loading boundary.
+    listed = store.list_records()
+    if method == "load":
+        monkeypatch.setattr(store, "list_records", lambda: listed)
+
     def failing(*_args, **_kwargs):
         raise api.InvalidRecord(f"SYNTHETIC read failure at {_STORAGE_PRIVATE}")
 
