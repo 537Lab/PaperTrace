@@ -399,3 +399,28 @@ entries:
   limitations:
   - 本轮未修改获批测试、共享契约或 D 模块
   - 使用合成数据，真实模型调用为零，本轮未重跑完整团队回归
+- entry_id: B-OPENCODE-20261123-PR25
+  timestamp: '2026-11-23T18:45:45+08:00'
+  tool: OpenCode v2.0.12 + Codex Desktop supervisor
+  model: cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 实现获批的越界 sent 拒绝
+  scope:
+  - src/papertrace/retrieval/service.py
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-independent-review
+  approvals:
+  - 用户明确授权该模型、所需仓库上下文和两个临时工作副本内的 B 源码修改。
+  - 沿用本会话此前已核实的精确测试批准 PR23 / 8411f8b2；本轮未新增真人批准。
+  verification:
+  - B 离线测试 65 项通过；模块 Ruff 和 mypy 通过。
+  - 获批测试未修改。
+  limitations:
+  - OpenCode 会话 ses_df871cff5ffeqg0GEOYJctn7Vf
+  - 多轮尝试因 reasoning_text HTTP400 中断，改用同模型附件单轮输出补丁。
+  - Codex 将新增字段放在既有字段之后以保留位置参数兼容性，并将 reported sent 只物化一次。
+  - 流以 ECONNRESET 结束，但输出有完整补丁；Codex 提取、检查并应用补丁。
+  - 开发助手模型实际已调用；产品模型与论文质量评估未运行。
+  - 全量离线回归 414 passed、7 failed，退出码 1。失败节点涉及 contracts、full_regression、gates、opencode_workflow、semantic_evidence，未判定其因果归属。
+  - 对获批测试提交重放这 7 个失败节点，7 项均复现；证据与全量回归在相同本地验证环境运行。
+  - 复审准备时将越界校验放在引用读取前，阻断结果仅返回诊断 ID；核对最终源码 blob 与既有 PR 25 源码完全相同。
+  - 远端门禁、本次实现独立人审和最终合并待完成。
