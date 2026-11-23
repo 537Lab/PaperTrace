@@ -334,6 +334,36 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: E-SRC-20261123-PAGE-WIRING
+  timestamp: '2026-11-23T20:15:00+08:00'
+  tool: OpenCode 2.0.12 papertrace-build-E; Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash; Codex supervisor
+  purpose: Implement the independently approved injectable E save/history/download panel and local synthetic preview
+  scope:
+  - src/papertrace/reports/view.py
+  - src/papertrace/reports/preview.py
+  - docs/team/designs/module-E/page-wiring-implementation-evidence.md
+  - docs/ai-use-log.yaml
+  status: local-implementation-awaiting-corrected-test-approval-and-independent-source-review
+  approvals:
+  - Student approved exact page plan and instructed continued E work
+  - Supervisor observed GitHub review 6018715777 by 537Lab APPROVED test PR31 commit f64986ed667082d5df8bbb2eefe9c445274ef7d5
+  - This source branch starts at that approved commit and retains its test/plan blobs; corrected test head f7c4752f744120aba8f29b1cc36e53945858f9fa is not yet approved or adopted here
+  verification:
+  - OpenCode source session ses_df7c7c083ffenVDR4zsgPomRg5; raw transcript Team/E-opencode-page-implementation.jsonl retained
+  - Supervisor supplied persisted live approval evidence after the model refused to rely on prompt assertions; initial unverified numeric review ID was corrected from actual API, never used as approval evidence
+  - First source check 113 passed / 4 failed; old approved tests after source fixes 116 passed / 1 failed at defective selected-load test setup
+  - Corrected test file from separate proposal run diagnostically against this source produced 117 passed; not a claim of new exact-head approval or formal CI success
+  - Targeted reports Ruff passed; mypy passed for all six reports source files
+  - Actual Streamlit AppTest with supplied synthetic handoff verified initial/refresh no-save, explicit save/history, blocked reopen, duplicate immutable save and second new record save
+  - Supervisor found real DuplicateWidgetID after second new save; OpenCode fixed the rerun behavior, and AppTest passed afterwards
+  - Synthetic handoff saved/reopened and default JSON/Markdown exactly matched package reference exports; excerpts omitted
+  limitations:
+  - Directory read was denied without widening permission; subsequent calls used explicit files. Model reported a shell reflex; raw transcript is authoritative, not its self-report
+  - All source edits made through restricted OpenCode; supervisor authored approval evidence, external diagnostic scripts and truthful disclosure
+  - Corrected test setup needs a new independent exact-head approval before adoption and formal implementation delivery
+  - Local loopback preview and synthetic AppTest do not certify public navigation, real model quality, real paper export permission or complete C/B/D/E assembly
+  - No source/test merge, provider fallback, new dependencies, shared contracts or CI changes
 - entry_id: E-TEST-20261123-PAGE-WIRING
   timestamp: '2026-11-23T16:10:59+08:00'
   tool: OpenCode 2.0.12 papertrace-build-E; Codex supervision
