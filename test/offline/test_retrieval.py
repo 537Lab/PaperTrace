@@ -1311,6 +1311,7 @@ def test_generation_validates_reported_sent_before_resolving_citations(scenario:
     if invalid:
         assert result.status.value == "INVALID_SENT_EVIDENCE"
         assert result.invalid_sent_evidence_ids == invalid
+        assert result.sent_evidence_ids == ()
         assert result.citation_aliases == ()
     else:
         assert result.status is gateway.GenerationStatus.SUCCESS
