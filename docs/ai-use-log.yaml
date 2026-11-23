@@ -261,3 +261,23 @@ entries:
   limitations:
   - 验证只覆盖本地提案，未运行完整回归、真实模型或 GitHub CI
   - 未修改 smoke 脚本，未提交或推送，尚无独立 GitHub 审批
+- entry_id: SHARED-CI-SMOKE-LINT-TEST-AUDIT-FIX-20261124-01
+  timestamp: '2026-11-23T18:30:46Z'
+  tool: Codex
+  model: GPT-6
+  purpose: 修复 PR #45 在 44b10dfd 上独立审计发现的 P1、P2-1 和 P2-2，收紧 AST 初始化检查、区分 Ruff 缺失与 I001，并同步计划和验证记录
+  scope:
+  - test/offline/test_smoke_lint_baseline.py
+  - docs/team/designs/shared-ci/smoke-lint-fix-plan.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  approvals:
+  - 用户明确指定本轮审计修复的文件、验收要求和离线验证范围
+  verification:
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/ruff check --config papertrace.ruff.toml test/offline/test_smoke_lint_baseline.py → 0，All checks passed!'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini --collect-only test/offline/test_smoke_lint_baseline.py → 0，2 tests collected'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini -vv test/offline/test_smoke_lint_baseline.py → 1，1 failed, 1 passed。第一项 Ruff 子进程退出码为 1，stdout 仅报告 scripts/paperqa_smoke.py:37:1 I001，stderr 为空。第二项 AST 检查通过。'
+  - 'git diff --check → 0，无输出'
+  limitations:
+  - 本轮记录为本地测试提案修订，尚待新版测试的独立 GitHub 审批
+  - 验证范围为定向离线测试，完整回归、真实模型和 GitHub CI 未运行
