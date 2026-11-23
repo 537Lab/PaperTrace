@@ -361,3 +361,23 @@ entries:
   - 全仓 Ruff 唯一仍报既有 scripts/paperqa_smoke.py:37 I001；本轮未修改该无关文件
   - 没有修改测试、fixtures、共享 contracts、其他模块、依赖、锁、CI、冻结上游或远端权限；没有代理 push 或 merge
   - 后续须由用户推送本地实现分支，创建正文含 Test approval PR: #9 的新实现 PR，并由独立同学审查其精确最新 head
+- entry_id: B-TEST-20261123-SENT
+  timestamp: '2026-11-23T11:26:39+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为 PR #23 准备 B 生成端口越界 sent 的离线测试，并确认 B 到 D 的失败返回契约
+  scope:
+  - test/offline/test_retrieval.py
+  - test/fixtures/retrieval/fake_adapter.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户要求推进 B 测试、创建 PR #23，并根据队友反馈补充正式披露
+  - 用户提供的复核反馈称 8a4d5004 的测试设计无新增修改意见，正式批准待披露补齐后复核
+  verification:
+  - Codex 在禁用插件自动加载并启用 pytest-socket 的环境中运行 B 离线测试，62 项通过、3 项预期失败
+  - 三项预期失败覆盖混入未知 ID、混入已批准但未选中的 ID，以及全部越界
+  - 引用回归通过受控适配器与 fake 上游验证 b1 映射，以及 b999 在原文和未知引用诊断中的保留
+  limitations:
+  - 使用合成数据和 fake 上游，真实模型调用为零
+  - 本次披露提交仅追加日志，源码实现待独立审核批准后推进
