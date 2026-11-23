@@ -240,3 +240,58 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: SHARED-APP-TEST-20261123-01
+  timestamp: '2026-11-23T12:38:00+00:00'
+  tool: Antigravity (local verified test/plan drafting with user-authorized GitHub publication)
+  model: Gemini 4
+  purpose: Propose the single shared public application entrypoint plan and 12 offline RED tests for Issue #37 connecting A library view and E reports panel while explicitly blocking absent B/C/D ports
+  scope:
+  - docs/team/designs/shared-app/entrypoint-plan-v1.md
+  - test/offline/test_app_entrypoint.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - Verified Ruff check passes on test/offline/test_app_entrypoint.py with papertrace.ruff.toml
+  - Verified pytest collection collects all 12 offline test nodes with zero collection errors and fails cleanly at IMPLEMENTATION_MISSING before implementation
+  - Verified schema, ai-use-log and semantic gates pass locally against origin/main
+  limitations:
+  - This is a tests-only RED proposal authored with AI assistance under 537Lab authorization, not an independent non-author human Approve and not a student-supervised OpenCode D5 implementation transcript
+  - No src/papertrace/app.py implementation, no new dependencies, no PaperQA2/provider/network calls, and no edits to other modules
+- entry_id: SHARED-APP-TEST-REVIEW-FIX-20261123-01
+  timestamp: '2026-11-23T12:51:00+00:00'
+  tool: Antigravity (local verified review-fix drafting with user-authorized GitHub push)
+  model: Gemini 4
+  purpose: Address independent reviewer ziqilin669 CHANGES_REQUESTED on PR #39 head c0fd8ce4 by adding pending_record/upstream-error forwarding controls, positive UI visibility assertions, and real-E UI facade signature alignment
+  scope:
+  - docs/team/designs/shared-app/entrypoint-plan-v1.md
+  - test/offline/test_app_entrypoint.py
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - Preserved all original 12 test nodes and added 2 focused controls (14 total collected, zero collection errors, 14 explicit IMPLEMENTATION_MISSING RED failures)
+  - Verified Ruff passes cleanly on test/offline/test_app_entrypoint.py with papertrace.ruff.toml
+  - Verified local schema, ai-use-log and semantic gates pass against origin/main
+  limitations:
+  - Still a tests-only RED proposal awaiting independent non-author Approve on the new exact HEAD; no src/papertrace/app.py implementation exists yet
+  - Offline stubs validate unit/wiring contracts only and do not substitute for real A/E component integration or live Streamlit click acceptance
+- entry_id: SHARED-APP-TEST-LOOPBACK-FIX-20261123-01
+  timestamp: '2026-11-23T13:53:00+00:00'
+  tool: Antigravity + Codex adversarial pre-review (user-authorized test proposal update)
+  model: Gemini 4 + Codex
+  purpose: Add strict fail-closed loopback server.address negative/positive controls (unset None, empty/whitespace, config read error, non-string, non-loopback, explicit loopback, missing Streamlit) to PR #39 before re-implementing src/papertrace/app.py
+  scope:
+  - docs/team/designs/shared-app/entrypoint-plan-v1.md
+  - test/offline/test_app_entrypoint.py
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - Preserved all 14 prior tests and added 18 startup test nodes (13 parameterized negative, 4 parameterized positive, 1 fresh-import missing-Streamlit node; 32 total collected with 0 collection errors via pytest -c papertrace.pytest.ini --collect-only test/offline/test_app_entrypoint.py exit code 0, and 32 explicit IMPLEMENTATION_MISSING RED failures via pytest -c papertrace.pytest.ini test/offline/test_app_entrypoint.py exit code 1)
+  - Verified targeted Ruff passes cleanly via ruff check --config papertrace.ruff.toml test/offline/test_app_entrypoint.py (exit code 0)
+  - Ran two-round independent adversarial pre-review via Codex (session 01a208af-5c8b-7d02-8465-8ff6e143789c) reaching PASS with zero P0/P1 findings, then also resolved both remaining P2 polish notes (restoring papertrace.app attribute + rejecting raw ModuleNotFoundError text, and recording exact verification commands)
+  - Verified local scripts/gates.py --gate schema, --gate ai-log, and --gate semantic each pass (exit code 0) against origin/main on the published commit
+  limitations:
+  - Tests-only RED proposal awaiting independent non-author Approve on the new exact HEAD; no src/papertrace/app.py exists in this PR
+  - A fresh implementation PR must be opened after this new test HEAD is approved so test-approval timestamp ordering stays valid
