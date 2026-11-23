@@ -12,6 +12,7 @@ import importlib.util
 import json
 import re
 import shlex
+import stat
 import subprocess
 import sys
 import textwrap
@@ -54,6 +55,14 @@ FORBIDDEN_DIAGNOSTIC_KEYS = {
     "stderr",
     "stdout",
 }
+PRIVATE_WINDOWS_PATH = r"C:\Users\PRIVATE-WIN-7f3a\secret.txt"
+PRIVATE_UNC_PATH = r"\\fileserver\share\PRIVATE-UNC-9c2e\secret.txt"
+PRIVATE_POSIX_PATH = "/private/PRIVATE-POSIX-5d81/secret.txt"
+PRIVATE_MARKERS = ("PRIVATE-WIN-7f3a", "PRIVATE-UNC-9c2e", "PRIVATE-POSIX-5d81")
+PRIVATE_MESSAGE = (
+    f"private paths {PRIVATE_WINDOWS_PATH} {PRIVATE_UNC_PATH} {PRIVATE_POSIX_PATH}"
+)
+PACKAGING_MARKER = "PRIVATE-PACKAGING-2b77"
 
 
 def runner():
@@ -219,6 +228,34 @@ def assert_no_raw_report_material(value):
     assert not (keys & FORBIDDEN_DIAGNOSTIC_KEYS), (
         "diagnostics must not embed longrepr/locals/environment/captured/raw output"
     )
+
+
+def nested_strings(value):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield str(key)
+            yield from nested_strings(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from nested_strings(child)
+    elif isinstance(value, str):
+        yield value
+
+
+def assert_no_private_markers(value, markers):
+    for text in nested_strings(value):
+        for marker in markers:
+            assert marker not in text, f"private marker leaked in decoded diagnostics: {marker}"
+
+
+def assert_serialized_artifacts_have_no_markers(output, markers, *, include_events=True):
+    manifest_text = (Path(output) / "diagnostics/manifest.json").read_text(encoding="utf-8")
+    for marker in markers:
+        assert marker not in manifest_text, f"private marker leaked in manifest.json: {marker}"
+    if include_events:
+        events_text = (Path(output) / "diagnostics/events.jsonl").read_text(encoding="utf-8")
+        for marker in markers:
+            assert marker not in events_text, f"private marker leaked in events.jsonl: {marker}"
 
 
 def assert_explicit_identity(identity):
@@ -1754,6 +1791,203 @@ def test_diagnostics_untrusted_messages_are_bounded_and_not_evaluated(tmp_path):
     collected = [event for event in events if event["event"] == "collection"]
     assert collected and isinstance(collected[0]["nodeid"], str)
     assert_no_raw_report_material(events)
+
+
+def _raw_child_output(output):
+    return (
+        (output / "stdout.txt").read_text(encoding="utf-8", errors="replace")
+        + "\n"
+        + (output / "stderr.txt").read_text(encoding="utf-8", errors="replace")
+    )
+
+
+def test_private_paths_in_failing_test_text_are_redacted(tmp_path):
+    module = runner()
+    assert len(PRIVATE_MESSAGE.encode("utf-8")) < 512
+    source = (
+        "def test_private_paths():\n"
+        f"    message = {PRIVATE_MESSAGE!r}\n"
+        "    print(message, flush=True)\n"
+        "    assert False, message\n"
+    )
+    for marker in PRIVATE_MARKERS:
+        assert marker in source
+    report, output = run_fixture(module, tmp_path, source)
+    assert report["status"] == "FAIL"
+    assert report["outcomes"]["failed"] == 1
+    raw = _raw_child_output(output)
+    for marker in PRIVATE_MARKERS:
+        assert marker in raw, f"injected marker did not reach the child boundary: {marker}"
+    require_runner_diagnostics(module)
+    manifest = require_manifest(output)
+    assert_manifest_schema(manifest, suite="fixture", mode="execution")
+    assert manifest["legacy"]["status"] == "FAIL"
+    assert manifest["legacy"]["report"] == "present"
+    assert manifest["counts"]["unique_nodes_retained"] >= 1
+    assert_explicit_identity(manifest["identity"])
+    events = read_events(output)
+    failed = [
+        event for event in events
+        if event["event"] == "report" and event["outcome"] == "failed"
+    ]
+    assert failed, "the failing test diagnostic event is required"
+    assert failed[0].get("error") is not None
+    assert_error_record(failed[0]["error"])
+    assert_no_private_markers(manifest, PRIVATE_MARKERS)
+    assert_no_private_markers(events, PRIVATE_MARKERS)
+    assert_serialized_artifacts_have_no_markers(output, PRIVATE_MARKERS)
+
+
+def test_private_paths_in_collection_error_text_are_redacted(tmp_path):
+    module = runner()
+    assert len(PRIVATE_MESSAGE.encode("utf-8")) < 512
+    source = (
+        "import sys\n"
+        f"MESSAGE = {PRIVATE_MESSAGE!r}\n"
+        "print(MESSAGE, flush=True)\n"
+        "raise RuntimeError(MESSAGE)\n"
+        "\n"
+        "def test_unused():\n"
+        "    assert True\n"
+    )
+    for marker in PRIVATE_MARKERS:
+        assert marker in source
+    report, output = run_fixture(module, tmp_path, source)
+    assert report["status"] == "FAIL"
+    assert report["collection_errors"][0]["kind"] == "collection-failure"
+    raw = _raw_child_output(output)
+    for marker in PRIVATE_MARKERS:
+        assert marker in raw, f"injected marker did not reach the collection boundary: {marker}"
+    require_runner_diagnostics(module)
+    manifest = require_manifest(output)
+    assert_manifest_schema(manifest, suite="fixture", mode="execution")
+    assert manifest["legacy"]["status"] == "FAIL"
+    assert manifest["counts"]["collection_errors"] >= 1
+    assert_explicit_identity(manifest["identity"])
+    events = read_events(output)
+    collection_errors = [
+        event for event in events if event["event"] == "collection_error"
+    ]
+    assert collection_errors, "the collection-error diagnostic event is required"
+    assert collection_errors[0]["kind"] == "collection-failure"
+    assert collection_errors[0].get("error") is not None
+    assert_error_record(collection_errors[0]["error"])
+    assert_no_private_markers(manifest, PRIVATE_MARKERS)
+    assert_no_private_markers(events, PRIVATE_MARKERS)
+    assert_serialized_artifacts_have_no_markers(output, PRIVATE_MARKERS)
+
+
+def test_private_path_in_packaging_error_is_redacted_with_documented_omission(tmp_path):
+    module = runner()
+    output = tmp_path / f"pkg-{PACKAGING_MARKER}" / "evidence"
+    diagnostics = output / "diagnostics"
+    diagnostics.mkdir(parents=True)
+    trap = diagnostics / "events.jsonl"
+    trap.mkdir()
+    (trap / "keep").write_text("keep", encoding="utf-8")
+    assert PACKAGING_MARKER in str(trap)
+    assert len(str(trap).encode("utf-8")) < 512
+    source = f"def test_fail():\n    assert False, {PACKAGING_MARKER!r}\n"
+    suite = fixture_suite(module, tmp_path, source)
+    report = module.run_suite(tmp_path, suite, output, timeout=20)
+    assert report["status"] == "FAIL"
+    assert report["outcomes"]["failed"] == 1
+    require_runner_diagnostics(module)
+    manifest = require_manifest(output)
+    assert_manifest_schema(manifest, suite="fixture")
+    assert manifest["status"] in {"partial", "unavailable"}
+    assert manifest["legacy"]["status"] == "FAIL"
+    assert manifest["error"] is not None
+    assert_explicit_identity(manifest["identity"])
+    events_path = output / "diagnostics/events.jsonl"
+    assert not events_path.is_file(), (
+        "documented omission: unsafe events path remains a directory; no events parsed"
+    )
+    assert manifest["events"]["bytes"] == 0
+    assert manifest["events"]["terminal_present"] is False
+    assert (trap / "keep").read_text(encoding="utf-8") == "keep"
+    markers = (*PRIVATE_MARKERS, PACKAGING_MARKER)
+    assert_no_private_markers(manifest, markers)
+    assert_serialized_artifacts_have_no_markers(output, markers, include_events=False)
+
+
+@pytest.mark.parametrize(
+    ("private_path", "marker"),
+    [
+        (PRIVATE_WINDOWS_PATH, "PRIVATE-WIN-7f3a"),
+        (PRIVATE_UNC_PATH, "PRIVATE-UNC-9c2e"),
+    ],
+    ids=("windows-drive", "unc"),
+)
+def test_private_paths_in_parent_packaging_stat_are_redacted(
+    tmp_path, monkeypatch, private_path, marker,
+):
+    module = runner()
+    path_message = f"packaging path {private_path}"
+    assert len(path_message.encode("utf-8")) < 512
+    source = f"def test_fail():\n    assert False, {path_message!r}\n"
+    suite = fixture_suite(module, tmp_path, source)
+    legacy_report = module.run_suite(
+        tmp_path, suite, tmp_path / "legacy-evidence", timeout=20
+    )
+    assert legacy_report["status"] == "FAIL"
+    assert legacy_report["outcomes"]["failed"] == 1
+    legacy_raw = _raw_child_output(tmp_path / "legacy-evidence")
+    assert marker in legacy_raw, (
+        "the scenario's synthetic path did not reach raw child output"
+    )
+    require_runner_diagnostics(module)
+    output = tmp_path / "evidence"
+    events_path = output / "diagnostics/events.jsonl"
+    fixture_paths = {events_path, events_path.resolve()}
+    message = f"simulated packaging inspection failure for {private_path}"
+    assert len(message.encode("utf-8")) < 512
+    injected = {"count": 0, "metadata": None}
+    original_stat = Path.stat
+
+    def guarded_stat(self, *args, **kwargs):
+        metadata = original_stat(self, *args, **kwargs)
+        if self in fixture_paths:
+            if (
+                injected["count"] == 0
+                and stat.S_ISREG(metadata.st_mode)
+                and metadata.st_size > 0
+            ):
+                injected["count"] += 1
+                injected["metadata"] = metadata
+                raise OSError(message)
+        return metadata
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "stat", guarded_stat)
+        report = module.run_suite(tmp_path, suite, output, timeout=20)
+    assert report["status"] == "FAIL"
+    assert report["outcomes"]["failed"] == 1
+    raw = _raw_child_output(output)
+    assert marker in raw, "the scenario's synthetic path did not reach raw child output"
+    assert injected["count"] == 1, "the packaging Path.stat fault was not consumed once"
+    metadata = injected["metadata"]
+    assert metadata is not None
+    assert stat.S_ISREG(metadata.st_mode) and metadata.st_size > 0
+    manifest = require_manifest(output)
+    assert_manifest_schema(manifest, suite="fixture")
+    assert manifest["status"] in {"partial", "unavailable"}
+    assert manifest["legacy"]["status"] == "FAIL"
+    assert manifest["legacy"]["report"] == "present"
+    assert manifest["error"] is not None
+    assert_error_record(manifest["error"])
+    assert_explicit_identity(manifest["identity"])
+    assert_no_private_markers(manifest, (marker,))
+    if events_path.is_file():
+        events = read_events(output)
+        assert events, "a retained event file must include at least one diagnostic record"
+        assert_no_private_markers(events, (marker,))
+        assert_serialized_artifacts_have_no_markers(output, (marker,))
+    else:
+        assert not events_path.exists() and not events_path.is_symlink()
+        assert_serialized_artifacts_have_no_markers(output, (marker,), include_events=False)
+        assert manifest["events"]["bytes"] == 0
+        assert manifest["events"]["terminal_present"] is False
 
 
 def test_diagnostics_failure_does_not_stop_other_suites_and_summary_is_written(tmp_path):

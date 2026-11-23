@@ -1,6 +1,7 @@
 # Shared Full-Regression Diagnostics — Test-Preparation Design Record
 
-Status: **test preparation only, revised twice, still RED by design**. This record
+Status: **test preparation only, revised through focused additions, still RED by design**.
+This record
 describes tests and proposed contracts; it is not an implementation, an approval, or a
 claim that any remote check ran. The two new files are the whole candidate.
 
@@ -14,8 +15,12 @@ upload guard to the actual gate and qualification step outcomes, scans the compl
 workflow for overlapping uploads, and tests the real proposed `module.main(argv)` CLI
 wrapper with a monkeypatched qualification boundary. A third narrow correction aligns the
 guard with Actions implicit `success()` semantics and explicitly opts the hidden
-`.local` paths into v4 artifact transport. Historical measurements from earlier drafts and
-the supervisor snapshots remain separately labelled.
+`.local` paths into v4 artifact transport. A fourth focused authoring change adds PR22
+negative coverage for Windows-drive, UNC, and POSIX absolute paths in nested diagnostic
+text, using only synthetic strings and temporary fixture paths. A fifth addition covers the
+parent packaging inspection boundary with a one-shot `Path.stat` fault for the Windows-drive
+and UNC cases. Historical measurements from earlier drafts and the supervisor snapshots
+remain separately labelled.
 
 ## 1. Base and source identities
 
@@ -178,6 +183,76 @@ messages are untrusted data: they are bounded and serialized, never evaluated wi
 These are check-time path guards, not an OS sandbox. Malicious candidate code can tamper
 with its own diagnostics; the design therefore marks diagnostics untrusted and never uses
 them to certify a result.
+
+### 4.5 Private absolute-path redaction negative contract (PR22)
+
+The collector must not emit private absolute paths in nested diagnostic text. The new
+deterministic synthetic inputs are:
+
+- Windows drive: `C:\Users\PRIVATE-WIN-7f3a\secret.txt`;
+- UNC: `\\fileserver\share\PRIVATE-UNC-9c2e\secret.txt`;
+- POSIX: `/private/PRIVATE-POSIX-5d81/secret.txt`;
+- packaging path marker: `PRIVATE-PACKAGING-2b77`.
+
+The markers are distinct, the injected message/path is under 512 UTF-8 bytes, and no test
+opens the synthetic Windows/UNC/POSIX paths. All real accesses stay under `tmp_path`.
+
+Negative cases:
+
+1. **Failing test text:** a synthetic assertion message includes all three paths and is
+   printed to raw child output. The test proves the message reached the child boundary, then
+   requires the manifest/events and a failed report error record. No marker may appear in
+   decoded nested values or serialized artifacts.
+2. **Collection error text:** a synthetic import raises `RuntimeError` with all three paths.
+   The test proves the message reached raw child output, requires the manifest/events and a
+   `collection_error` error record, and checks decoded/serialized marker absence.
+3. **Packaging boundary:** the suite output directory contains the packaging marker and the
+   existing `events.jsonl` directory trap injects an unsafe artifact path. The manifest is
+   required with `status` partial/unavailable, legacy `FAIL`, identity, and a non-null error.
+   The events file is an intentionally omitted section: it is absent because the unsafe path
+   remains a directory; the test asserts `events.bytes == 0`, no terminal, and the trap is
+   not deleted. Only the manifest is parsed for markers.
+
+Error detail may be explicitly `unavailable`; that is a documented omission, not a leak.
+If detail is available/truncated, the markers must be absent. An empty diagnostic bundle or
+loss of all diagnostics cannot satisfy the cases: legacy verdict, counts, identity, expected
+artifacts, and error records are asserted before the marker checks.
+
+### 4.6 Parent packaging-stat seam for Windows drive and UNC text
+
+Separately parameterized tests cover the two remaining synthetic path forms:
+
+- Windows drive `C:\Users\PRIVATE-WIN-7f3a\secret.txt`;
+- UNC `\\fileserver\share\PRIVATE-UNC-9c2e\secret.txt`.
+
+The child failing-test diagnostic emits the same scoped path used by the parameter. A first
+legacy run proves the marker reached raw child stdout and that the legacy verdict is FAIL
+with `failed=1`. Only then does the test perform the `DIAGNOSTICS_SCHEMA_VERSION`
+availability check. On the unimplemented collector the test therefore stops at availability,
+and the packaging fault and manifest assertions are NOT_REACHED.
+
+The proposed filesystem seam for the eventual implementation is:
+
+- final parent packaging inspects the child-produced
+  `<suite-output>/diagnostics/events.jsonl` with `pathlib.Path.stat()`;
+- the test wraps `Path.stat` narrowly. For the exact fixture events path only, it calls the
+  original `stat` first, requires a regular nonempty file, and raises a single `OSError`
+  whose bounded message contains the parameter's synthetic path. Every other path and every
+  other operation delegates to the original method;
+- the injected fault is consumed exactly once after the availability check; the test
+  asserts the captured original metadata was regular/nonempty and never opens the synthetic
+  Windows/UNC path.
+
+After the fault, the test requires the manifest schema, explicit identity fields, legacy
+`FAIL`, and a non-null bounded packaging error. It checks private-marker absence in decoded
+nested values and raw serialized manifest/events. If the fault causes the events artifact to
+be explicitly omitted, the manifest must be partial/unavailable with zero event bytes and no
+terminal. The existing real-POSIX directory-trap packaging test remains separate.
+
+Contract assumption: the implementation must use this `Path.stat` inspection boundary (or
+the reviewer must approve and the test must be updated for another equally explicit standard
+filesystem boundary). No future runner API is imported, and the test does not manufacture a
+final diagnostic artifact.
 
 ## 5. Pre-upload qualification and CLI status protocol
 
@@ -389,6 +464,10 @@ references rather than incidental names. The synthetic upload uses YAML boolean 
 | Git identities vs tree digest, missing provenance null, non-numeric job key | `test_diagnostics_missing_provenance_is_null_and_identities_are_distinct` |
 | Child environment adds only the diagnostic path; no credentials/metadata | `test_diagnostics_child_environment_adds_only_the_diagnostic_path` |
 | Untrusted long/non-UTF-8-boundary message and node id bounded, never evaluated | `test_diagnostics_untrusted_messages_are_bounded_and_not_evaluated` |
+| Failing-test text with Windows/UNC/POSIX private markers redacted from nested detail and serialized artifacts; legacy FAIL/identity/error record retained | `test_private_paths_in_failing_test_text_are_redacted` |
+| Collection-error text with Windows/UNC/POSIX private markers redacted from nested detail and serialized artifacts; legacy FAIL/collection count/error record retained | `test_private_paths_in_collection_error_text_are_redacted` |
+| Packaging path marker redacted; manifest error/legacy/identity retained; events intentionally omitted with explicit unsafe-path status | `test_private_path_in_packaging_error_is_redacted_with_documented_omission` |
+| Windows-drive/UNC path in parent packaging `Path.stat` OSError; one-shot exact-path fault, raw child proof, manifest/identity/error and marker checks | `test_private_paths_in_parent_packaging_stat_are_redacted[PRIVATE-WIN-7f3a / PRIVATE-UNC-9c2e]` |
 | Diagnostics packaging failure cannot stop other suites; summary written | `test_diagnostics_failure_does_not_stop_other_suites_and_summary_is_written` |
 | Pre-upload qualification accepts current regular bounded six-file bundle | `test_transport_qualification_accepts_current_bounded_six_file_bundle` |
 | Pre-upload qualification withholds stale/unknown provenance | `test_transport_qualification_withholds_stale_or_unknown_provenance` |
@@ -535,16 +614,82 @@ Measured after the two Actions-compatibility corrections with the exact approved
 | File SHA256 | NOT_RUN (no approved hashing command) |
 | Actions execution, remote enforcement, product model/live/upstream | NOT_RUN |
 
-## 9. Real RED categories (current post-correction state)
+### 8.7 Independent PR22 review evidence
+
+The independent review of PR22 reported that the existing guards constrain size and
+disallowed keys, while synthetic absolute-path strings in nested error detail can pass
+those guards. That is a missing test of the future collector, not a claim that the
+collector ran. No independent Windows execution results were supplied in this restricted
+authoring session, so this record does not claim a Windows run; the review finding is kept
+as separate evidence from the local suite results.
+
+### 8.8 Post-PR22 measurements
+
+Measured after adding the three path-redaction negative tests:
+
+| Check | Post-PR22 result |
+|---|---|
+| New file collect-only | 74 tests collected, exit 0 |
+| New file `--tb=short` | 39 passed, 35 failed, 0 skipped, exit 1, 9.79 s |
+| Existing runner/events targeted | 50 passed, exit 0, 9.96 s |
+| Full `test/offline` | 389 passed, 39 failed, 2 skipped, exit 1, 34.14 s |
+| Full minus new file | 350 passed, 4 failed, 2 skipped, exit 1, 26.06 s |
+| Ruff new file / targeted existing | PASS / PASS |
+| Full Ruff | 1 unchanged pre-existing `scripts/paperqa_smoke.py:37` I001 |
+| mypy / schema / preflight | PASS (5 files) / PASS (27 requirements) / PASS |
+| Git identity/status/diff checks | HEAD matches; two pre-existing setup modifications; two candidate paths untracked; tracked `git diff --check` PASS |
+| File SHA256 | NOT_RUN (no approved hashing command) |
+| Actions execution, remote enforcement, product model/live/upstream | NOT_RUN |
+
+### 8.9 Post-seam measurements (Windows/UNC packaging stat)
+
+Measured after adding the two parameterized parent packaging-stat cases:
+
+| Check | Post-seam result |
+|---|---|
+| New file collect-only | 76 tests collected, exit 0 |
+| New file `--tb=short` | 39 passed, 37 failed, 0 skipped, exit 1, 17.06 s |
+| Existing runner/events targeted | 50 passed, exit 0, 9.96 s |
+| Full `test/offline` | 389 passed, 41 failed, 2 skipped, exit 1, 63.10 s |
+| Full minus new file | 350 passed, 4 failed, 2 skipped, exit 1, 50.90 s |
+| Ruff new file / targeted existing | PASS / PASS |
+| Full Ruff | 1 unchanged pre-existing `scripts/paperqa_smoke.py:37` I001 |
+| mypy / schema / preflight | PASS (5 files) / PASS (27 requirements) / PASS |
+| Git identity/status/diff checks | HEAD matches; two pre-existing setup modifications; two candidate paths untracked; tracked `git diff --check` PASS |
+| File SHA256 | NOT_RUN (no approved hashing command) |
+| Actions execution, remote enforcement, product model/live/upstream | NOT_RUN |
+
+### 8.10 Supervisor verification of the final local draft
+
+After the OpenCode authoring run, the supervisor scoped the injected `Path.stat` wrapper
+to the runner call and matched both literal and resolved fixture paths. A retained events
+file must contain a diagnostic record. An omitted events file must have no filesystem
+entry. The manifest must retain the legacy `FAIL` verdict and a `present` legacy report.
+
+The final offline run produced 39 passed and 37 availability failures in the 76-case
+diagnostics file. The full offline run produced 389 passed, 41 failed, and 2 skipped.
+The paired baseline produced 350 passed, 4 failed, and 2 skipped. All 356 baseline test
+nodes had identical outcomes in the full run. Configured Ruff and both draft whitespace
+checks passed. The two additions reached the legacy failing-child and raw-marker checks.
+They stopped at the missing `DIAGNOSTICS_SCHEMA_VERSION` prerequisite. The packaging
+injection and redaction checks remain unexecuted on this base.
+
+## 9. Real RED categories (current post-seam state)
 
 At this commit the new file is intentionally RED:
 
-- **Availability RED — runner base diagnostics (20 tests).** These include the success,
+- **Availability RED — runner base diagnostics (25 tests).** These include the success,
   phase, collection, pending, timeout, spawn, legacy-report, stale/fresh, symlink, unsafe
   path, packaging, tamper, budget, six-directory, provenance, child-env, untrusted-text,
-  failure-isolation, and built-in-subtest diagnostic tests. They stop at the absent
+  failure-isolation, built-in-subtest, three private-path text tests, and two
+  Windows/UNC parent-packaging-stat tests. They stop at the absent
   `DIAGNOSTICS_SCHEMA_VERSION`; no behavioural diagnostic assertion behind the marker is
-  claimed to have executed. The tamper test checks availability before injection.
+  claimed to have executed. The tamper test checks availability before injection. The
+  path-redaction tests prove the injected markers reached raw child/collection boundaries
+  before stopping at the marker. The Windows/UNC packaging cases prove the legacy raw
+  marker and failure count, then stop at availability; their one-shot `Path.stat` fault,
+  manifest parsing, identity/error checks, and decoded/artifact redaction assertions are
+  NOT_REACHED.
 - **Availability RED — qualification function (6 tests).** They stop at the absent
   `DIAGNOSTICS_TRANSPORT_SCHEMA_VERSION`/`qualify_diagnostics_artifacts`; no provenance,
   symlink, oversized, or partial qualification function assertion is claimed to have
@@ -555,9 +700,12 @@ At this commit the new file is intentionally RED:
 - **Availability RED — real workflow transport (1 test).** The actual `ci.yml` has no
   referenced gate id/qualification/upload/summary chain; the validator reports the first
   exact missing piece (currently the gate step id).
+- Total availability RED: 25 base + 6 qualification-function + 5 CLI + 1 real workflow =
+  **37**; passing controls **39**; total **76**; no skips/xfails.
 - **Passing controls (39 tests).** Eight legacy runner controls, one built-in-subtest
   legacy control (2 failed / 2 passed / 0 collection errors), the gate-exit control, and
-  twenty-nine synthetic workflow-contract checks. The synthetic checks **actually executed**:
+  twenty-nine synthetic workflow-contract checks. The three new private-path tests are
+  availability RED, not passing controls. The synthetic checks **actually executed**:
   four supported explicit-status/condition policies, ten invalid condition/guard mutants,
   the old outcome-only implicit-success negative, ordered-chain negatives, the four A–D
   mutants, renamed ids/alternate trusted metadata, unrelated upload allowance, hidden-file
@@ -602,6 +750,15 @@ remain the unavailable-OpenCode-executable limitation.
   exception propagates. The physical six paths may remain; the upload guard requires
   `failure() && !cancelled() && steps.<gate>.outcome == 'failure' && steps.<qualify>.outcome == 'success'`,
   and the hidden `.local` files require `include-hidden-files: true`.
+- PR22 path-redaction tests use only synthetic Windows/UNC/POSIX strings; they never open
+  those injected paths, and all real filesystem access stays under `tmp_path`. Markers fit
+  inside the 512-byte detail budget, so truncation alone cannot explain absence. Decoded
+  nested values and raw serialized artifacts are both checked. The real-POSIX directory-trap
+  packaging case intentionally omits `events.jsonl` because the unsafe events-path boundary
+  leaves a directory; the manifest carries the documented unavailable/partial status/error.
+  The separate Windows/UNC cases use a one-shot `Path.stat` wrapper on the exact fixture
+  events path, after the child has produced a regular nonempty file; all other stats
+  delegate. This is a documented seam/contract assumption, not a future runner API import.
 - The static state table is a YAML/condition contract, not Actions E2E.
 - These tests are behavioural contracts against a trusted local runner, not an OS sandbox
   or remote enforcement proof. Malicious candidate code can tamper with its own diagnostic
@@ -647,7 +804,12 @@ silently.
 ## 13. Remaining owner ADR/adoption decisions
 
 - Adopt or revise the proposed base-diagnostics schema shape, field names, status values,
-  exact byte limits, and `subtest` reporting field.
+  exact byte limits, `subtest` reporting field, and the requirement that nested error text
+  redact private absolute paths or be explicitly unavailable.
+- Agree the parent packaging inspection seam for `diagnostics/events.jsonl` (the tests use
+  `pathlib.Path.stat` on the exact file, original metadata first, one-shot injected
+  `OSError`). If the implementation uses another standard boundary, the tests and this
+  record must be updated together.
 - Adopt or revise the minimal pre-upload qualification entry, its return shape, the CLI
   status/exit protocol, the supported single-command form, and the partial-material policy.
 - Require the regression gate to have an explicit step id and no step `if`; the upload
@@ -670,3 +832,23 @@ silently.
   candidate does not fabricate one.
 - Verify file hashes, whitespace, remote GitHub enforcement, and branch protection outside
   this offline session. None of those is claimed here.
+
+
+## 14. Local replay against the current PR 22 head
+
+The revision starts at PR #22 head `6567515bd9cf77751e296c925201d4981f742614` and responds to
+review `6015807713`. It adds five cases covering failing test text, collection error text, a POSIX
+packaging failure, and one-shot parent packaging failures carrying Windows drive and UNC path text.
+The cases require preservation of the legacy outcome and check the final artifacts for private path
+markers or explicit event omission. The file SHA-256 is
+`f348c922adf67017a3a7370aadee08e405782a6d15c9c6c548cb027d41a65439`.
+
+| Run | Passed | Failed | Skipped |
+|---|---:|---:|---:|
+| Tests on the original PR head | 393 | 32 | 2 |
+| Tests on the local revision | 393 | 37 | 2 |
+| Revised diagnostics file | 39 | 37 | 0 |
+
+All 427 original node outcomes match. The five additional failures reach the missing diagnostics
+collector prerequisite. Configured Ruff passes for the diagnostics test. Verification of produced
+artifacts and Windows execution remains open.

@@ -302,3 +302,39 @@ entries:
     commit or PR exists at this preparation checkpoint.
   - Existing AI-use entries are retained with identical parsed values; only these two truthful records are appended.
     No private host paths or synthetic approvals added.
+- entry_id: SHARED-REGRESSION-PRIVACY-TEST-20261123-01
+  timestamp: '2026-11-23T12:26:15+08:00'
+  tool: OpenCode, papertrace-build-D
+  model: deepseek/deepseek-flash (API-reported), max
+  purpose: Extend the shared diagnostic artifact privacy negatives with portable packaging
+    faults
+  scope:
+  - test/offline/test_full_regression_diagnostics.py
+  - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
+  status: local test revision for PR 22
+  approvals:
+  - The supervising student authorized local test and design preparation.
+  verification:
+  - The final authoring prompt and session were retained privately. The supervisor
+    scoped the synthetic fault and independently replayed the candidate.
+  limitations:
+  - Verification used a local offline interpreter. Collector behavior and native Windows
+    execution remain pending.
+- entry_id: SHARED-REGRESSION-PRIVACY-CANDIDATE-20261123-01
+  timestamp: '2026-11-23T13:34:06+08:00'
+  tool: OpenAI Codex desktop
+  model: GPT-6 (session-reported family)
+  purpose: Verify and package the PR 22 privacy test revision
+  scope:
+  - test/offline/test_full_regression_diagnostics.py
+  - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
+  - docs/ai-use-log.yaml
+  status: local test revision candidate
+  approvals: []
+  verification:
+  - The diagnostics file has 39 passing cases and 37 missing-collector availability
+    failures. All 427 prior node outcomes match the paired replay. Configured Ruff
+    passed for the test file.
+  limitations:
+  - All five newly added cases stop at the missing collector prerequisite. The runner
+    and workflow implementation remain a separate stage.
