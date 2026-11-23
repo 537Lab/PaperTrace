@@ -842,3 +842,233 @@ def test_empty_record_negative_variants_are_rejected(mutation):
             data["release"][f"{name}_check_passed"] = True
     with pytest.raises(ValueError):
         api.ResearchRecord.model_validate(data)
+
+
+# ---------------------------------------------------------------------------
+# PR18 REVIEW REGRESSION (batch 1): recursive run_metadata inspection.
+# Synthetic only. ``_check_metadata`` must recurse list-within-list so nested
+# credentials/passwords and nested absolute paths are rejected. These are
+# appended proposals and require independent precise-head approval before any
+# source repair. No production helpers or validation mocks are used.
+# ---------------------------------------------------------------------------
+
+# Contract rejects sensitive KEYS and absolute paths, not arbitrary strings that
+# merely look secret. Values are clearly synthetic; names kept neutral (no
+# password/token words) to avoid Ruff S105.
+SENTINEL_A = "SYNTHETIC_VALUE_A_20261123"
+SENTINEL_B = "SYNTHETIC_VALUE_B_20261123"
+SENTINEL_C = "SYNTHETIC_VALUE_C_20261123"
+SENTINEL_D = "SYNTHETIC_VALUE_D_20261123"
+SYNTHETIC_NESTED_POSIX = "/Users/SYNTHETIC/nested/paper.pdf"
+SYNTHETIC_NESTED_WINDOWS = "C:\\Users\\SYNTHETIC\\nested\\paper.pdf"
+SYNTHETIC_NESTED_UNC = "\\\\SYNTHETIC-host\\nested-share\\paper.pdf"
+
+
+@pytest.mark.parametrize(
+    "case_key, value",
+    [
+        ("nested_api_key", [{"api_key": SENTINEL_A}]),
+        ("nested_password", [[{"password": SENTINEL_B}]]),
+        ("nested_posix_path", [[SYNTHETIC_NESTED_POSIX]]),
+        ("nested_windows_path", [[{"path": SYNTHETIC_NESTED_WINDOWS}]]),
+        ("nested_unc_path", ([SYNTHETIC_NESTED_UNC],)),
+        (
+            "mixed_containers",
+            {"outer": [([{"private_key": SENTINEL_C}],)]},
+        ),
+    ],
+)
+def test_nested_metadata_rejects_credentials_and_paths(case_key, value):
+    """Initial ``model_validate`` must recurse nested lists/tuples/dicts."""
+    api = reports()
+    data = payload()
+    data["run_metadata"][case_key] = value
+    with pytest.raises(ValueError):
+        api.ResearchRecord.model_validate(data)
+
+
+def test_safe_nested_metadata_roundtrips(tmp_path):
+    """Arbitrary nested safe metadata survives save/reopen unchanged (JSON)."""
+    api = reports()
+    data = payload()
+    data["run_metadata"] = {
+        "synthetic_run": {
+            "code_version": "SYNTHETIC-version-1",
+            "attempts": [1, 2, 3],
+            "nested": [{"latency_ms": 12, "ratio": 0.5}, [True, False]],
+            "labels": ["alpha", "beta"],
+        },
+        "model_name": "SYNTHETIC-model",
+        "temperature": 0.0,
+    }
+    original = api.ResearchRecord.model_validate(data)
+    store = api.HistoryStore(tmp_path)
+    store.save(original)
+    reopened = store.load(original.record_id)
+    assert reopened.model_dump(mode="json") == original.model_dump(mode="json")
+
+
+# ---------------------------------------------------------------------------
+# PR18 REVIEW REGRESSION (batch 2): post-construction run_metadata mutation.
+# Synthetic only. Mutating a frozen ResearchRecord's run_metadata after
+# validation must not let HistoryStore.save persist secrets/absolute paths.
+# The injected writer records calls and raises AssertionError if reached, so a
+# rejection that still serializes/writes cannot pass. No model_construct/copy
+# bypass; no validation mocks. Appended proposals requiring independent
+# precise-head approval before any source repair.
+# ---------------------------------------------------------------------------
+
+SECOND_RECORD_ID = "0b8f5f0e-2d4c-4f3e-9a51-7c6e2f0d1a23"
+
+SAFE_MUTABLE_METADATA = {
+    "synthetic_run": {
+        "code_version": "SYNTHETIC-mutated-version",
+        "attempts": [4, 5, 6],
+        "nested": [{"latency_ms": 7, "ratio": 0.25}, [True]],
+    },
+}
+
+POISON_MUTATIONS = (
+    ("top_level_api_key", lambda meta: meta.__setitem__("api_key", SENTINEL_A)),
+    (
+        "nested_list_password",
+        lambda meta: meta.__setitem__("box", [[{"password": SENTINEL_B}]]),
+    ),
+    (
+        "nested_list_abs_path",
+        lambda meta: meta.__setitem__("box", [[{"path": SYNTHETIC_NESTED_POSIX}]]),
+    ),
+)
+
+
+def _snapshot_dir_bytes(root):
+    return {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+
+
+def _second_record(api, *, metadata=None):
+    data = payload()
+    data["record_id"] = SECOND_RECORD_ID
+    data["run_metadata"] = dict(SAFE_MUTABLE_METADATA) if metadata is None else metadata
+    return api.ResearchRecord.model_validate(data)
+
+
+@pytest.mark.parametrize("case_key, poison", POISON_MUTATIONS)
+def test_mutated_run_metadata_rejected_before_writer(tmp_path, case_key, poison):
+    """Poisoned save must raise ValueError and never reach the writer."""
+    api = reports()
+    predecessor = record()
+    store = api.HistoryStore(tmp_path)
+    store.save(predecessor)
+    before = _snapshot_dir_bytes(tmp_path)
+
+    calls = []
+
+    def sentinel_writer(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AssertionError("atomic_writer must not be called for rejected metadata")
+
+    poisoned = _second_record(api)
+    run_metadata = poisoned.run_metadata
+    poison(run_metadata)
+    assert isinstance(run_metadata, dict), case_key
+
+    guarded = api.HistoryStore(tmp_path, atomic_writer=sentinel_writer)
+    with pytest.raises(ValueError):
+        guarded.save(poisoned)
+
+    assert calls == []
+    assert _snapshot_dir_bytes(tmp_path) == before
+    assert not (tmp_path / f"{SECOND_RECORD_ID}.json").exists()
+    assert [item.record_id for item in guarded.list_records()] == [predecessor.record_id]
+    assert guarded.load(predecessor.record_id).model_dump(mode="json") == (
+        predecessor.model_dump(mode="json")
+    )
+
+
+def test_actual_writer_rejects_poisoned_metadata_without_secret(tmp_path):
+    """Default (real) atomic writer path: ValueError, no file, no secret."""
+    api = reports()
+    predecessor = record()
+    api.HistoryStore(tmp_path).save(predecessor)
+
+    poisoned = _second_record(api)
+    poisoned.run_metadata["api_key"] = SENTINEL_A
+
+    with pytest.raises(ValueError):
+        api.HistoryStore(tmp_path).save(poisoned)
+
+    assert not (tmp_path / f"{SECOND_RECORD_ID}.json").exists()
+    for path in (p for p in tmp_path.rglob("*") if p.is_file()):
+        assert SENTINEL_A not in path.read_text("utf-8")
+
+
+def test_external_alias_metadata_mutation_is_not_persisted(tmp_path):
+    """Mutating the validated record's metadata dict alias is caught by save."""
+    api = reports()
+    data = payload()
+    data["record_id"] = SECOND_RECORD_ID
+    data["run_metadata"] = {
+        "synthetic_run": {"nested": {"labels": ["alpha"], "ratio": 0.5}},
+    }
+    alias = data["run_metadata"]["synthetic_run"]["nested"]
+    candidate = api.ResearchRecord.model_validate(data)
+
+    # Poison the original dictionary alias AFTER validation.
+    alias["api_key"] = SENTINEL_A
+
+    predecessor = record()
+    store = api.HistoryStore(tmp_path)
+    store.save(predecessor)
+    before = _snapshot_dir_bytes(tmp_path)
+
+    calls = []
+
+    def sentinel_writer(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AssertionError("atomic_writer must not be called for rejected metadata")
+
+    guarded = api.HistoryStore(tmp_path, atomic_writer=sentinel_writer)
+
+    # Inspect the serialized MODEL metadata (not the input mapping) to select
+    # the branch and to prove what save would persist.
+    model_metadata = candidate.model_dump(mode="json")["run_metadata"]
+    if "api_key" not in json.dumps(model_metadata):
+        # Defensive copy: model never saw the poison; save through the DEFAULT
+        # store (no sentinel) since safe data must persist.
+        store.save(candidate)
+        persisted_metadata = json.loads(
+            (tmp_path / f"{SECOND_RECORD_ID}.json").read_text("utf-8")
+        )["run_metadata"]
+        assert "api_key" not in json.dumps(persisted_metadata)
+        assert SENTINEL_A not in (tmp_path / f"{SECOND_RECORD_ID}.json").read_text("utf-8")
+        reopened = store.load(candidate.record_id)
+        assert reopened.model_dump(mode="json") == candidate.model_dump(mode="json")
+    else:
+        # Shared reference: the model's own metadata carries the poison; save
+        # must reject before the writer and leave the directory untouched.
+        assert SENTINEL_A in json.dumps(model_metadata)
+        with pytest.raises(ValueError):
+            guarded.save(candidate)
+        assert calls == []
+        assert _snapshot_dir_bytes(tmp_path) == before
+        assert not (tmp_path / f"{SECOND_RECORD_ID}.json").exists()
+
+
+def test_safe_mutated_metadata_persists(tmp_path):
+    """Safe mutated metadata is valid and must persist through the default store."""
+    api = reports()
+    predecessor = record()
+    store = api.HistoryStore(tmp_path)
+    store.save(predecessor)
+
+    candidate = _second_record(api)
+    candidate.run_metadata["synthetic_run"]["attempts"] = [7, 8, 9]
+
+    store.save(candidate)
+    reopened = store.load(candidate.record_id)
+    assert reopened.model_dump(mode="json") == candidate.model_dump(mode="json")
+    assert reopened.run_metadata["synthetic_run"]["attempts"] == [7, 8, 9]
+    assert [item.record_id for item in store.list_records()] == [
+        predecessor.record_id,
+        candidate.record_id,
+    ]

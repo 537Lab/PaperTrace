@@ -1,5 +1,30 @@
 schema_version: 1
 entries:
+- entry_id: E-METADATA-TEST-20261123-01
+  timestamp: '2026-11-23T11:38:01+08:00'
+  tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash
+  purpose: 为PR18嵌套元数据漏检及污染记录落盘问题追加正式回归测试
+  scope:
+  - test/offline/test_reports.py
+  - docs/team/designs/module-E/metadata-boundary-plan.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-new-independent-approval
+  approvals:
+  - 学生在本聊天要求完成已识别E缺陷补测和联调准备
+  - 旧9b6629b批准不覆盖本次13项新增测试，本轮尚无新测试精确head的独立Approve
+  - 未进行任何生产源码修复，PR8及PR18不合并
+  verification:
+  - 真实OpenCode会话ses_df98a9403ffez3WmrShwwGU8oX生成补测，Codex监督并纠正测试数据和写入器辅助错误
+  - 对照当前未修复E实现，88项为79 passed及9项安全行为RED，exit1，无收集错误或跳过
+  - 新增13项，原75项未改，测试Ruff通过，未改src及共享契约
+  - 9项RED分别为初始校验漏检及污染对象到达写入边界或真实写入未拒绝，不冒称实现已修复
+  - 完整团队离线回归另行记录，原始JUnit和输出保留在Team工作区E-metadata-red文件
+  limitations:
+  - 测试提案不含E源码，行为验证显式指向受审实现源码，不能混称测试分支已有实现
+  - 初稿辅助错误已发布前纠正，未计作最终生产缺陷
+  - 原始输出及真实脱敏会话保留，未运行产品模型或完整上游评估
+  - 本地合成E交接工具由Codex编写，仅验证E输入输出，不是实际C/D联调或OpenCode业务贡献
 - entry_id: E-TEST-REVIEW-20261122-02
   timestamp: '2026-11-22T11:20:59+08:00'
   tool: OpenCode 2.0.12 papertrace-build-E with Codex supervision
