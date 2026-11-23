@@ -276,3 +276,22 @@ entries:
   limitations:
   - Still a tests-only RED proposal awaiting independent non-author Approve on the new exact HEAD; no src/papertrace/app.py implementation exists yet
   - Offline stubs validate unit/wiring contracts only and do not substitute for real A/E component integration or live Streamlit click acceptance
+- entry_id: SHARED-APP-TEST-LOOPBACK-FIX-20261123-01
+  timestamp: '2026-11-23T13:53:00+00:00'
+  tool: Antigravity + Codex adversarial pre-review (user-authorized test proposal update)
+  model: Gemini 4 + Codex
+  purpose: Add strict fail-closed loopback server.address negative/positive controls (unset None, empty/whitespace, config read error, non-string, non-loopback, explicit loopback, missing Streamlit) to PR #39 before re-implementing src/papertrace/app.py
+  scope:
+  - docs/team/designs/shared-app/entrypoint-plan-v1.md
+  - test/offline/test_app_entrypoint.py
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - Preserved all 14 prior tests and added 18 startup test nodes (13 parameterized negative, 4 parameterized positive, 1 fresh-import missing-Streamlit node; 32 total collected with 0 collection errors via pytest -c papertrace.pytest.ini --collect-only test/offline/test_app_entrypoint.py exit code 0, and 32 explicit IMPLEMENTATION_MISSING RED failures via pytest -c papertrace.pytest.ini test/offline/test_app_entrypoint.py exit code 1)
+  - Verified targeted Ruff passes cleanly via ruff check --config papertrace.ruff.toml test/offline/test_app_entrypoint.py (exit code 0)
+  - Ran two-round independent adversarial pre-review via Codex (session 01a208af-5c8b-7d02-8465-8ff6e143789c) reaching PASS with zero P0/P1 findings, then also resolved both remaining P2 polish notes (restoring papertrace.app attribute + rejecting raw ModuleNotFoundError text, and recording exact verification commands)
+  - Verified local scripts/gates.py --gate schema, --gate ai-log, and --gate semantic each pass (exit code 0) against origin/main on the published commit
+  limitations:
+  - Tests-only RED proposal awaiting independent non-author Approve on the new exact HEAD; no src/papertrace/app.py exists in this PR
+  - A fresh implementation PR must be opened after this new test HEAD is approved so test-approval timestamp ordering stays valid

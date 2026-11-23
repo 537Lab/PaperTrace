@@ -51,7 +51,7 @@
        - 当 A 概览健康但 `ports.pending_input_error` 非 `None` 时，必须向 E 面板传入非空脱敏通用 `input_error`，且绝不将原始异常/路径/凭据值渲染泄露到 UI；
        - 公共入口自身不得写入 `history_store`，也不得在 `snapshot_id` 漂移后迁移或篡改已有历史记录。
      - 当 `retrieval_port` / `review_port` / `answer_port` 任一为 `None` 时，`blocked_stages` 必须显式包含缺失阶段；用户切换至缺失阶段时必须在 UI 中真实渲染包含该阶段标识与明确阻断/不可用提示的可见消息（`warning`/`info`/`error`），绝不允许空白页面，绝不合成 `ResearchRecord`、`released` 或调用外部模型/网络。
-     - `src/papertrace/app.py` 顶层不得直接 `import paperqa` 或强依赖 `import streamlit`（本地可选 Streamlit 启动壳 `main(argv=None) -> int` 仅在显式运行时加载并限定本机回环地址，干净 CI 环境 `mypy`/`ruff`/`architecture` 均需通过）。
+     - `src/papertrace/app.py` 顶层不得直接 `import paperqa` 或强依赖 `import streamlit`（本地可选 Streamlit 启动壳 `main(argv=None) -> int` 仅在显式运行时加载；**严格 fail-closed 仅接受明确配置为 `str` 类型且经首尾空白裁剪与小写归一化后命中三值白名单 `{"127.0.0.1", "localhost", "::1"}` 的本机回环地址**，当 `server.address` 为 `None`、空字符串/纯空白、非 `str` 对象（即使 `__str__` 仿冒回环地址）、`127.0.0.2` / `localhost.example` / `0.0.0.0` / `::` / 局域网 IP、`st.config` 为 `None` 或缺属性、或配置读取抛异常时，一律拒绝继续渲染页面并返回退出码 `2`，且不向 stdout/stderr/UI 泄露原始异常消息、路径或凭据；无 `streamlit` 环境导入模块不报错且 `main()` 安全返回退出码 `2` 并向 stderr 输出包含 `streamlit` 说明的固定安全提示，干净 CI 环境 `mypy`/`ruff`/`architecture` 均需通过）。
 
 ## 3. 读写路径、工具与依赖边界
 
@@ -62,7 +62,7 @@
 - 不新增任何第三方依赖，不修改 `pyproject.toml`、`uv.lock`、`requirements*.lock`、`contracts.py` 或任何已有模块源码。
 - 全程离线合成数据，使用 `--disable-socket` 断言零网络与零付费模型调用。
 
-## 4. 离线测试清单与不变量映射（14 项 RED 测试）
+## 4. 离线测试清单与不变量映射（17 项测试函数 / 32 个收集节点 RED 测试）
 
 位于 `test/offline/test_app_entrypoint.py`，使用真实 `papertrace.contracts.CorpusSnapshot` / `DocumentVersion` 与严格匹配 A（PR #36）/ E（PR #35）真实签名的离线受控桩（`_RecordingUI` 已对齐 `button(disabled=...)`、`selectbox(index=...)`、`download_button(label, data, file_name, mime, ...)` 控件签名，但仍仅作为单元/装配边界替身，不替代真 A/E 组件联调与真实 Streamlit 点击验收）：
 
@@ -80,9 +80,12 @@
 12. `test_entrypoint_module_has_no_top_level_streamlit_or_paperqa_import`（ADR-001、B-only 架构边界）：静态 AST 校验无顶层 `streamlit` 与任意 `paperqa` 导入。
 13. `test_entrypoint_forwards_non_none_pending_record_identically_to_reports_panel`（FR-E-01、INV-04/05）：A 概览健康时，明确标注为合成对象的非空 `pending_record` 原样（同对象引用）传给 E 面板，且零隐式保存。
 14. `test_entrypoint_forwards_upstream_input_error_when_library_healthy_without_leaking_raw_value`（FR-E-01、SEC-01、INV-04）：A 概览健康时，非空上游 `pending_input_error` 转为非空脱敏通用错误传给 E 面板，且原始敏感路径/凭据不泄露到 UI 或错误值中。
+15. `test_entrypoint_main_refuses_unset_empty_unreadable_or_non_loopback_address`（计划 §2、SEC-01 防泄漏，13 组参数化负测）：当 `server.address` 为 `None`、空字符串、纯空白、配置读取抛异常、`st.config` 为 `None`、`st.config` 属性缺失、整型、仿冒 `__str__` 的非字符串对象、`0.0.0.0`、`::`、`127.0.0.2`、`localhost.example` 或局域网 IP 时，均拒绝渲染（零 `title`/`info` 调用）、返回退出码 `2` 且 stdout/stderr/UI 均不泄露原始异常标记、路径或凭据。
+16. `test_entrypoint_main_accepts_explicit_loopback_address`（计划 §2，4 组参数化正测）：明确配置的 `127.0.0.1`、`localhost`、`::1`（含大小写与首尾空白归一化）允许渲染并返回 `0`。
+17. `test_entrypoint_main_fails_closed_when_streamlit_missing`（计划 §2、SEC-01）：在全新模块导入前注入缺失 `streamlit` 哨兵，验证顶层导入成功且 `main()` 返回退出码 `2`、stdout 为空、stderr 含固定 `streamlit` 提示且无 Traceback。
 
 ## 5. 验证口径与限制
 
-- 本提案 PR 为 RED 测试提案：在 `src/papertrace/app.py` 存在前，所有 14 项测试可无错收集并在 `IMPLEMENTATION_MISSING: papertrace.app` 处明确失败，不宣称任何实现功能已通过。
+- 本提案 PR 为 RED 测试提案：在 `src/papertrace/app.py` 存在前，所有 32 个测试节点可无错收集并在 `IMPLEMENTATION_MISSING: papertrace.app` 处明确失败，不宣称任何实现功能已通过。
 - 本离线单元测试使用受控桩验证单元与装配契约，不替代真实 A/E 合并后的真实组件集成验收与真实 Streamlit 点击验收；该端到端验收将在后续阶段单独执行。
-- 后续实现 PR 需在非作者独立 Approve 本提案精确 HEAD 后，以受控 OpenCode 会话实现 `src/papertrace/app.py` 并附带真实会话证据。
+- 后续实现 PR 需在非作者独立 Approve 本提案精确 HEAD 后重新基于该新 HEAD 创建（避免早于新批准时间触发门禁错误）；因受保护的 `opencode.jsonc` 目前仅放行 5 个模块子目录、未对 `src/papertrace/app.py` 授权 `edit`，需由项目负责人/团队明确确认是走受保护配置的窄权限放行后再跑受限 OpenCode 会话，还是批准受监督 AI 替代实现方案。

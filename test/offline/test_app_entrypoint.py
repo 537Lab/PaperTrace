@@ -10,6 +10,7 @@ No PaperQA2, provider, network, or other-module source writes.
 from __future__ import annotations
 
 import ast
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -24,7 +25,7 @@ from papertrace.contracts import CorpusSnapshot, DocumentVersion
 
 
 def app_api() -> Any:
-    """Delay loading ``papertrace.app`` so all 14 tests collect cleanly as RED."""
+    """Delay loading ``papertrace.app`` so all tests collect cleanly as RED."""
     assert find_spec("papertrace.app") is not None, (
         "IMPLEMENTATION_MISSING: papertrace.app; ASSERTIONS_NOT_REACHED"
     )
@@ -759,3 +760,138 @@ def test_entrypoint_module_has_no_top_level_streamlit_or_paperqa_import() -> Non
                 assert not alias.name.startswith("streamlit")
         elif isinstance(node, ast.ImportFrom) and node.module:
             assert not node.module.startswith("streamlit")
+
+
+class _StrLoopback:
+    """Non-string object whose ``__str__`` mimics a valid loopback host."""
+
+    def __str__(self) -> str:
+        return "127.0.0.1"
+
+
+class _FakeStreamlitConfig:
+    def __init__(self, value: Any = None, *, error: Exception | None = None) -> None:
+        self._value = value
+        self._error = error
+
+    def get_option(self, name: str) -> Any:
+        assert name == "server.address"
+        if self._error is not None:
+            raise self._error
+        return self._value
+
+
+class _FakeStreamlitModule:
+    def __init__(self, config: Any, *, omit_config: bool = False) -> None:
+        if not omit_config:
+            self.config = config
+        self.titles: list[str] = []
+        self.infos: list[str] = []
+        self.errors: list[str] = []
+
+    def title(self, text: str) -> None:
+        self.titles.append(str(text))
+
+    def info(self, text: str) -> None:
+        self.infos.append(str(text))
+
+    def error(self, text: str) -> None:
+        self.errors.append(str(text))
+
+
+@pytest.mark.parametrize(
+    ("label", "fake_st"),
+    [
+        ("unset_none", _FakeStreamlitModule(_FakeStreamlitConfig(None))),
+        ("empty_string", _FakeStreamlitModule(_FakeStreamlitConfig(""))),
+        ("whitespace_only", _FakeStreamlitModule(_FakeStreamlitConfig("   "))),
+        (
+            "config_read_error",
+            _FakeStreamlitModule(
+                _FakeStreamlitConfig(
+                    error=RuntimeError(
+                        "RAW_CFG_BOOM_8821 /private/cfg/secret.toml token=sk-cfg-secret-99"
+                    )
+                )
+            ),
+        ),
+        ("config_is_none", _FakeStreamlitModule(None)),
+        ("config_attr_missing", _FakeStreamlitModule(None, omit_config=True)),
+        ("non_string_int", _FakeStreamlitModule(_FakeStreamlitConfig(127001))),
+        ("non_string_str_spoof", _FakeStreamlitModule(_FakeStreamlitConfig(_StrLoopback()))),
+        (
+            "wildcard_ipv4",
+            _FakeStreamlitModule(_FakeStreamlitConfig(".".join(("0", "0", "0", "0")))),
+        ),
+        ("wildcard_ipv6", _FakeStreamlitModule(_FakeStreamlitConfig("::"))),
+        ("non_allowlisted_loopback_127002", _FakeStreamlitModule(_FakeStreamlitConfig("127.0.0.2"))),
+        (
+            "localhost_prefix_spoof",
+            _FakeStreamlitModule(_FakeStreamlitConfig("localhost.example")),
+        ),
+        ("lan_ip", _FakeStreamlitModule(_FakeStreamlitConfig("192.168.1.20"))),
+    ],
+)
+def test_entrypoint_main_refuses_unset_empty_unreadable_or_non_loopback_address(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    label: str,
+    fake_st: _FakeStreamlitModule,
+) -> None:
+    """Plan §2, SEC-01: main() fails closed unless server.address is an allowlisted loopback str."""
+    del label
+    api = app_api()
+    monkeypatch.setitem(sys.modules, "streamlit", fake_st)
+
+    rc = api.main([])
+    captured = capsys.readouterr()
+    all_output = "\n".join(
+        [*fake_st.errors, *fake_st.titles, *fake_st.infos, captured.out, captured.err]
+    )
+
+    assert rc == 2
+    assert fake_st.titles == []
+    assert fake_st.infos == []
+    assert fake_st.errors or captured.err.strip() != ""
+    assert "RAW_CFG_BOOM_8821" not in all_output
+    assert "/private/cfg/secret.toml" not in all_output
+    assert "sk-cfg-secret-99" not in all_output
+
+
+@pytest.mark.parametrize("address", ["127.0.0.1", "localhost", "::1", " Localhost "])
+def test_entrypoint_main_accepts_explicit_loopback_address(
+    monkeypatch: pytest.MonkeyPatch,
+    address: str,
+) -> None:
+    """Plan §2: explicitly configured allowlisted loopback hosts (trimmed/casefolded) are allowed."""
+    api = app_api()
+    fake_st = _FakeStreamlitModule(_FakeStreamlitConfig(address))
+    monkeypatch.setitem(sys.modules, "streamlit", fake_st)
+
+    rc = api.main([])
+
+    assert rc == 0
+    assert fake_st.errors == []
+    assert fake_st.titles != []
+
+
+def test_entrypoint_main_fails_closed_when_streamlit_missing(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Plan §2, SEC-01: fresh import without Streamlit succeeds and main() exits cleanly with 2."""
+    pkg = import_module("papertrace")
+    monkeypatch.setitem(sys.modules, "streamlit", None)
+    monkeypatch.delitem(sys.modules, "papertrace.app", raising=False)
+    monkeypatch.delattr(pkg, "app", raising=False)
+    api = app_api()
+
+    rc = api.main([])
+    captured = capsys.readouterr()
+
+    assert rc == 2
+    assert captured.out == ""
+    assert "streamlit" in captured.err.lower()
+    assert "Traceback" not in captured.err
+    assert "ModuleNotFoundError" not in captured.err
+    assert "No module named" not in captured.err
