@@ -315,3 +315,31 @@ entries:
   limitations:
   - Protected opencode.jsonc was not modified; if the team/course later adopts a separate narrow-permission opencode.jsonc PR for shared src/papertrace/app.py, a restricted OpenCode replay session can be recorded on top of that adopted configuration
   - Unit tests use offline stubs aligned with A/E contracts; real merged A+E component integration, live Streamlit click/bind verification, B/C/D integration, and shared repo lint/upstream regression remain separate acceptance steps
+- entry_id: SHARED-WORKBENCH-TEST-20261124-01
+  timestamp: '2026-11-24T03:32:23+08:00'
+  tool: Codex
+  model: Codex (GPT-6)
+  purpose: Draft the interactive workbench contract and 12 offline RED tests on PR #41 head f64baad3668f2ec996d97cd6d66d72d8744d9428
+  scope:
+  - docs/team/designs/shared-app/interactive-workbench-plan-v1.md
+  - test/offline/test_interactive_workbench.py
+  - docs/ai-use-log.yaml
+  status: draft-plan-and-test-proposal-awaiting-student-plan-confirmation-and-independent-review
+  approvals: []
+  verification:
+  - command: /Users/usagi/Documents/PaperTrace/.venv/bin/ruff check --config papertrace.ruff.toml test/offline/test_interactive_workbench.py
+    exit_code: 0
+    result: All checks passed on the final test file
+  - command: /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini --collect-only test/offline/test_interactive_workbench.py
+    exit_code: 0
+    result: 12 collected with zero collection errors
+  - command: /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini test/offline/test_interactive_workbench.py -vv
+    exit_code: 1
+    result: '12 failed at IMPLEMENTATION_MISSING: papertrace.workbench'
+  - command: independent read-only Codex audit (session 01a209e6-7e85-7b32-8ea9-123713f60f2a)
+    exit_code: 0
+    result: Caught 5 P1 and 4 P2 gaps on initial draft; all code/contract/test gaps plus the empty-selection import P2 were fixed and re-verified before publishing as a Draft PR
+  limitations:
+  - Combined plan + tests-only RED candidate drafted under 537Lab authorization in chat; no separate prior written student plan approval record exists yet, so this PR is opened as Draft awaiting explicit student plan confirmation and independent non-author test approval on the exact HEAD before any implementation begins.
+  - Scope is strictly limited to the three tests-only files; source, existing tests, and protected configuration remain untouched.
+  - The missing-module guard prevents execution of behavioral and AST assertions; real A/E integration, live Streamlit interaction, and full regression are separate later verification.
