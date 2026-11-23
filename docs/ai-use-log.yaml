@@ -469,6 +469,7 @@ entries:
   - Initial merge-based PR35 failed implementation-commit-predates-test-approval because old originally approved source commits preceded the newer corrected test review
   - Preserved original history at archive/E-page-delivery-645e054; recreated delivery from exact latest test head with genuine new commit times, without changing the verifier or fabricating generation dates
   - Raw new OpenCode session ses_df7abaacfffexEx2yuhdb9BWAR retained in E-opencode-page-replay-fix.jsonl; optional runtime import and nullable annotation only
+  - First importlib variant was rejected by architecture; same restricted session replaced it with ordinary explicit imports and a TYPE_CHECKING-only typed facade, without ignores or rule changes
   - Reverified117 E passes, actual Streamlit AppTest passes, targeted Ruff passes; approved test and plan unchanged
   - Full offline regression on preceding integrated source completed397 passed,74 failed,2 skipped; failures are separate shared issues, no full-green claim
   limitations:

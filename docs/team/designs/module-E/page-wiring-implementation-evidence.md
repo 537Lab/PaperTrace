@@ -56,3 +56,9 @@ workspace changes only the optional preview import to runtime importlib loading
 and explicitly annotates the nullable pending model. Streamlit is optional and
 not a newly required CI dependency. The earlier session rejected this different
 directory; no permissions were widened to bypass that refusal.
+
+The first optional import fix passed types but failed the existing architecture
+rule forbidding dynamic loading outside B. It was replaced by an ordinary
+explicit Streamlit import with an Any facade in the TYPE_CHECKING-only branch;
+that branch is never a runtime fallback. No rule, dependency or ignore was
+added. Targeted Ruff, strict mypy, architecture and real AppTest were rechecked.

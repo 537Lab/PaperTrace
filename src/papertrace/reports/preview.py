@@ -17,10 +17,10 @@ Run only on loopback, e.g.::
 from __future__ import annotations
 
 import argparse
-import importlib
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from papertrace.reports import HistoryStore, InvalidRecord, ResearchRecord, parse_record
 from papertrace.reports.view import render_reports_panel
@@ -63,6 +63,23 @@ def _load_pending(path: Path) -> ResearchRecord:
     return parse_record(raw)
 
 
+def _streamlit() -> Any:
+    """Import Streamlit for local runtime use, or raise :class:`ImportError`.
+
+    Streamlit is an optional local-only convenience and is not a pinned CI
+    dependency. Under type checking the module is treated as an ``Any``-typed
+    facade so this core package never needs a stub or ignore; at runtime the
+    ordinary explicit :mod:`streamlit` import is performed here. Callers guard
+    this and fail closed when the package is missing.
+    """
+    if TYPE_CHECKING:
+        st: Any = None
+        return st
+    import streamlit as st
+
+    return st
+
+
 def _configured_server_address() -> str | None:
     """Read the configured Streamlit server bind address, or ``None`` if unset.
 
@@ -70,7 +87,7 @@ def _configured_server_address() -> str | None:
     Any failure or missing value is treated as unset so the caller fails closed.
     """
     try:
-        st_config = importlib.import_module("streamlit").config
+        st_config = _streamlit().config
     except Exception:  # noqa: BLE001 - Streamlit availability is checked by caller
         return None
     try:
@@ -90,7 +107,7 @@ def _is_loopback(address: str | None) -> bool:
 def main(argv: Sequence[str] | None = None) -> int:
     """Render the panel inside Streamlit, or explain the local-only invocation."""
     try:
-        st = importlib.import_module("streamlit")
+        st = _streamlit()
     except Exception:  # noqa: BLE001 - Streamlit is an optional local convenience
         sys.stderr.write(
             "This preview needs a local Streamlit install; "
