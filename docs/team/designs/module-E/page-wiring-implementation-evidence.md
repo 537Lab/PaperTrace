@@ -62,3 +62,26 @@ rule forbidding dynamic loading outside B. It was replaced by an ordinary
 explicit Streamlit import with an Any facade in the TYPE_CHECKING-only branch;
 that branch is never a runtime fallback. No rule, dependency or ignore was
 added. Targeted Ruff, strict mypy, architecture and real AppTest were rechecked.
+
+## Independent clean-environment finding and repair
+
+The independent reviewer reproduced import-not-found and no-redef at preview.py:78
+on ff16de9 without Streamlit. The supervisor independently reproduced exactly
+those two errors using .verification-no-streamlit (venv without pip), reusing
+the existing pinned validation tools via PYTHONPATH, and verified
+importlib.util.find_spec('streamlit') is None. Prior host-only checks missed this.
+
+The same restricted OpenCode session made only the explicit if/else correction:
+the TYPE_CHECKING facade and normal runtime import are now mutually exclusive.
+No dynamic loading, type ignore, stub, dependency or configuration was added.
+
+In that no-Streamlit environment, the non-incremental full-project command
+python -m mypy --no-incremental --platform linux --config-file mypy.ini src/papertrace
+passed all 11 source files. The Linux target matches CI type semantics; the
+isolated interpreter itself is the existing local Windows interpreter, not a
+claim of full Linux runtime certification. E117 and targeted Ruff passed there.
+main([]) returns code2 with a fixed optional-dependency message when absent.
+The installed-Streamlit AppTest and unchanged architecture check are also rerun.
+
+The previous implementation approval binds f9cf64f, not ff16de9 or this repair.
+This new source requires independent exact-head re-review; no approval is claimed.

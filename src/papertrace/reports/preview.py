@@ -74,8 +74,8 @@ def _streamlit() -> Any:
     """
     if TYPE_CHECKING:
         st: Any = None
-        return st
-    import streamlit as st
+    else:
+        import streamlit as st
 
     return st
 

@@ -476,3 +476,27 @@ entries:
   - Source is reused from genuine prior restricted OpenCode output, not claimed newly generated in entirety after latest approval
   - Old session refused external directory, fresh session used the actual new workspace without widening tool permissions
   - Shared lint, full CI, public assembly, real models and paper permissions remain separately tracked
+
+- entry_id: E-SRC-20261123-NO-STREAMLIT-REVIEW
+  timestamp: '2026-11-23T12:34:06.797881+00:00'
+  tool: OpenCode restricted implementation; Codex supervisor
+  model: cityucs/CS5351/DeepSeek-V4-Flash; Codex supervisor
+  purpose: Fix independently reproduced import-not-found and no-redef when optional Streamlit is absent
+  scope:
+  - src/papertrace/reports/preview.py
+  - docs/team/designs/module-E/page-wiring-implementation-evidence.md
+  - docs/ai-use-log.yaml
+  status: repaired-source-awaiting-independent-exact-head-review
+  approvals:
+  - Existing test PR31 exact7e70e13 approval remains applicable; test tree and plan blobs unchanged
+  - User supplied independent review findings and requested repair; prior source approval binds f9cf64f and does not approve the new source
+  verification:
+  - Independently reproduced both reported errors on ff16de9 in a no-pip venv with find_spec(streamlit)=None, using existing pinned tools
+  - Same restricted session ses_df7abaacfffexEx2yuhdb9BWAR made the minimal explicit if-else edit; raw transcript retained
+  - No-Streamlit full-project mypy --no-incremental --platform linux passed all11 source files
+  - No-Streamlit E117 tests and targeted Ruff passed; main without optional Streamlit returned code2 safely
+  - Installed-Streamlit actual AppTest and original architecture check passed; approved tests and plan unchanged
+  limitations:
+  - Previous installed-Streamlit host checks missed the clean-environment semantic import errors; this record corrects that verification gap
+  - Isolated interpreter is local Windows with Linux type target, not full Linux runtime certification
+  - No dependencies, ignores, stubs, rules or shared source changed; full CI and new source approval remain separately required
