@@ -281,3 +281,25 @@ entries:
   limitations:
   - 本轮记录为本地测试提案修订，尚待新版测试的独立 GitHub 审批
   - 验证范围为定向离线测试，完整回归、真实模型和 GitHub CI 未运行
+- entry_id: SHARED-CI-SMOKE-LINT-FIX-20261124-01
+  timestamp: '2026-11-24T02:03:45Z'
+  tool: Codex
+  model: GPT-6
+  purpose: 按已批准的测试计划修复共享 CI smoke 脚本的 Ruff I001
+  scope:
+  - scripts/paperqa_smoke.py
+  - docs/ai-use-log.yaml
+  status: implementation-verified-locally
+  approvals:
+  - '据用户提供的 GitHub 审批记录，非作者 ziqilin669 于 2026-11-24T01:20:59Z 对 PR #45 的精确 HEAD 48ff74d5a3702bb35e039514fcbda8bbd8589eca 提交 APPROVED，review PRR_kwDOVtJ17M8AAAABZ4v5hA。'
+  - 用户授权本轮两个文件的精确修改与本地验证。
+  verification:
+  - 'RUFF_NO_CACHE=true /Users/usagi/Documents/PaperTrace/.venv/bin/ruff check --fix --select I001 --config papertrace.ruff.toml scripts/paperqa_smoke.py → 0，Found 1 error (1 fixed, 0 remaining).'
+  - '离线验证环境：export RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" MYPY_CACHE_DIR=/dev/null'
+  - '/Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini test/offline/test_smoke_lint_baseline.py -vv → 0，2 passed。'
+  - '/Users/usagi/Documents/PaperTrace/.venv/bin/ruff check --config papertrace.ruff.toml src/papertrace test/offline scripts → 0，All checks passed!'
+  - '/Users/usagi/Documents/PaperTrace/.venv/bin/mypy --config-file mypy.ini src/papertrace → 0，Success: no issues found in 5 source files。'
+  - 'git diff --exit-code 48ff74d5a3702bb35e039514fcbda8bbd8589eca -- test/offline/test_smoke_lint_baseline.py docs/team/designs/shared-ci/smoke-lint-fix-plan.md → 0，无输出。'
+  - '/Users/usagi/Documents/PaperTrace/.venv/bin/python scripts/gates.py --root "$PWD" --gate static --base "$(git rev-parse origin/main)" → 0，base 6235c33d460b48d1ff11a10624d1bcd5919ea4f0，head WORKTREE，lint、types、dependencies、frozen-baseline、architecture、contract-api、secrets、permissions 均 PASS。'
+  limitations:
+  - 本轮验证覆盖定向离线测试和本地静态门禁。完整回归、真实模型和 GitHub CI 未运行。
