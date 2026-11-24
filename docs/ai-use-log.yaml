@@ -291,3 +291,21 @@ entries:
   limitations:
   - Tests and plan only; no workflow source, existing approved tests, schema, data or provider call changed.
   - Direct ChatGPT assistance, not a student-supervised OpenCode implementation transcript.
+
+- entry_id: SHARED-EVAL-WORKFLOW-TEST-20261125-01
+  timestamp: '2026-11-24T15:59:26.960Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Address E review 6042557397 by testing effective workflow credential isolation
+  scope:
+  - test/offline/test_semantic_workflow_proposal.py
+  - docs/team/designs/shared-evaluation/workflow-plan-v1.md
+  status: revised-test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Read exact e67a6a7c review and test source; retained all 44 nodes and added 15 structural controls.
+  - Both actual-workflow tests invoke the common recursive credential assertion.
+  - Full revised pytest and Ruff not yet executed in the locked runtime.
+  limitations:
+  - No actual secret values, secret configuration, workflow source, evaluator implementation or live model calls changed.
+  - Static credential checks do not establish runtime or school API authorization.

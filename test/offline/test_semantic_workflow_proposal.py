@@ -205,6 +205,7 @@ def test_evaluation_workflow_has_only_manual_dispatch_and_separate_review_stage(
         for permission, value in job.get("permissions", workflow.get("permissions", {})).items():
             assert value in {"read", "none"}, permission
 
+    assert_credential_isolation(workflow)
     for name in ("preflight", "finalize"):
         assert "secrets." not in json.dumps(jobs[name])
     for job in jobs.values():
@@ -238,6 +239,7 @@ STAGE_COMMANDS = {
 
 
 def assert_workflow_wiring(workflow):
+    assert_credential_isolation(workflow)
     jobs = workflow["jobs"]
     assert set(jobs) == set(STAGE_COMMANDS)
     assert jobs["collect"]["needs"] == "preflight"
@@ -368,3 +370,103 @@ def test_real_workflow_uses_exact_authorization_and_rating_cli_wiring():
     path = ROOT / ".github/workflows/semantic-evaluation.yml"
     assert path.is_file(), "IMPLEMENTATION_MISSING: evaluation workflow"
     assert_workflow_wiring(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+
+# Only the fixed collect command may receive a provider credential. Inspect
+# the whole YAML tree, not just job-local env; global env is inherited.
+PROVIDER_ENV = "PAPERTRACE_PROVIDER_API_KEY"
+PROVIDER_SECRET = expression("secrets.PAPERTRACE_EVALUATION_API_KEY")
+
+
+def assert_credential_isolation(workflow):
+    collect = workflow["jobs"]["collect"]
+    assert collect["environment"] == "papertrace-evaluation-execution"
+    collect_steps = collect["steps"]
+    allowed = [
+        index for index, step in enumerate(collect_steps)
+        if step.get("run") == STAGE_COMMANDS["collect"]
+    ]
+    # A missing stage is rejected by the wiring assertion; no secret may
+    # appear anywhere when no unique approved collect command exists.
+    allowed_path = (
+        ("jobs", "collect", "steps", allowed[0], "env", PROVIDER_ENV)
+        if len(allowed) == 1 else None
+    )
+
+    def visit(value, path=()):
+        if isinstance(value, dict):
+            for key, child in value.items():
+                assert not (
+                    isinstance(key, str) and "$" + "{{" in key
+                ), "Dynamic YAML keys cannot establish credential isolation"
+                if key == PROVIDER_ENV:
+                    assert (*path, key) == allowed_path, "Provider env outside collect command"
+                    assert child == PROVIDER_SECRET, "Unapproved provider credential binding"
+                visit(child, (*path, key))
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                visit(child, (*path, index))
+        elif isinstance(value, str):
+            # Conservatively reject any secrets-context expression (including
+            # bracket syntax, mixed case and toJSON) outside the exact leaf.
+            if "$" + "{{" in value and re.search(r"\bsecrets\b", value, re.IGNORECASE):
+                assert path == allowed_path, "Secret reference outside collect command"
+                assert value == PROVIDER_SECRET, "Unapproved provider credential binding"
+
+    visit(workflow)
+
+
+def test_collect_only_provider_credential_is_valid():
+    workflow = synthetic_wired_workflow()
+    workflow["jobs"]["collect"]["steps"][-1]["env"][PROVIDER_ENV] = PROVIDER_SECRET
+    assert_workflow_wiring(workflow)
+
+
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "global-env", "global-bracket", "global-secrets-object",
+        "preflight-job-env", "finalize-job-env", "preflight-step-env",
+        "finalize-action-input", "collect-job-env", "collect-checkout-input",
+        "collect-other-step", "collect-output", "wrong-secret",
+        "provider-env-global", "provider-env-finalize",
+    ),
+)
+def test_provider_credentials_cannot_escape_collect_command(fault):
+    workflow = synthetic_wired_workflow()
+    jobs = workflow["jobs"]
+    stage = jobs["collect"]["steps"][-1]
+    stage["env"][PROVIDER_ENV] = PROVIDER_SECRET
+    diagnostic = expression("secrets.DIAGNOSTIC_PROVIDER_KEY")
+    if fault == "global-env":
+        workflow["env"] = {"DIAGNOSTIC_PROVIDER_KEY": diagnostic}
+    elif fault == "global-bracket":
+        workflow["env"] = {"LEAK": expression("secrets['DIAGNOSTIC_PROVIDER_KEY']")}
+    elif fault == "global-secrets-object":
+        workflow["env"] = {"LEAK": expression("toJSON(SeCrEtS)")}
+    elif fault == "preflight-job-env":
+        jobs["preflight"]["env"] = {"LEAK": diagnostic}
+    elif fault == "finalize-job-env":
+        jobs["finalize"]["env"] = {"LEAK": diagnostic}
+    elif fault == "preflight-step-env":
+        jobs["preflight"]["steps"][-1]["env"]["LEAK"] = diagnostic
+    elif fault == "finalize-action-input":
+        jobs["finalize"]["steps"][0]["with"]["token"] = diagnostic
+    elif fault == "collect-job-env":
+        jobs["collect"]["env"] = {"LEAK": diagnostic}
+    elif fault == "collect-checkout-input":
+        jobs["collect"]["steps"][0]["with"]["token"] = diagnostic
+    elif fault == "collect-other-step":
+        jobs["collect"]["steps"].append({"run": "echo safe", "env": {"LEAK": diagnostic}})
+    elif fault == "collect-output":
+        jobs["collect"]["outputs"] = {"leak": diagnostic}
+    elif fault == "wrong-secret":
+        stage["env"][PROVIDER_ENV] = diagnostic
+    elif fault == "provider-env-global":
+        workflow["env"] = {PROVIDER_ENV: "synthetic-not-a-real-key"}
+    elif fault == "provider-env-finalize":
+        jobs["finalize"]["steps"][-1]["env"][PROVIDER_ENV] = "synthetic-not-a-real-key"
+    else:
+        pytest.fail(f"Unknown synthetic mutation: {fault}")
+    with pytest.raises(AssertionError):
+        assert_workflow_wiring(workflow)
