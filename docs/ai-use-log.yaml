@@ -240,3 +240,21 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+
+- entry_id: SHARED-EVAL-TEST-20261124-01
+  timestamp: '2026-11-24'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Propose tests and plan for real semantic evaluation execution and immutable artifact binding
+  scope:
+  - test/offline/test_semantic_execution_proposal.py
+  - docs/team/designs/shared-evaluation/execution-plan-v1.md
+  status: test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Read exact trusted main verifier, schema, workflow, dataset and existing synthetic test fixture.
+  - Identified artifact ID allocated only after immutable upload; proposed server-bound provenance without self-reference.
+  - New tests not locally executed by this assistant; CI and independent review are required.
+  limitations:
+  - No implementation, workflow change, budget approval, product calls, real ratings or semantic PASS.
+  - Not a student-supervised OpenCode implementation transcript.
