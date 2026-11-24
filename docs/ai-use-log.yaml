@@ -240,3 +240,20 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+
+- entry_id: SHARED-EVAL-WORKFLOW-TEST-20261124-01
+  timestamp: '2026-11-24T13:10:00Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Propose manual evaluation preflight and authenticated independent rating intake tests
+  scope:
+  - test/offline/test_semantic_workflow_proposal.py
+  - docs/team/designs/shared-evaluation/workflow-plan-v1.md
+  status: test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Inspected original semantic gate and actual request capture handoff; proposed deterministic preflight and intake contracts against existing synthetic fixture.
+  - Fourteen offline nodes proposed; no local pytest or Ruff result claimed.
+  limitations:
+  - No workflow code, provider calls, credential access, authorization, schema or existing test changes.
+  - Not a genuine student-supervised OpenCode implementation transcript.
