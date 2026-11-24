@@ -240,6 +240,151 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+- entry_id: SHARED-CI-SMOKE-LINT-TEST-20261124-01
+  timestamp: '2026-11-23T17:58:29Z'
+  tool: Codex
+  model: GPT-6
+  purpose: 为共享 CI 的 smoke 脚本既有 I001 准备独立 tests-only RED 提案
+  scope:
+  - docs/team/designs/shared-ci/smoke-lint-fix-plan.md
+  - test/offline/test_smoke_lint_baseline.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  approvals:
+  - 用户在本会话明确批准精确计划及离线验证范围
+  verification:
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/python -m ruff --version → 0，ruff 0.17.5'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/ruff check --config papertrace.ruff.toml test/offline/test_smoke_lint_baseline.py → 0，All checks passed!'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini --collect-only test/offline/test_smoke_lint_baseline.py → 0，2 tests collected'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini test/offline/test_smoke_lint_baseline.py -vv → 1，1 failed, 1 passed。第一项的 Ruff 子进程退出码为 1，stdout 报 scripts/paperqa_smoke.py:37:1 I001，stderr 为空。第二项 AST 顺序检查通过。'
+  - 'git diff --check → 0，无输出。git status --short --untracked-files=all → 仅日志和两个新增提案文件。'
+  limitations:
+  - 验证只覆盖本地提案，未运行完整回归、真实模型或 GitHub CI
+  - 未修改 smoke 脚本，未提交或推送，尚无独立 GitHub 审批
+- entry_id: SHARED-CI-SMOKE-LINT-TEST-AUDIT-FIX-20261124-01
+  timestamp: '2026-11-23T18:30:46Z'
+  tool: Codex
+  model: GPT-6
+  purpose: 修复 PR #45 在 44b10dfd 上独立审计发现的 P1、P2-1 和 P2-2，收紧 AST 初始化检查、区分 Ruff 缺失与 I001，并同步计划和验证记录
+  scope:
+  - test/offline/test_smoke_lint_baseline.py
+  - docs/team/designs/shared-ci/smoke-lint-fix-plan.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  approvals:
+  - 用户明确指定本轮审计修复的文件、验收要求和离线验证范围
+  verification:
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/ruff check --config papertrace.ruff.toml test/offline/test_smoke_lint_baseline.py → 0，All checks passed!'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini --collect-only test/offline/test_smoke_lint_baseline.py → 0，2 tests collected'
+  - 'RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" /Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini -vv test/offline/test_smoke_lint_baseline.py → 1，1 failed, 1 passed。第一项 Ruff 子进程退出码为 1，stdout 仅报告 scripts/paperqa_smoke.py:37:1 I001，stderr 为空。第二项 AST 检查通过。'
+  - 'git diff --check → 0，无输出'
+  limitations:
+  - 本轮记录为本地测试提案修订，尚待新版测试的独立 GitHub 审批
+  - 验证范围为定向离线测试，完整回归、真实模型和 GitHub CI 未运行
+- entry_id: SHARED-CI-SMOKE-LINT-FIX-20261124-01
+  timestamp: '2026-11-24T02:03:45Z'
+  tool: Codex
+  model: GPT-6
+  purpose: 按已批准的测试计划修复共享 CI smoke 脚本的 Ruff I001
+  scope:
+  - scripts/paperqa_smoke.py
+  - docs/ai-use-log.yaml
+  status: implementation-verified-locally
+  approvals:
+  - '据用户提供的 GitHub 审批记录，非作者 ziqilin669 于 2026-11-24T01:20:59Z 对 PR #45 的精确 HEAD 48ff74d5a3702bb35e039514fcbda8bbd8589eca 提交 APPROVED，review PRR_kwDOVtJ17M8AAAABZ4v5hA。'
+  - 用户授权本轮两个文件的精确修改与本地验证。
+  verification:
+  - 'RUFF_NO_CACHE=true /Users/usagi/Documents/PaperTrace/.venv/bin/ruff check --fix --select I001 --config papertrace.ruff.toml scripts/paperqa_smoke.py → 0，Found 1 error (1 fixed, 0 remaining).'
+  - '离线验证环境：export RUFF_NO_CACHE=true PYTHONDONTWRITEBYTECODE=1 PYTEST_ADDOPTS="-p no:cacheprovider" MYPY_CACHE_DIR=/dev/null'
+  - '/Users/usagi/Documents/PaperTrace/.venv/bin/pytest -c papertrace.pytest.ini test/offline/test_smoke_lint_baseline.py -vv → 0，2 passed。'
+  - '/Users/usagi/Documents/PaperTrace/.venv/bin/ruff check --config papertrace.ruff.toml src/papertrace test/offline scripts → 0，All checks passed!'
+  - '/Users/usagi/Documents/PaperTrace/.venv/bin/mypy --config-file mypy.ini src/papertrace → 0，Success: no issues found in 5 source files。'
+  - 'git diff --exit-code 48ff74d5a3702bb35e039514fcbda8bbd8589eca -- test/offline/test_smoke_lint_baseline.py docs/team/designs/shared-ci/smoke-lint-fix-plan.md → 0，无输出。'
+  - '/Users/usagi/Documents/PaperTrace/.venv/bin/python scripts/gates.py --root "$PWD" --gate static --base "$(git rev-parse origin/main)" → 0，base 6235c33d460b48d1ff11a10624d1bcd5919ea4f0，head WORKTREE，lint、types、dependencies、frozen-baseline、architecture、contract-api、secrets、permissions 均 PASS。'
+  limitations:
+  - 本轮验证覆盖定向离线测试和本地静态门禁。完整回归、真实模型和 GitHub CI 未运行。
+- entry_id: SHARED-CI-SMOKE-LINT-FIX-20261124-02
+  timestamp: '2026-11-24T04:30:00Z'
+  tool: Antigravity
+  model: Claude Opus 5.5
+  purpose: 修正 PR #48 首版排序在 CI regression 环境下仍触发 Ruff I001 的环境依赖问题
+  scope:
+  - scripts/paperqa_smoke.py
+  - docs/ai-use-log.yaml
+  status: implementation-verified-locally
+  approvals:
+  - '沿用 PR #45 的测试审批：非作者 ziqilin669 于 2026-11-24T01:20:59Z 对精确 HEAD 48ff74d5a3702bb35e039514fcbda8bbd8589eca 提交 APPROVED，review PRR_kwDOVtJ17M8AAAABZ4v5hA；测试与计划文件未改动。'
+  - 用户（仓库所有者、A 模块负责人）授权本轮两个文件的修改、本地验证与推送；新提交仍需非作者在 GitHub 上重新审批。
+  - '计划偏差披露：PR #45 计划写明“仅排序九行 import 块”。由于 paperqa.version 的分类随生成文件变化，任何纯排序都无法同时通过 static-analysis 与 regression，本轮改为从 paperqa 导入同一 __version__。导入来源改变、绑定值不变；该偏差将在 PR #48 说明，须由复审同学确认接受。'
+  verification:
+  - '根因复现：src/paperqa/version.py 为 gitignore 的 setuptools_scm 生成文件。Ruff 0.17.5 在该文件不存在时把 paperqa.version 归为第三方，存在时归为第一方。CI regression 任务在 uv sync 后会生成该文件，因此首版 38876cdb 在 static-analysis 通过，但在 regression 的 test_paperqa_smoke_passes_configured_ruff_lint 中报 I001（远端 team-offline 356 passed / 2 failed，PR #45 为 357 / 1）。'
+  - '修正：改为 from paperqa import __version__ as PAPERQA_VERSION。paperqa/__init__.py 原本就从 paperqa.version 导出 __version__，取值不变；模块名 paperqa 的分类不依赖生成文件。'
+  - 'RUFF_NO_CACHE=true ruff check --config papertrace.ruff.toml scripts/paperqa_smoke.py 以及 src/papertrace test/offline scripts 全范围，在 version.py 缺失和存在两种状态下均 → 0。'
+  - 'test/offline/test_smoke_lint_baseline.py 在两种状态下均 2 passed。'
+  - 'scripts/full_regression.py run_suite team-offline（含 version.py，模拟 CI 状态）→ 358 passed / 0 failed。'
+  - 'scripts/full_regression.py run_suite team-runtime（requirements-runtime.lock 固定环境）新旧代码均 1 passed；paperqa_smoke.py --json 输出的 paperqa_source 新旧一致。'
+  limitations:
+  - 本地验证不覆盖 upstream 套件和远端 macOS runner；以 GitHub CI 实际结果为准。
+- entry_id: SHARED-EVAL-CONTROL-TEST-20261124-01
+  timestamp: '2026-11-24T13:10:00Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Propose exact-path evaluator and schema implementation classification regression tests
+  scope:
+  - test/offline/test_evaluation_control_paths.py
+  - docs/team/designs/shared-evaluation/control-path-plan.md
+  status: test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Read existing Gate 1 implementation and synthetic approval fixture, identified unconditional changed test path check.
+  - Nine new synthetic test nodes proposed; no local Ruff or pytest execution claimed.
+  limitations:
+  - No protected source, dataset, previous tests, workflow or model calls changed.
+  - Not a genuine student-supervised OpenCode implementation transcript.
+
+- entry_id: SHARED-EVAL-CONTROL-CANDIDATE-20261124-02
+  timestamp: '2026-11-24T13:34:49.961Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Draft implementation of approved exact evaluation control path classification
+  scope:
+  - scripts/gate_evidence.py
+  status: implementation-candidate-awaiting-student-supervised-opencode-and-independent-verification
+  approvals:
+  - PR 54 exact f20bd503462021782f5f5b0b64b05f843cc6a06d approved in review 6040093292.
+  verification:
+  - Reviewer reported 27 passed and two expected RED, Ruff passed for approved test proposal.
+  - Exact two control paths are exempt only from changed-tests comparison and are protected safety paths.
+  - Existing approved test and plan blobs retained; candidate not locally executed.
+  limitations:
+  - Direct ChatGPT candidate, not a supervised OpenCode transcript.
+  - Trusted base and independent current-head source review must judge this candidate, not itself.
+  - No gate adoption, merge, provider call or authorization.
+
+- entry_id: SHARED-EVAL-CONTROL-OPENCODE-ADOPTION-20261125-01
+  timestamp: '2026-11-24T21:20:43Z'
+  tool: OpenCode v2.0.12 (papertrace-verify)
+  model: openai/gpt-6.2-sol
+  purpose: Student-supervised OpenCode read-only verification and bounded adoption of PR #56 control-path classification change
+  scope:
+  - scripts/gate_evidence.py
+  - docs/team/designs/shared-evaluation/control-path-plan.md
+  - test/offline/test_evaluation_control_paths.py
+  - docs/ai-use-log.yaml
+  status: supervised-opencode-verified-awaiting-independent-review
+  approvals:
+  - PR #54 exact test anchor f20bd503462021782f5f5b0b64b05f843cc6a06d approved by Y15BeTa (review 6040093292).
+  - Student (537Lab) authorized this supervised OpenCode verification and adoption record without relaxing opencode.jsonc write protection on protected scripts/gate_evidence.py.
+  verification:
+  - 'OpenCode session ses_df0921808ffeN1TKs9WWjQST7e (agent: papertrace-verify, read-only) verified HEAD 8235aa3ed2eeae15203b701eca3f54343341f5b8 against origin/main 624bccb019e443bbc08a235d5f76f789e64bd543 with empty git status before and after.'
+  - 'Confirmed scripts/gate_evidence.py diff excludes only literal test/evaluation/evaluator.py and test/evaluation/report-schema.json from changed_tests while retaining both in PROTECTED_GATE_PATHS; test/evaluation/cases.json and all other verifier rules remain unchanged.'
+  - 'Confirmed docs/team/designs/shared-evaluation/control-path-plan.md and test/offline/test_evaluation_control_paths.py remain byte-identical to approved PR #54 commit f20bd503462021782f5f5b0b64b05f843cc6a06d.'
+  - 'python -m pytest -c papertrace.pytest.ini -q test/offline/test_gate_evidence.py test/offline/test_evaluation_control_paths.py -> exit 0 (29 passed in 4.41s).'
+  - 'RUFF_NO_CACHE=true python -m ruff check --config papertrace.ruff.toml src/papertrace test/offline scripts -> exit 0 (All checks passed!).'
+  - 'python scripts/gates.py --gate schema -> exit 0 (PASS, 27 requirements); python scripts/gates.py --gate ai-log -> exit 0 (PASS).'
+  limitations:
+  - opencode.jsonc intentionally denies editing protected scripts/gate_evidence.py; OpenCode executed in read-only papertrace-verify mode to audit and verify the existing bounded diff rather than rewriting the file directly.
+  - Read-only verification does not substitute for independent non-author GitHub approval on the final head SHA, nor does it cover remote CI or upstream regression.
 - entry_id: A-TEST-PREP-20261117-01
   timestamp: '2026-11-17T20:07:04.009273+00:00'
   tool: OpenCode v2.0.12 papertrace-build-A；Hermes Agent技术监督、离线验证和本地Git操作
@@ -327,3 +472,62 @@ entries:
   - Isolated environment does not have Ruff installed; any lint pass must be confirmed by actual remote checks on the new head
   - This ChatGPT review change is not a supervised OpenCode course transcript or human Approve
   - No provider/model experiment, private source corpus, public UI or other-module code changes
+- entry_id: A-VIEW-SRC-20261123-01
+  timestamp: '2026-11-23T12:13:34.216Z'
+  tool: ChatGPT with connected GitHub repository tools
+  model: GPT-6
+  purpose: Create an A-only framework-neutral library view adapter candidate after independent approval of PR 30 tests
+  scope:
+  - src/papertrace/library/view.py
+  - docs/ai-use-log.yaml
+  status: AI-authored-implementation-candidate-not-supervised-OpenCode
+  approvals:
+  - PR 30 exact head b4648da3ab962612a832b209ac35029713bdcda9 independently approved by ziqilin669
+  - Student owner requested urgent work in ChatGPT; PR 30 comment 7100609902 was AI-posted on their behalf and is not independent student review
+  verification:
+  - The proposed adapter delegates authorization and writes to existing CorpusService, preserves immutable snapshot/source identity, and rejects mismatched freshness tokens
+  - Code was reviewed statically in the authoring conversation, not executed against the actual project Python environment
+  - No claim of passing the 16 A view tests, full offline regression, Ruff, mypy, GitHub CI, or student-supervised OpenCode work
+  limitations:
+  - This direct GitHub-generated candidate is NOT a student-supervised OpenCode implementation session or course D5 transcript; it must not be used as such
+  - No public application entrypoint, E page, real A-to-E E2E acceptance, provider call, paid API call or private source access
+  - Draft PR must stay open and unmerged until verified by the course-compliant supervised workflow and independently reviewed
+- entry_id: A-VIEW-SRC-OPENCODE-20261123-01
+  timestamp: '2026-11-23T13:11:00+00:00'
+  tool: OpenCode v2.0.12 (restricted papertrace-build-A, --standalone, no --auto) with local supervisor under 537Lab authorization
+  model: openai/gpt-6.1-sol (OpenCode papertrace-build-A)
+  purpose: Replace the prior unverified ChatGPT candidate src/papertrace/library/view.py with a genuine restricted OpenCode implementation derived strictly from approved PR #30 plan/contracts/service and verified on macOS/POSIX
+  scope:
+  - src/papertrace/library/view.py
+  - docs/ai-use-log.yaml
+  status: opencode-implementation-verified-awaiting-independent-human-review
+  approvals:
+  - Prior ChatGPT candidate disclosure A-VIEW-SRC-20261123-01 preserved verbatim without relabeling
+  - PR #30 exact test head b4648da3ab962612a832b209ac35029713bdcda9 independently APPROVED by ziqilin669 (review 6017589113)
+  - Student owner 537Lab authorized running the restricted local OpenCode session to address ziqilin669 CHANGES_REQUESTED on PR #36
+  verification:
+  - Real restricted OpenCode session ses_df7877787ffeiFEAhOk7s5f1nS executed under opencode.jsonc allowlist without --auto, shell, network, or test-file edits (raw export session-ses_df7877787ffeiFEAhOk7s5f1nS.json sha256 d8961ffe07e5322f62a05c689e0d92eea705560a925bc7230cf4c95db28c6c5f; events sha256 37400583c19bb440d688624a2c1c99a5428264cc8d96d614d59495b619fee8bf / 9a95cfd7c5f7deeac3ccc5fd42b2e37b412028987a483d91228c1e604321aef5 / 55a7d5a5360daa4607d891061078823bab29cf026d8f20d83e3a03bc73f65533)
+  - Real supervisor interventions recorded across three turns (initial approval-hold verification, then catching and correcting an unexecuted-write hallucination so turn 3 invoked the actual write tool to create src/papertrace/library/view.py)
+  - Supported-platform macOS/POSIX (Darwin 27.2.0 arm64, Python 3.14.6) exact-node pytest passed all 49/49 tests (16 test_library_view.py + 33 test_library.py) in 0.27s
+  - Targeted Ruff passed on src/papertrace/library and both A test files; strict mypy passed all 11 source files under src/papertrace; approved PR #30 test and plan blobs remain byte-identical
+  limitations:
+  - Triggered locally by an authorized AI supervisor operating OpenCode CLI on behalf of 537Lab rather than interactive keyboard typing by the student; disclosed truthfully without claiming unverified identity
+  - Shared repository baseline lint (scripts/paperqa_smoke.py I001), full upstream regression, independent source Approve on the new HEAD, and merged public app E2E acceptance remain separate
+- entry_id: A-VIEW-REOPEN-20261125-01
+  timestamp: '2026-11-24T22:30:48Z'
+  tool: Git / GitHub CLI (human-directed branch re-publication; no code generation)
+  model: N/A
+  purpose: Re-open clean implementation PR for approved test anchor PR #30 (b4648da3) carrying verbatim validated OpenCode code from PR #36 (998f56d1)
+  scope:
+  - src/papertrace/library/view.py
+  - docs/ai-use-log.yaml
+  status: reopened-for-independent-review
+  approvals:
+  - PR #30 exact test anchor b4648da3ab962612a832b209ac35029713bdcda9 re-approved by Y15BeTa after base retarget dismissal event.
+  - Student (537Lab) authorized clean re-publication without modifying gate_evidence.py or altering previously validated OpenCode source code.
+  verification:
+  - 'src/papertrace/library/view.py matches PR #36 (998f56d1) byte-for-byte.'
+  - 'Approved PR #30 files (view-plan-v1.md and test_library_view.py) match b4648da3 byte-for-byte.'
+  - 'Local schema, ai-log, ruff, mypy, and test_library_view.py executed cleanly prior to PR publication.'
+  limitations:
+  - Re-publication preserves original OpenCode implementation verbatim; requires fresh non-author GitHub approval and remote Gate 1 verification before squash merge.

@@ -1,0 +1,8 @@
+# GOV-01/GOV-02: distinguish two executable evaluation control paths from tests
+
+Related #51 / #53 / #44. Tests-only proposal against trusted main 6235c33d.
+Gate 1 currently treats every modified test/ path as a previously approved test blob. The approved #51 plan legitimately requires implementation of test/evaluation/evaluator.py and modification of test/evaluation/report-schema.json; the evaluator is executable control code and the schema is a protected validation contract, not an offline assertion. The current check rejects even independently reviewed implementation of these exact paths.
+
+Proposed minimal change, after independent exact-head test approval: classify ONLY those two literal paths as implementation controls for the changed-tests comparison, include both in the protected/safety path set, continue to forbid both in tests-only proposals. Do not allow arbitrary test/evaluation paths, dataset edits, old test changes, or missing approved tests. Require existing independent exact-head source review, ADR, trusted unchanged base verifier, original ordering and all other checks. Do not change semantic thresholds, data or workflow in this PR. Adopt the change only via actual independent review and ordinary merge gates; do not use candidate to certify itself. After adoption, integrate trusted main into #53 preserving #51's approved test/plan blobs and obtain new source review.
+
+Nine nodes use existing synthetic GitHub fixtures: two positive exact control paths with missing-review negative, four forbidden tests-only paths, three unapproved extra paths with real implementation. Expected old-validator RED for the two exact controls; other controls must still fail at the original precise reason. No local execution claimed. No model call.
