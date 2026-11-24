@@ -5,8 +5,8 @@
   "data": {
     "schema_version": 1,
     "document_id": "doc-synthetic-a",
-    "version_sha256": "1f008283b605be4baa1da0f90d4204eda7d8dd66646135f8ba501830f9538e6c",
-    "title": "合成文献 A：契约示例（不是真实论文）",
+    "version_sha256": "91bb7abcd33a9a87dd7945fe9815188a127fda09ae391f1a345fb872a4be3acf",
+    "title": "Synthetic document A: contract example (not a real paper)",
     "source_name": "synthetic-paper-a.txt",
     "status": "ready"
   }

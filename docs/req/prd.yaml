@@ -3,48 +3,48 @@ product: PaperTrace — Evidence Review Workbench
 status: proposed-awaiting-student-review
 scope:
   workflow:
-  - 导入论文
-  - AI检索候选证据
-  - 人工接受/排除
-  - 仅据获准证据回答
-  - 追溯报告导出
+  - Import papers
+  - AI retrieval of candidate evidence
+  - Human acceptance/exclusion
+  - Answer only from approved evidence
+  - Traceability report export
   modules:
     A: library
     B: retrieval
     C: review
     D: answer
     E: reports
-  platform: Python + 原PaperQA2 + 薄适配 + 本地Streamlit；单机单人单写者
+  platform: Python + original PaperQA2 + thin adapter + local Streamlit; single machine, single user, single writer
   not_in_scope:
-  - 独立重写PaperQA2
-  - 大型前端/数据库服务器/云平台
-  - 全网获取论文
-  - 第三方预建pickle索引
-  - 自动认定科学事实正确
-  - 运行中物理回收全部上游索引
+  - Rewriting PaperQA2 independently
+  - Large frontend/database server/cloud platform
+  - Fetching papers from the whole web
+  - Third-party prebuilt pickle indexes
+  - Automatically declaring scientific facts correct
+  - Physically reclaiming all upstream indexes during a run
 priorities:
   Must:
-  - 五模块各有业务功能/测试/真实OpenCode过程
-  - 不可变快照与人审授权发布边界
-  - D1-D9及六类门禁证据
+  - Each of the five modules has business features/tests/a genuine OpenCode process
+  - Immutable snapshots and the human-approved release boundary
+  - D1-D9 and evidence for the six gates
   Should:
-  - 证据比较与报告可读性提升
+  - Better evidence comparison and report readability
   Could:
-  - 批量操作的便利性改进
+  - Convenience improvements for batch operations
   Wont:
-  - 多用户/云部署/多模态/自主Agent循环
+  - Multi-user/cloud deployment/multimodal/autonomous Agent loops
 tradeoffs:
-- 先减少便利性而非授权边界/完整回归/真实披露
-- 先单机单写者，存在并发写需求时重开ADR
-- 初始化不是学生正式OpenCode开发贡献
+- Cut convenience first, not the authorization boundary/full regression/honest disclosure
+- Start single-machine single-writer; reopen an ADR if concurrent-write needs arise
+- Initialization is not a student's formal OpenCode development contribution
 registry: requirements.yaml
 course_sources:
   project: CS5351-2026-2027-project.pdf:p3-10
   introduction: cs5351-2026-2027-introduction.pdf:p5,20-26
 unresolved_student_decisions:
-- 原文角色轮换与一次功能分工的流程角色安排
-- 五份会话与D5一份/from-scratch表述的最终口径
-- 以PaperQA2扩展作为同复杂度项目的教师确认
-- 本轮初始化不是OpenCode产出的课程认可边界
-- 真实截止时间与工作投入
-- 真实模型provider/model/数据/费用授权
+- The process-role arrangement for the role rotation described in the source text and for the one-time feature split
+- The final wording for the five session transcripts versus the single D5 session / the from-scratch statement
+- Instructor confirmation that extending PaperQA2 counts as a project of the same complexity
+- The course-accepted boundary for this round's initialization not being OpenCode output
+- The real deadline and the actual work investment
+- Authorization for the real model provider/model/data/cost

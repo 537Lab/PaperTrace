@@ -42,7 +42,7 @@ def test_human_only_rules_are_present_in_the_discovered_project_instructions():
     """GOV-01/04: both rule source and actual AGENTS instructions preserve key human gates."""
     rules = (ROOT / ".opencode" / "rules.md").read_text(encoding="utf-8")
     instructions = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-    for marker in ("学生", "非实现者", "凭据", "批准"):
+    for marker in ("student", "non-implementer", "credentials", "approval"):
         assert marker in rules
         assert marker in instructions
     config = json.loads((ROOT / "opencode.jsonc").read_text(encoding="utf-8"))
@@ -54,11 +54,11 @@ def test_human_only_rules_are_present_in_the_discovered_project_instructions():
     }.items():
         role = f"papertrace-build-{letter}"
         system = config["agents"][role]["system"]
-        assert "测试准备阶段" in system, role
-        assert "严禁写入任何 src/" in system, role
-        assert "通过 GitHub 对具体测试 commit 实际批准" in system, role
-        assert "即使工具 permission 允许" in system, role
-        assert "此行为规则不是身份认证或 OS sandbox" in system, role
+        assert "test-preparation stage" in system, role
+        assert "writing any src/" in system, role
+        assert "approve the specific test commit through GitHub" in system, role
+        assert "even when tool permission allows" in system, role
+        assert "not identity authentication or an OS sandbox" in system, role
         # Native permissions deliberately remain a role/path scope, not an approval service.
         assert module.permission_effect(
             config, role, "edit", f"src/papertrace/{module_name}/service.py"

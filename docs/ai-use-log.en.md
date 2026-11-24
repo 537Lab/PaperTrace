@@ -1,0 +1,211 @@
+# AI-use log: English rendering
+
+English rendering of docs/ai-use-log.yaml for readers of the submission package. The YAML file is the canonical record and stays append-only; if the wording differs, the YAML wins. The historical entries keep their original text there, and this file restates the same facts in English.
+
+## INIT-20261113-01 - 2026-11-13T11:42:18.324716+00:00
+
+- **Tool:** Hermes Agent Desktop (initialization assistance, not OpenCode student session)
+- **Model:** gpt-6.1-sol (runtime-reported, no separate provider verification)
+- **Purpose:** Course source-text checking, an independent Git baseline, architecture and team materials, shared contracts and the offline test foundation
+- **Status:** initialization-assisted-not-student-approved
+- **Scope:** docs; shared-contracts; offline-test-and-CI-foundation
+- **Verification:**
+  - The real execution logs are kept in artifacts/verification; what passed and what was not executed is subject to the final status report
+- **Limitations:**
+  - No PaperQA2 model was called and no provider credentials were read in this round
+  - This round did not approve tests/plans on the student's behalf
+  - This round is not a student OpenCode supervision session or a personal contribution
+  - The protected-file write tool once returned a confirmation timeout, but a read-only check-back showed that AGENTS.md did in fact already exist; the write was not retried and was not treated as student human approval
+  - The five modules' business logic awaits member development; GitHub creation/push/branch protection await authorization
+- **Approvals:** none recorded
+
+## INIT-20261113-02 - 2026-11-13T12:14:15Z
+
+- **Tool:** Hermes delegate_task / parent verification
+- **Model:** gpt-6-luna (runtime-selected subagent); gpt-6.1-sol (parent)
+- **Purpose:** One read-only consistency review of the specified team documents; verify and fix the stale statement about the initial C/D review revision
+- **Status:** completed-ai-review-not-human-approval
+- **Scope:** docs/team/module-C.md; docs/team/module-D.md; docs/reviews/initialization-document-review.md
+- **Verification:**
+  - The subtask completed, with actual task metadata model=gpt-6-luna; the parent checked each item and found
+  - Direct pytest exited 0 with 170 passed; Ruff and mypy passed; the source freeze and the 46 required files checked out
+- **Limitations:**
+  - The AI document review is not a student's prior test approval, a human PR APPROVE or a D5 session
+  - Limited to the specified documents; no real PaperQA2 model evaluation, GitHub write or full upstream regression was performed
+  - Coding/review assistant inference consumes its channel quota; the COST-01 zero-call claim covers only product initialization verification and offline tests
+- **Approvals:** none recorded
+
+## UNBLOCK-20261114-01 - 2026-11-14T10:40:02.555991+00:00
+
+- **Tool:** Hermes Agent Desktop with parallel implementation and independent AI verification
+- **Model:** gpt-6.1-sol (parent runtime-reported); delegated model identities not independently verified
+- **Purpose:** Fix the development permissions, implement GitHub evidence and full regression checks, verify the fixed PaperQA2 offline interface, and simplify the team entry
+- **Status:** engineering-repair-not-student-approval
+- **Scope:** development-governance-and-OpenCode-configuration; executable-CI-evidence-verifiers-and-regression-runner; offline-PaperQA2-technical-smoke-not-business-implementation; team-onboarding-and-module-taskbooks
+- **Verification:**
+  - The original 170 initialization offline tests were re-run and passed; the original upstream core, packages, tests, pyproject and uv.lock have no diff
+  - The gates and the full regression runner's targeted positive/negative tests ran for real; results are subject to this round's artifacts and the final acceptance
+  - The specific OpenCode simulation, the real-object PaperQA2 offline path, the GitHub checks and the unfinished conditions are recorded separately and not conflated
+- **Limitations:**
+  - Does not develop the formal A–E business logic for the student, does not sign student test or plan approvals, and does not impersonate a formal D5 OpenCode contribution
+  - Does not read private model credentials and makes no unauthorized paid or private-data calls; mock output is not a real semantic quality evaluation
+  - CI visibility does not equal enforced branch protection; the private repository protection API still returns a plan-limitation 403
+- **Approvals:** The user authorized PaperTrace project-scope fixes, dependency installation, commits on a dedicated branch and a PR; this is not a course student's prior test approval
+
+## CLOSEOUT-20261114-01 - 2026-11-14T13:19:37.142685+00:00
+
+- **Tool:** Hermes Agent Desktop with bounded configuration helper and independent AI review
+- **Model:** gpt-6.1-sol (parent runtime-reported); gpt-6-luna (delegation metadata, not separate provider attestation)
+- **Purpose:** Continuing from 931cea6, only closing out the semantic verifier's request material, the actual runtime dependency binding and the accurate triggering of Gate4
+- **Status:** engineering-repair-not-student-approval
+- **Scope:** scripts/semantic_evidence.py; scripts/semantic_changes.py; scripts/gate_evidence.py-trusted-helper-list; semantic-schema-contract-and-positive-negative-regressions
+- **Verification:**
+  - The request substitution and the lock change that rebound the head and let it pass wrongly, and the false trigger from unrelated tool configuration, were both reproduced first, then covered by positive/negative regression
+  - All team offline 299 passed, 0 skip; the original 250 items are retained; PaperQA2 offline integration 1 passed
+  - Ruff and mypy passed; the static gate and schema passed; the 83 packages of the actual isolated runtime were checked package by package against the lock
+  - Evidence for the independent review and the final commit is in artifacts/verification/closeout-semantic.json; this log does not masquerade as review approval
+- **Limitations:**
+  - Does not ghost-write the formal A–E features, does not sign student test/plan approvals, and does not treat a mock tool session as D5 or as real model quality
+  - No product model was called and no private model credentials were used; the complete upstream's earlier real FAIL and the 9 unauthorized live items are not rewritten
+  - Adopting the new gates, real student approval, the model budget and independent scoring still need real people; no self-approved bootstrap
+- **Approvals:** The user authorized continuing the local dedicated-branch fixes, verification, push and creation of a human-review PR; merging to main is not allowed
+
+## FINAL-CI-20261114-01 - 2026-11-14T14:30:21.251883+00:00
+
+- **Tool:** Hermes Agent Desktop with bounded read-only Scout and Verifier
+- **Model:** gpt-6.1-sol (parent runtime-reported); gpt-6-luna (delegation metadata)
+- **Purpose:** Verify and fix the responsibilities of PR and main push events, preserve the real approval replay, and make the one-time human adoption and the five-member start entry explicit
+- **Status:** engineering-closeout-not-human-approval
+- **Scope:** Actions-event-context-and-native-merged-PR-evidence-replay; existing-bootstrap-and-team-start-documents
+- **Verification:**
+  - A minimal old workflow and verifier path reproduced the push missing a PR number; then normal PR/main, reverted/unapproved changes/abnormal events and native API shapes were added as positive/negative tests
+  - All team offline 332 passed, 0 skip; the 299 items are retained; PaperQA2 offline smoke 1 passed; Ruff/mypy passed
+  - The actual bash selector, CLI context and post-merge semantic material replay all have synthetic Git history tests; the independent AI review is in this round's verification artifact
+- **Limitations:**
+  - No real main merge was performed; the post-merge CI is only an offline event simulation and is not claimed to have run green on remote main
+  - Does not ghost-write the A–E business logic; the real Plan/test/PR review/D5 process and acceptance of the shared course starting point must be completed by the student/instructor
+  - The original full-upstream FAIL/time limit, the 9 unauthorized live items, the unevaluated real model quality and the private-protection limitation remain unchanged
+  - Does not set a bootstrap PASS by itself or remove the six gates; this round makes no product model credential/paid calls
+- **Approvals:** The user authorized closing out the existing branch/PR; merging to main, fabricating student approval and unauthorized costs are explicitly forbidden
+
+## D1-TESTPREP-20261117-01 - 2026-11-17T06:07:18Z
+
+- **Tool:** OpenCode desktop session, agent role papertrace-build-D (test-preparation stage)
+- **Model:** deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently verified)
+- **Purpose:** Offline tests, synthetic fixtures and design records for module D slice 1 (the approval-eligibility gate and pre-generation abstention); does not implement src
+- **Status:** test-preparation-complete-awaiting-independent-test-commit-approval
+- **Scope:** test/offline/test_answer.py; test/fixtures/answer/synthetic-corpus-a.txt; test/fixtures/answer/synthetic-corpus-b.txt; docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+- **Verification:**
+  - Local measurement (.venv, CPython 3.14.8, requirements-init.lock): single file 32 failed / 1 passed; full offline suite 32 failed / 331 passed / 2 skipped
+  - All 32 failures are the expected missing-implementation assertions "proposed module papertrace.answer is not implemented", with no collection error
+  - ruff has 1 pre-existing error in the unmodified scripts/paperqa_smoke.py (I001); mypy 0; schema PASS
+- **Limitations:**
+  - Not a non-implementer's GitHub Approve, and does not prove the tests have been human-approved
+  - Did not write src/, and did not change shared contracts/dependencies/CI/permissions/shared fixtures/shared logs
+  - The downstream assertions remain unverified before implementation
+  - This entry was appended to the shared log on 2026-11-19 at the reviewer's request; this disclosure is not evidence that any approval exists
+- **Approvals:** The student approved the "module D test preparation only" scope in a self-contained message on 2026-11-17; this does not constitute test commit approval or source implementation approval
+
+## D1-IMPL-20261118-01 - 2026-11-17T16:47:39Z
+
+- **Tool:** OpenCode desktop session, agent role papertrace-build-D (source implementation stage)
+- **Model:** deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently verified)
+- **Purpose:** Implement module D slice 1 (reading the review projection, eligibility checks and pre-generation abstention); does not implement generation/release
+- **Status:** implementation-complete-awaiting-pr-review-not-merged
+- **Scope:** src/papertrace/answer/__init__.py; src/papertrace/answer/model.py; src/papertrace/answer/errors.py; src/papertrace/answer/eligibility.py; src/papertrace/answer/service.py; docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
+- **Student decisions:**
+  - The student approved this module's test preparation scope (2026-11-17), then approved installing the CPython 3.14 venv and requirements-init.lock
+  - The student confirmed that Li Yafei has approved the test proposal PR
+  - The student approved the slice-1 implementation scope and asked to keep the uncommitted .DS_Store deletion out of the commit
+- **Verification:**
+  - .venv/bin/python -m pytest ... test/offline/test_answer.py → exit 0; 33 passed
+  - .venv/bin/python -m pytest ... test/offline → exit 0; 363 passed, 2 skipped (the skips are the pre-existing missing OpenCode executable)
+  - ruff (run on the D files alone) → exit 0; the global run still fails on the unmodified scripts/paperqa_smoke.py I001
+  - mypy src/papertrace → exit 0, 7 source files
+  - scripts/gates.py --gate schema → exit 0, PASS
+- **Limitations:**
+  - No product model was called; no new network calls (only the previously approved interpreter/dependency downloads)
+  - {'The real C integration is unverified': 'C PR'}
+  - Generation, citation parsing, freshness/token, budget and the release gate are all unimplemented
+  - The static import scan is only a supplementary observation and does not prove zero outbound attempts
+  - This entry was appended to the shared log on 2026-11-19 at the reviewer's request; this disclosure is not evidence that any approval exists
+- **Approvals:** Test commit approval: GitHub reviews.totalCount = 0 and the PR timeline has no review event, no non-author Approve of 29b2133 is recorded; that claim comes only from the student's verbal account; Implementation scope: the student's 2026-11-18 message; this does not constitute merge approval
+
+## D-RELEASE-20261123-01 - 2026-11-23T13:06:03+08:00
+
+- **Tool:** OpenCode desktop session, agent role papertrace-build-D (source implementation stage), session ses_df9385cc9ffeXneA5e41reGvzw
+- **Model:** deepseek-flash (provider deepseek, variant max; runtime label not independently verified)
+- **Purpose:** Implement the deterministic D release check in its blocked-only scope and expose it through the D entry point; does not implement the final publication transaction
+- **Status:** implementation-complete-pr-open-draft-approved-not-merged
+- **Scope:** src/papertrace/answer/ (release decision, service wiring, package exports); docs/team/designs/module-D/20261123-d-release-gate-plan.md; docs/team/designs/module-D/20261123-d-release-gate-implementation.md
+- **Student decisions:**
+  - The student approved the release-check implementation after the test approval on PR
+  - The student fixed the scope to the blocked-only decision; the final publication transaction and the compare-and-commit boundary remain with the A/C/E and application owners.
+- **Verification:**
+  - Candidate offline run: 454 passed, 2 skipped, including 29 release-check tests.
+  - Targeted Ruff, mypy (12 files), schema and AI-use-log checks passed locally.
+  - Remote static analysis, full regression and semantic evaluation were not green at the head; no merge was attempted.
+- **Limitations:**
+  - No real model call and no final publication transaction in this round.
+  - The release decision stays blocked / PUBLICATION_COMMIT_UNAVAILABLE by design.
+  - The upstream full regression was not green; the semantic gate has no bound real run.
+- **Approvals:** Test approval: PR #24 carried the approved test version that this implementation inherits.; Implementation review: GitHub review 6018723258 requested changes on the ADR-001 scope; the 24 November readback recorded the same head as APPROVED, and the PR remains an open draft.
+
+## D-FIX-20261124-01 - 2026-11-24T12:25:27+08:00
+
+- **Tool:** OpenCode desktop session, agent role papertrace-build-D (source implementation stage), session ses_df432d66affeKQLMHJb0TYkNc6
+- **Model:** deepseek/deepseek-flash (OpenCode CLI 2.3.0; provider identity not independently attested)
+- **Purpose:** Repair the duplicate-sent failure path so a rejected draft keeps validated accounting; limited to two D source files
+- **Status:** implementation-complete-fix-approved-open-draft-not-merged
+- **Scope:** src/papertrace/answer/generation.py; src/papertrace/answer/b_gateway_adapter.py
+- **Student decisions:**
+  - The student authorized the narrow repair after the six regression cases were approved on PR
+  - The student required duplicate evidence to remain a rejection and reserved verification for a separate run.
+- **Verification:**
+  - Six approved cases: three valid-accounting cases failed on #43 and pass on #50; three invalid-accounting controls pass on both.
+  - 259 D/C tests passed in the locked runtime with an isolated metadata overlay; 24 D and B/D boundary tests passed offline.
+  - An independent B-side replay reported 451 passing B/C/D/E checks; the E-side replay preserved 1, 0 and null through save, reopen and export.
+- **Limitations:**
+  - No real product model was called; the real-provider semantic evaluation was not run.
+  - Static analysis, full regression and semantic evaluation remained failing at the candidate; the public page wiring is not accepted.
+  - This entry does not claim a merge or a human approval beyond the recorded reviews.
+- **Approvals:** Test approval: PR #49 at 476fbae91d6d56988bdfd89c5c3004c49b05f44a, GitHub review 6033407385, before any source edit.; Implementation review: PR #50 at 8f0866675157b3e8fdce264ba3cd6e65e8e3892f, GitHub review 6037341203; the PR remains an open draft.
+
+## PREP-20261125-01 - 2026-11-25T03:25:00+08:00
+
+- **Tool:** DeepSeek Harness agent session (submission preparation with delegated translation workers; not an OpenCode student development session)
+- **Model:** deepseek-flash (runtime-reported; provider identity not independently verified)
+- **Purpose:** Prepare the D5 annotated transcript, the D6 personal reflection and the D report section; translate submission files to English; build the ZIP acceptance checklist
+- **Status:** preparation-assistance-not-human-approval
+- **Scope:** transcripts/60588464-Yu-Wenyan.md; docs/ and repository prose files; README.md, AGENTS.md, Report.md; test/fixtures/contracts and test/evaluation/cases.json; artifacts/verification annotations
+- **Student decisions:**
+  - The student requested the English conversion and the D5/D6 preparation.
+  - No student approval of tests, architecture or a merge is implied by this entry.
+- **Verification:**
+  - Translation structure check: 66 files matched heading, fence and link counts; no CJK outside two upstream fixtures.
+  - Offline suite after the fixture and case changes: 362 passed, 2 skipped, 1 failed only because the sandbox denies ps.
+  - Contract tests: 149 passed; YAML and JSON files re-parsed; ZIP checker 31 pass, 1 warn, 2 fail (Report placeholder, transcripts 1/5).
+- **Limitations:**
+  - No product model was called and no provider credential was read.
+  - This is not a D5 transcript and not a substitute for student OpenCode supervision.
+  - The translation changed test fixture identifiers and two test files; that change is recorded here rather than presented as an approved test revision.
+  - The exact Codex/DSH session identifier is not retrievable from this interface; update this entry if an export becomes available.
+- **Approvals:** none recorded
+
+## SUBMISSION-EN-20261125-01 - 2026-11-25T04:50:00+08:00
+
+- **Tool:** DeepSeek Harness agent session (submission english conversion)
+- **Model:** deepseek-flash (runtime-reported; provider identity not independently verified)
+- **Purpose:** Convert the repository submission materials to English, and keep the audit log, the fixed evaluation set and the startup prompt append-only
+- **Status:** translation-assistance-not-human-approval
+- **Scope:** docs/ai-use-log.en.md; docs, team and tooling prose; README.md, AGENTS.md, architecture-blueprint.md, Prompt.md
+- **Student decisions:**
+  - The student asked for the repository materials to be in English.
+  - The student accepted the review comment that docs/ai-use-log.yaml, test/evaluation/cases.json and prompts/prompt_v1.0.yaml stay byte-identical; the first two are reverted and this log only appends.
+- **Verification:**
+  - Every historical entry is byte-identical to the version before this branch; the D-RELEASE, D-FIX and PREP entries appended earlier on this branch are unchanged, and this entry is the only new one in this revision.
+  - scripts/gates.py --gate ai-log passes against base c3817ae.
+- **Limitations:**
+  - The canonical log keeps its original wording; the English rendering is a separate file.
+  - This entry records no approval of a test revision and no human sign-off of the human-maintained rules files.
+- **Approvals:** none recorded

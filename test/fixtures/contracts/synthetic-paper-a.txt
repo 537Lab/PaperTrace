@@ -1,1 +1,1 @@
-SYNTHETIC：本行只是共享契约测试样例，不是真实论文或科学结论。
+SYNTHETIC: this line is only a shared-contract test example, not a real paper or a scientific conclusion.

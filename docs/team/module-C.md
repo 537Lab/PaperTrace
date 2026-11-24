@@ -1,49 +1,49 @@
-# 模块 C｜原文比较、人工审核与追加式账本
+# Module C | Source comparison, human review and the append-only ledger
 
-> **Owner C：**端到端负责 review 功能、自己的 view、需求/设计、监督 OpenCode、测试与 PR。此任务书不是授权记录；业务仍待成员实现。
+> **Owner C:** end-to-end responsibility for the review feature, their own view, requirements/design, supervision of OpenCode, tests and PRs. This task book is not an authorization record; the business logic still awaits member implementation.
 >
-> 统一从[团队启动入口](../../TEAM_START_HERE.md)进入；字段事实源是 [`integration-contract.md`](integration-contract.md) 和真实 contracts。
+> Always start from the [team start entry](../../TEAM_START_HERE.md); the authoritative source for fields is [`integration-contract.md`](integration-contract.md) and the real contracts.
 
-## 用户结果与责任
+## User outcome and responsibilities
 
-研究者能对同一问题/快照比较至少两条独立来源，清楚看到原文、AI 摘要、版本/定位和审核理由；只能通过明确的人类操作接受、排除或重置；决定可重放，旧事件不覆盖。没有有效决定就是 pending。
+The researcher can compare at least two independent sources for the same question/snapshot and clearly see the source text, the AI summary, version/locator and the review rationale; only an explicit human action can accept, exclude or reset; decisions are replayable and old events are never overwritten. No valid decision means pending.
 
-C 唯一负责人工审核权威及追加 ledger。`actor_kind="human"`、匿名 `reviewer_ref` 等 schema 字段只是形状，不证明真人身份；本产品是本机单人流程，不承诺对抗恶意本机管理员。任何 fake/model/import/UI cache 均不能写权威 accepted。
+C is the sole owner of human-review authority and of the append-only ledger. Schema fields such as `actor_kind="human"` and the anonymous `reviewer_ref` are only shapes and do not prove a real person's identity; this product is a local single-user flow and does not claim to withstand a malicious local administrator. No fake/model/import/UI cache may write an authoritative accepted.
 
-## Must 与可验收结果
+## Must and reviewable outcomes
 
-| 需求/不变量 | 必须行为与验收 |
+| Requirement/invariant | Required behaviour and acceptance |
 |---|---|
-| `FR-C-01`, `INV-03/05` | 明确 human 命令追加 `accepted/excluded/pending` 决定；理由非空、scope 对应 question/snapshot/evidence；revision 单调递增、digest 可重算；冲突/伪造/损坏拒绝且 fail closed。重置追加 pending，不删除旧事件。 |
-| `FR-C-02`, `INV-02` | 同时比较 ≥2 来源；文献版本、locator、原文、摘要和理由均可见；相似/相反 evidence 保持不同身份；展示/排序/刷新不改 ledger。 |
-| `INV-04/06`, `QA-01`, `SEC-01` | 决定绑定固定 snapshot/question；旧决定不迁移到新文献；绕过 view 调服务仍受同一 human/scope/revision 校验；匿名材料不记真实身份。 |
+| `FR-C-01`, `INV-03/05` | An explicit human command appends an `accepted/excluded/pending` decision; the rationale is non-empty and the scope corresponds to question/snapshot/evidence; revision increases monotonically and the digest can be recomputed; conflicts/forgeries/corruption are rejected and fail closed. A reset appends pending and does not delete old events. |
+| `FR-C-02`, `INV-02` | Compare ≥2 sources at the same time; literature version, locator, source text, summary and rationale are all visible; similar/opposing evidence keeps distinct identities; display/ordering/refresh does not modify the ledger. |
+| `INV-04/06`, `QA-01`, `SEC-01` | Decisions bind to a fixed snapshot/question; old decisions are not migrated to new literature; calling the service while bypassing the view is still subject to the same human/scope/revision checks; anonymous material does not record a real identity. |
 
-空账本 revision 为 0、没有 accepted；具体 digest/重放/幂等/原子写策略须在 Plan 设计并批准，不从 UI 缓存补权限。
+An empty ledger has revision 0 and no accepted entries; the exact digest/replay/idempotency/atomic-write policy must be designed and approved at Plan, and permissions are never filled in from UI cache.
 
-## 边界与拟议改动范围
+## Boundaries and proposed change scope
 
-- 接 B/A 的 `EvidenceRecord`、`CorpusSnapshot` 与受限原文读取；向 D/E 提供指定 question/snapshot 的可重放投影和 token。D 是发布权威；C 不决定 release，不直接改 A/B/E 文件。
-- **常规模块范围（在 Plan 一次确认；范围内日常编辑/新增文件不逐次批准）：**`src/papertrace/review/`（ledger 服务与 view）、`test/offline/test_review.py`、`test/fixtures/review/`。共享合同/fixture、需求/trace、app 编排、依赖/CI 与治理日志另批。
-- `.opencode/rules.md` 是 human-only，AI 不得修改；不读真实 `.env`、论文、历史或个人目录，不调用模型/网络。
+- Consumes `EvidenceRecord`, `CorpusSnapshot` and restricted source-text reads from B/A; provides D/E with a replayable projection and token for a given question/snapshot. D is the release authority; C does not decide release and does not directly modify A/B/E files.
+- **Routine module scope (confirmed once at Plan; routine edits/new files inside the scope are not approved one by one):** `src/papertrace/review/` (ledger service and view), `test/offline/test_review.py`, `test/fixtures/review/`. Shared contracts/fixtures, requirements/trace, app orchestration, dependencies/CI and governance logs are approved separately.
+- `.opencode/rules.md` is human-only and AI must not modify it; do not read the real `.env`, papers, history or personal directories, and do not call models/network.
 
-## 不等 B/D 的 fake 开发与验收
+## Fake-first development and acceptance without waiting for B/D
 
-用共享规范 `EvidenceRecord`/`CorpusSnapshot` 和自写两条相反观点加一条无关观点的 synthetic evidence；fake candidate feed 只能产生候选，永不返回有权威的 accepted。先实现纯服务/重放，再由 view 调同一服务，避免复制状态机。
+Use the shared canonical `EvidenceRecord`/`CorpusSnapshot` with hand-written synthetic evidence holding two opposing viewpoints plus one irrelevant viewpoint; the fake candidate feed may only produce candidates and never returns an authoritative accepted. Implement the pure service/replay first, then have the view call the same service, so the state machine is not duplicated.
 
-至少验证：无决定/模型建议都 pending；human 接受/排除/重置产生正确事件与 revision/digest；重复提交/排序/刷新不重复授权；伪造 human/import accepted 拒绝；旧 revision 冲突不覆盖；坏 digest/跨 question/snapshot 拒绝；相似内容不合并；service 直调不能绕过；新决定会让旧 D draft 失效。全程零模型调用，合成操作不能伪装真实审批记录。
+Minimum verification: with no decision, and with only a model suggestion, the state stays pending; human accept/exclude/reset produce the correct events and revision/digest; repeated submission/ordering/refresh does not grant twice; a forged human/import accepted is rejected; an old revision conflict does not overwrite; a bad digest/cross-question/snapshot is rejected; similar content is not merged; a direct service call cannot bypass; a new decision invalidates the old D draft. Zero model calls throughout; synthetic operations must not masquerade as real approval records.
 
-## D1–D9：C 应留下的模块证据
+## D1–D9: module evidence C should leave behind
 
-| 项 | 本模块证据 |
+| Item | Evidence for this module |
 |---|---|
-| D1 | `FR-C-01/02`、`INV-03/04/05` 的 fit criterion、测试与 trace。 |
-| D2 | Human-only 权威、ledger 追加/重放、revision/digest、冲突/幂等/坏账本策略与必要 ADR。 |
-| D3 | 本轮精确路径/工具权限及服务层 human/scope 边界；不把客户端字符串当身份认证。 |
-| D4 | 事前批准负测、service/UI 一致、全回归、独立 review memo 与真实 bug/debt。 |
-| D5 | 学生监督 OpenCode 的真实完整原始会话和干预理由；不得用 Hermes 初始化充数。课程份数口径待确认。 |
-| D6 | 本模块真实功能/协作贡献、发现与反思素材；最终身份由本人填写。 |
-| D7 | 本地 diff/PR、真实 CI/独立审查；先前远端保护 403 未生效，最终须核实。 |
-| D8 | ledger/投影、比较 view、synthetic fixture 及正负/回归复现。 |
-| D9 | 根 `Prompt.md` 的 Plan 停点、测试/计划/路径批准和监督执行记录。 |
+| D1 | Fit criterion, tests and trace for `FR-C-01/02`, `INV-03/04/05`. |
+| D2 | Human-only authority, ledger append/replay, revision/digest, conflict/idempotency/bad-ledger policy and necessary ADRs. |
+| D3 | This round's exact path/tool permissions and the service-layer human/scope boundary; client-provided strings are not identity authentication. |
+| D4 | Pre-approved negative tests, service/UI consistency, full regression, independent review memo and real bug/debt. |
+| D5 | The genuine complete original session of the student supervising OpenCode and the reasons for intervention; Hermes initialization must not be counted. The course count basis is pending confirmation. |
+| D6 | This module's real feature/collaboration contribution, findings and reflection material; the final identity is filled in by the person. |
+| D7 | Local diff/PR, real CI/independent review; the earlier remote protection 403 did not take effect and must be verified at the end. |
+| D8 | Ledger/projection, comparison view, synthetic fixtures and positive/negative/regression reproduction. |
+| D9 | The Plan stop point in the root `Prompt.md`, test/plan/path approvals and supervised execution records. |
 
-验收要求真人交互边界的真实服务测试；按钮 disabled、手写 accepted JSON 或模型建议均不算通过。
+Acceptance requires real service tests of the human-interaction boundary; a disabled button, hand-written accepted JSON or a model suggestion do not count as passing.

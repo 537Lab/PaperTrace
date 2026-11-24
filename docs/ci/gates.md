@@ -1,11 +1,11 @@
-# 六类门禁入口索引
+# Index of the six gate-category entry points
 
-- [实际命令、退出码、CI 信任边界](README.md)
-- [五人最小工作流与套餐限制](minimal-gates.md)
-- [Gate 1：真实事前测试批准验证](test-approval.md)
-- [Gate 4：真实模型报告与独立评分验证](../../test/evaluation/README.md)
-- [Gate 5：三来源完整回归执行器](full-regression.md)
-- [Live 授权边界](../../test/live/README.md)
-- [当前实跑状态（唯一状态表）](../../INITIALIZATION_STATUS.md)
+- [Actual commands, exit codes, CI trust boundary](README.md)
+- [Five-person minimal workflow and plan limits](minimal-gates.md)
+- [Gate 1: real prior test approval verification](test-approval.md)
+- [Gate 4: real model report and independent scoring verification](../../test/evaluation/README.md)
+- [Gate 5: three-source full regression executor](full-regression.md)
+- [Live authorization boundary](../../test/live/README.md)
+- [Current real run status (single source of status)](../../INITIALIZATION_STATUS.md)
 
-验证器已不是恒定 BLOCKED 占位；无真实证据仍正确阻断。历史首跑结果不代表本次修复已在远端验证，mock 验证不是人审或模型评估。
+The verifier is no longer a permanently BLOCKED placeholder; without real evidence it still correctly blocks. Historical first-run results do not mean this round's fixes were verified remotely, and mock verification is neither human review nor model evaluation.

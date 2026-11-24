@@ -1,9 +1,9 @@
-# 初始化文档一致性审查（不是PR人工批准）
+# Initialization document consistency review (not a human PR approval)
 
-日期2026-11-13；审查工具Hermes委派的gpt-6-luna，运行任务元数据显示该模型，子任务已完成。仅只读TEAM_START_HERE、module-D、integration-contract、contracts/schema四份文档；未运行测试、未更改文件、未额外调用PaperQA2模型、未读取凭据或使用联网工具。审查本身使用gpt-6-luna并会消耗相应助手渠道额度，不是零额度操作，也不是PaperQA2产品评估。
+Date 2026-11-13; the review tool was gpt-6-luna delegated by Hermes, the task run metadata shows that model, and the subtask completed. Only the four documents TEAM_START_HERE, module-D, integration-contract and contracts/schema were read read-only; no tests were run, no files changed, no additional PaperQA2 model was called, no credentials were read and no networked tools were used. The review itself used gpt-6-luna and consumes the corresponding assistant channel quota, so it is not a zero-quota operation, and it is not a PaperQA2 product evaluation either.
 
-发现：module-D仍称review_revision必须正整数、空账本映射待定，已落后于共享契约对revision=0拒答/阻断的修正。主控读回核实后，仅修正对应段落。主控定向搜索另发现module-C同类陈旧表述，并同步修正；没有把这项扩展搜索归功于子任务。
+Finding: module-D still said review_revision must be a positive integer and that the empty-ledger mapping was undecided, which had fallen behind the shared contract's correction for revision=0 abstention/blocking. After the controller read it back and verified, only the corresponding paragraphs were corrected. A targeted search by the controller also found the same stale wording in module-C, which was corrected in the same pass; that extended search was not credited to the subtask.
 
-处置：空账本revision=0仅可abstained/failed或blocked；真实人工事件从1开始，不可为满足字段伪造事件。digest仍由C按经批准规范计算，不把hash等同真人认证。共享代码没有因此再改；170项离线测试已通过。
+Disposition: with an empty ledger, revision=0 allows only abstained/failed or blocked; real human events start at 1, and no event may be fabricated to satisfy a field. The digest is still computed by C per the approved specification, and a hash is not equated with real-person authentication. The shared code was not changed again because of this; the 170 offline tests have passed.
 
-性质：AI辅助初始化检查。没有GitHub PR、没有学生人工APPROVE，不作为实现前测试批准、个人贡献或D5 transcript。真实学生采纳及后续PR审查仍须本人完成。
+Nature: an AI-assisted initialization check. There is no GitHub PR and no student human APPROVE, and it does not serve as prior test approval, personal contribution or a D5 transcript. Real student adoption and subsequent PR review must still be done by the students themselves.

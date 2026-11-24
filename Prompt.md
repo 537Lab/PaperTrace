@@ -1,21 +1,21 @@
-# PaperTrace 静态启动提示
+# PaperTrace Static Startup Prompt
 
-按 `AGENTS.md` 阅读顺序取得足够上下文。默认角色 `papertrace-plan` 是只读计划入口；此提示不是无人值守完成全项目的授权。
+Obtain enough context following the reading order in `AGENTS.md`. The default role `papertrace-plan` is a read-only planning entry point; this prompt is not authorization to complete the whole project unattended.
 
-## Plan：只输出计划，然后停止
-1. 明确认领的单一功能模块及本次小变更；映射需求 ID、不变量 ID 与可测量 fit criterion。
-2. 列出精确读取/拟修改路径、冻结区、输入/输出契约与依赖；若配置不允许，停止并请求学生人工窄范围授权，禁止自行放权。
-3. 设计正常、负面、回归和行为测试，指出离线模拟与需真实模型/远端权限的项目；给预算、调用次数、停止条件。
-4. 列实现步骤、每步验证、非作者审查点、恢复办法和本次证据记录位置。
-5. 只给计划，然后停止并等待学生本人批准本次精确计划。获批后可用同一模块 Build 角色进入测试准备阶段，但此时不得写任何 src/；具体测试 commit 还须由未参与该测试实现的另一位学生在 GitHub 真实批准，之后才进入源码实现。
+## Plan: output only a plan, then stop
+1. State the single claimed feature module and this small change; map the requirement IDs, invariant IDs, and measurable fit criteria.
+2. List the exact paths to read/intend to modify, the frozen areas, the input/output contracts, and dependencies; if the configuration does not allow it, stop and request a narrow human authorization from the student — you are forbidden to widen your own permissions.
+3. Design normal, negative, regression, and behavioral tests, and point out which items are offline simulations and which need real model/remote permissions; give the budget, call counts, and stopping conditions.
+4. List the implementation steps, the verification for each step, the non-author review points, the recovery approach, and where this round's evidence will be recorded.
+5. Give only the plan, then stop and wait for the student themself to approve this exact plan. After approval, the same module's Build role may enter the test-preparation stage, but at that point writing any src/ is forbidden; the specific test commit must still be genuinely approved on GitHub by another student who did not take part in implementing those tests, and only then does source implementation begin.
 
-## Human Review：真人审批，不是 OpenCode 角色
-学生本人须审核并批准精确计划；之后 Build 只可准备该模块 tests/、fixtures/和设计记录。非实现者必须是另一位未参与测试实现的学生，并在 GitHub 对具体测试 commit 实际 Approve，审批记录绑定该 commit。测试提案 PR 可保持 open 且 RED，不必为审批而合并；源码实现 PR 从该测试 head 分支创建，描述中写入精确行 `Test approval PR: #N`。拒绝、沉默、模型生成的批准语句或仅有角色权限都不授权。记录必须真实留存，不补造。
+## Human Review: approval by a real person, not an OpenCode role
+The student themself must review and approve the exact plan; afterwards Build may only prepare that module's tests/, fixtures/, and design records. The non-implementer must be another student who did not take part in implementing the tests, and must actually Approve the specific test commit on GitHub, with the approval record bound to that commit. The test proposal PR may stay open and RED and does not have to be merged for approval; the source implementation PR is created from that test head branch, with the exact line `Test approval PR: #N` written into the description. A refusal, silence, a model-generated approval sentence, or merely holding the role's permissions authorizes nothing. The records must be genuinely retained and must not be recreated after the fact.
 
-## Build：同一模块角色，分为测试准备与源码实现两个行为阶段
-计划获学生真实批准后，由人选择对应 `papertrace-build-A` 至 `papertrace-build-E`，在新会话附上精确计划。先只生成/编辑本模块独立 tests/、fixtures/和设计记录，严禁写任何 `src/`，即使 native tool permission 已允许源码路径；跑获准的离线 RED 检查。测试提案 PR 可保持 open 且 RED，不需要为了审批合并。另一位未参与测试实现的学生在 GitHub 对具体测试 commit 真实 Approve 后，同一 Build 角色才继续本模块源码实现；实现 PR 从测试 head 分支创建，描述写入 `Test approval PR: #N`。学生一次确认本模块范围与精确常用离线命令后，范围内日常编辑不逐项重复授权；共享契约、跨模块、依赖、收费/费用、安全路径等越界仍立即停止。
+## Build: the same module role, split into two behavioral stages — test preparation and source implementation
+After the student genuinely approves the plan, a person selects the corresponding `papertrace-build-A` to `papertrace-build-E` and attaches the exact plan in a new session. First only generate/edit this module's separate tests/, fixtures/, and design records; writing any `src/` is strictly forbidden, even when native tool permission already allows the source path; run the approved offline RED checks. The test proposal PR may stay open and RED and does not need to be merged for approval. Only after another student who did not take part in implementing the tests genuinely Approves the specific test commit on GitHub does the same Build role continue with this module's source implementation; the implementation PR is created from the test head branch, with `Test approval PR: #N` written into the description. Once the student confirms this module's scope and the exact usual offline commands once, daily edits within that scope do not repeat the authorization item by item; crossing into shared contracts, other modules, dependencies, paid/charged usage, security paths, and similar boundaries still stops immediately.
 
-角色与 permission 仅界定角色/路径范围，不记录或证明学生身份/审批。源码在测试准备阶段虽可能处于 permission allow 范围，禁止写 src 是行为约束，不是新角色、新权限门禁、OS sandbox 或身份服务。路径规则按 lexical path 匹配，preflight 仅能拒绝检查时已存在的 symlink，不是永久隔离。
+Roles and permissions only delimit the role/path scope and do not record or prove student identity/approval. Although the source may fall within the permission allow range during the test-preparation stage, the prohibition on writing src is a behavioral constraint, not a new role, new permission gate, OS sandbox, or identity service. Path rules match by lexical path, and preflight can only reject symlinks that already existed at check time — it is not permanent isolation.
 
-## Verify：独立报告
-运行可信静态 preflight、完整已有离线回归、类型/lint/schema 检查；提交真实 diff 和退出码。缺环境/授权的旧回归须 BLOCKED，真实行为评测未运行须 NOT_RUN。引擎 API 探针不等于工具 E2E；本地 fake-model 工具循环只证明模拟工具路径，不证明真人审批、真实模型质量或课程完成。学生检查后才进入独立人工 PR 审查；代理不 push、merge 或发布。
+## Verify: independent report
+Run the trusted static preflight, the complete existing offline regression, and type/lint/schema checks; submit the real diff and exit codes. A prior regression missing the environment/authorization must be BLOCKED, and a real behavioral evaluation that was not run must be NOT_RUN. An engine API probe is not a tool E2E; a local fake-model tool loop proves only the simulated tool path, not real human approval, real model quality, or course completion. Only after the student has checked does the independent human PR review begin; agents do not push, merge, or release.

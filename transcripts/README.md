@@ -1,5 +1,5 @@
-# 真实OpenCode会话（D5待成员完成）
+# Real OpenCode sessions (D5 pending member completion)
 
-这里目前没有任何学生会话。本轮初始化记录在AI-use log与验收文件，不能改名成学生transcript。按较充分口径，每位功能负责人保留一次完整raw OpenCode session，并在副本标注真实学生中断/重定向/批准/拒绝与理由；raw与annotated分开，hash互相索引。第一次实现前保存提示词、测试批准版本与计划批准时点；不要事后重建为“逐字原记录”。
+There is currently no student session here. This round's initialization is recorded in the AI-use log and acceptance files and must not be renamed into a student transcript. Under the more thorough reading, each functional owner keeps one complete raw OpenCode session and annotates a copy with the real student's interruptions/redirections/approvals/rejections and reasons; raw and annotated are kept separate and index each other by hash. Before the first implementation, save the prompt, the approved test version and the plan approval time; do not reconstruct it afterwards as a "verbatim original record".
 
-课程最终文件名中的真实姓名/学号由学生本人提供，不在共享初始化文件里预填。Project p2概述五份与p6 D5一份/from scratch的口径，仍需教师确认；保存五份完整原始记录可避免遗漏个人责任，但不能擅称教师已确认。
+The real names/student IDs in the final course file names are provided by the students themselves and are not pre-filled in the shared initialization files. The reading of five in the Project p2 overview versus one/from scratch in p6 D5 still needs teacher confirmation; keeping five complete original records avoids omitting individual responsibility, but it cannot be claimed on our own that the teacher has confirmed it.

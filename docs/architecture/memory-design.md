@@ -1,143 +1,143 @@
-# 状态、记忆与 AI 上下文设计
+# State, Memory, and AI Context Design
 
-> 状态：proposed-awaiting-human。这里的目录、持久化与装配器是 A–E **待实现合同**；不是本轮已有数据库、后台任务或可恢复 Agent。权威正文：[根蓝图](../../architecture-blueprint.md)。
+> Status: proposed-awaiting-human. The directories, persistence, and assembler described here are A–E **contracts pending implementation**; they are not a database, background job, or resumable Agent that already exists in this round. Authoritative text: [root blueprint](../../architecture-blueprint.md).
 
-## 1. 三类东西不要混为“记忆”
+## 1. Three Kinds of Things That Must Not Be Conflated as "Memory"
 
-1. **来源与人审真相**：托管原件/快照、Evidence 原文及 locator、C 的追加审核账本。它们决定什么可以使用；模型摘要不能改它们。
-2. **可重建表示与工作状态**：解析结果、embedding、候选摘要、UI 选择、当前阶段、调用预算/请求状态。丢失时可重建或明确终止，不能当人审事实。
-3. **历史研究记录**：E 保存问题、当时来源与审核版本、实际发送/引用、草稿/发布结果。保留当时事实，不宣称现在仍有效。
+1. **Source and human-review truth**: managed originals/snapshots, Evidence source text and locators, and C's append-only review ledger. These decide what may be used; model summaries cannot change them.
+2. **Reconstructable representations and working state**: parse results, embeddings, candidate summaries, UI selections, the current phase, invocation budget/request state. When lost they can be rebuilt or explicitly terminated; they must not be treated as human-review facts.
+3. **Historical research records**: what E saves — the question, the sources and review versions at that time, what was actually sent/cited, and the draft/release outcome. They preserve the facts as they stood then and do not claim to be still valid now.
 
-课程项目第 5 页要求跨会话、中断、版本、写/取回政策、ownership、retention、privacy；默认上游 session/轻量响应不自动满足它。`PQASession.filter_content_for_user` 会去原文、媒体、embedding（`types.py:442–472`），因此研究记录需独立证据包，而不是关闭原有过滤。[1][4]
+Page 5 of the course project requires cross-session behavior, interruption, versioning, write/retrieval policy, ownership, retention, and privacy; the default upstream session and lightweight responses do not satisfy this automatically. `PQASession.filter_content_for_user` strips source text, media, and embeddings (`types.py:442–472`), so research records need an independent evidence package rather than turning off the existing filtering.[1][4]
 
-## 2. 计划中的本地存储布局
+## 2. Planned Local Storage Layout
 
-以下用 `.papertrace/` 表示仓库根下被 Git 排除的私有运行目录；不是允许 coding agent 任意读它。只有合成测试目录对测试角色开放。真实原件通过用户显式选择导入后，由产品管理；不扫描用户 home、个人资料库或上游 `~/.pqa`。
+Below, `.papertrace/` denotes a private runtime directory at the repository root that is excluded from Git; it is not a directory a coding agent may read freely. Only synthetic test directories are open to test roles. Real originals are imported through explicit user selection and then managed by the product; the user home directory, personal libraries, and the upstream `~/.pqa` are never scanned.
 
 ```text
-.papertrace/                       # 单机单人，不同步到Git
-  sources/<document>/<sha256>/     # A：托管源字节、只读版本
-  snapshots/<snapshot_id>.json     # A：不可变文献清单
-  state/current.json              # A：当前snapshot指针；单写者原子切换
-  evidence/<snapshot>/<evidence>.json  # B：不可变来源/原文；建议摘要另标版本
-  review/<snapshot>/<question>/   # C：追加事件、revision、digest投影
-  cache/<representation_hash>/    # B：可删除重建的解析/向量/摘要表示
-  requests/<request_id>/          # B/D：调用许可、attempt与恢复状态
-  reports/<report_id>/            # E：不可变JSON/Markdown和manifest
-  annotations/                   # E：追加superseded/损坏/来源失效注记
-  events/                        # 脱敏诊断、非证据授权来源
-  staging/                       # 未完成写入；从不当作已提交记录
-  quarantine/                    # 损坏/不匹配对象，仅人工检查
+.papertrace/                       # single machine, single user, not synced to Git
+  sources/<document>/<sha256>/     # A: managed source bytes, read-only versions
+  snapshots/<snapshot_id>.json     # A: immutable document manifest
+  state/current.json              # A: current snapshot pointer; atomic switch by the single writer
+  evidence/<snapshot>/<evidence>.json  # B: immutable source/source text; advisory summaries versioned separately
+  review/<snapshot>/<question>/   # C: append-only events, revision, digest projection
+  cache/<representation_hash>/    # B: disposable, rebuildable parse/vector/summary representations
+  requests/<request_id>/          # B/D: invocation permits, attempts, and recovery state
+  reports/<report_id>/            # E: immutable JSON/Markdown and manifest
+  annotations/                   # E: append-only superseded/corrupt/source-invalid annotations
+  events/                        # redacted diagnostics, non-evidence authorization source
+  staging/                       # incomplete writes; never treated as committed records
+  quarantine/                    # corrupt/mismatched objects, human inspection only
 ```
 
-路径片段只由合同验证后的标识派生，不接受用户直接拼路径；resolve 并核 root、拒绝越界 symlink。源文件 display name 不存主机绝对路径。数据存储使用 JSON/文本和明确数组字段；禁止通过 pickle 直接保存 `Docs`/`PQASession` 作为可移交持久状态。
+Path segments are derived only from identifiers validated by the contract; user-supplied path concatenation is not accepted; paths are resolved and checked against the root, and out-of-bounds symlinks are rejected. Source file display names do not store host absolute paths. Data storage uses JSON/text with explicit array fields; storing `Docs`/`PQASession` directly via pickle as transferable persistent state is prohibited.
 
-## 3. ownership、写与读取政策
+## 3. Ownership, Write, and Read Policy
 
-| 状态 | 写入 owner 与时机 | 取回条件 | 跨会话/中断与版本 |
+| State | Write owner and timing | Retrieval conditions | Cross-session/interruption and versions |
 |---|---|---|---|
-| 原件 / `DocumentVersion` | A 完成复制与 hash 后；源路径原件不改 | hash 对上才显示/交 B；仅允许本工作区来源 | 始终绑定 logical ID+SHA256；同路径更新为新版本 |
-| `CorpusSnapshot` | A 汇总 ready 文献形成新清单，校验后切指针 | schema/hash/清单 membership 全通过 | 不修改旧快照；当前指针损坏则只读，不猜最近的就是当前 |
-| `EvidenceRecord` | B 从源 Text+真实 locator 构建 | snapshot/doc/version/原文/locator 验证 | 缺 record 或原件不假造；重新解析产生新表示及必要的新 evidence |
-| 候选摘要与 embedding | B，在获批调用后 | 表示指纹完全匹配；永不授 accepted | 变更 parser/chunker/model/prompt/tokenizer 后明确失效；不静默混向量空间 |
-| `ReviewDecision` ledger | C，经明确人工命令追加 | 验 event 顺序、范围、schema、revision/digest；按 question 投影 | 无决定 pending；重置为新的 pending 决定；不迁移旧快照的接受状态 |
-| 调用/恢复状态 | B 执行计量，D 保存阶段和捕获的 scope | 调用许可未过期且 scope/freshness 复核 | 未知是否出站就标 unknown，禁止自动重发；已花预算不能归零 |
-| `AnswerDraft` / `ReleaseDecision` | D，验证后新建对象 | 只有绑定的 scope 与原始回答可作该轮记录 | 改版/审核变化则旧轮 stale；不更改旧决定为 released |
-| 报告/manifest | E，经 D→E 临界区提交 | 校验完整性、来源、schema；显示历史/当前标签 | 不覆写，不就地升级；superseded 用额外注记，不改原字节 |
-| UI session_state | UI，当前页面选择/进度 | 仅提示与界面缓存 | 刷新可丢；恢复必须从 A/C/E 重读，不能带出自动批准 |
+| Original / `DocumentVersion` | A, after the copy and hash complete; the original at the source path is not modified | Shown/handed to B only when the hash matches; only sources from this workspace are allowed | Always bound to logical ID+SHA256; an update at the same path becomes a new version |
+| `CorpusSnapshot` | A aggregates ready documents into a new manifest and switches the pointer after validation | schema/hash/manifest membership all pass | Old snapshots are not modified; if the current pointer is corrupt the state is read-only, and the most recent one is not assumed to be current |
+| `EvidenceRecord` | B builds it from the source Text plus the real locator | snapshot/doc/version/source text/locator verified | A missing record or original is never fabricated; re-parsing produces new representations and, where needed, new evidence |
+| Candidate summaries and embeddings | B, after an approved invocation | The representation fingerprint matches exactly; never grants accepted | Explicitly invalidated when parser/chunker/model/prompt/tokenizer changes; vector spaces are never silently mixed |
+| `ReviewDecision` ledger | C, appended via an explicit human command | Verify event order, scope, schema, revision/digest; project by question | No decision means pending; a reset yields a new pending decision; acceptance state is not migrated from an old snapshot |
+| Invocation/recovery state | B performs metering; D saves the phase and the captured scope | Invocation permit unexpired and scope/freshness re-checked | If it is unknown whether a request went out, mark it unknown; automatic resends are prohibited; spent budget cannot be reset to zero |
+| `AnswerDraft` / `ReleaseDecision` | D, creates new objects after validation | Only the bound scope and the raw answer can serve as that round's record | A revision or review change makes the old round stale; an old decision is not edited into released |
+| Reports/manifests | E, committed through the D→E critical section | Verify integrity, sources, schema; show historical/current labels | Never overwritten, never upgraded in place; superseding uses additional annotations and does not change the original bytes |
+| UI session_state | UI, current page selection/progress | Hints and UI cache only | May be lost on refresh; recovery must re-read from A/C/E and must not carry out automatic approval |
 
-上游 `Docs.delete` 的 tombstone 有部分过滤但不物理删向量，现有 session 又可复用（`docs.py:403–435,476–490,609–647`）。本设计用快照失效与新 session 限定新发布；不宣称实现向量擦除或完整跨存储删除。[3]
+The tombstone in upstream `Docs.delete` applies partial filtering but does not physically delete vectors, and existing sessions are reusable (`docs.py:403–435,476–490,609–647`). This design constrains new releases through snapshot invalidation and fresh sessions; it does not claim to implement vector erasure or complete cross-store deletion.[3]
 
-## 4. 来源身份与审核账本
+## 4. Source Identity and the Review Ledger
 
-### 4.1 身份与 locator
+### 4.1 Identity and Locators
 
-- 文献 ID 表示逻辑文献；version SHA256 表示源文件字节。`snapshot_id` 绑定按文献 ID 排序后的完整 ready 清单；同清单不同捕获时间不应产生不同身份。
-- evidence ID 绑定 schema、snapshot、document、version、locator、原文 excerpt；advisory summary、上游 ID、retrieved_at 不授身份。
-- 规范 JSON 使用 UTF-8、稳定字段/集合顺序，明确 schema 版本；散列实现以 `contracts.py` 为准，不另造一套算法。
-- 现行 `SourceLocator` 要求至少一组完整、1 起始且闭区间的页或行范围，以及 chunk ID、parser 名与版本；不支持只有自由字符串“某处”。字符 offset/bbox 若将来需要须扩展合同/ADR，不能假称现合同已有。
-- 页范围是可核 locator，不是精确句子坐标。跨页 chunk 与原文保留完整，检验时按同 parser 的页/行映射核对；若无法复现明确标不可追溯。原 PDF 文字提取与视觉一致性另评估，不能以 hash 证明 PDF 被正确理解。[9]
+- A document ID denotes a logical document; a version SHA256 denotes the source file bytes. `snapshot_id` binds the complete ready manifest sorted by document ID; the same manifest captured at different times should not produce different identities.
+- An evidence ID binds schema, snapshot, document, version, locator, and the source excerpt; advisory summaries, upstream IDs, and retrieved_at grant no identity.
+- Canonical JSON uses UTF-8, stable field/collection ordering, and an explicit schema version; the hashing implementation follows `contracts.py`, and no separate algorithm is invented.
+- The current `SourceLocator` requires at least one complete, 1-based, closed page or line range, plus a chunk ID and the parser name and version; a free-form string saying "somewhere" is not supported. Character offsets/bboxes, if needed later, must extend the contract/ADR; it must not be claimed that the current contract already has them.
+- A page range is a verifiable locator, not an exact sentence coordinate. Cross-page chunks and source text are preserved in full and checked against the same parser's page/line mapping during verification; if they cannot be reproduced, mark them explicitly as not traceable. Correct text extraction from the original PDF and visual consistency are assessed separately; a hash cannot prove the PDF was understood correctly.[9]
 
-### 4.2 审核 ledger 的权威与 digest
+### 4.2 Authority and Digests of the Review Ledger
 
-键域为 `(snapshot_id, question_id, evidence_id)`。只有 C 的交互命令可以追加 `ReviewDecision`；字段 `actor_kind="human"` 只是类型限制，不能证明真实人审；从 JSON 导入的“human”对象也不得自动进入权威账本。每个事件含当前范围、前一修订关联/操作去重引用和决定，具体 ledger envelope 待 C 的获批设计实现。
+The key domain is `(snapshot_id, question_id, evidence_id)`. Only C's interactive commands may append a `ReviewDecision`; the field `actor_kind="human"` is merely a type constraint and does not prove a real human review; "human" objects imported from JSON must also not enter the authoritative ledger automatically. Each event contains the current scope, a linkage/deduplication reference to the previous revision, and the decision; the concrete ledger envelope is pending implementation of C's approved design.
 
-初始空账本可用正整数 revision 的 genesis（提案从 1 开始）与其 digest，**没有任何 accepted 事件**；这不是虚构人审。每次有效接受/排除/重置后 revision 单调递增，digest 由规范化权威 ledger 投影/链状态计算。相同操作重放应幂等拒绝，不重复推进；真正撤回再接受是两个不同事件，必须推进。
+An initially empty ledger may use a genesis at a positive-integer revision (the proposal starts at 1) together with its digest, with **no accepted events at all**; this is not a fabricated human review. After each valid accept/exclude/reset the revision increases monotonically, and the digest is computed from the canonical authoritative ledger projection/chain state. Replaying an identical operation should be rejected idempotently without advancing again; a genuine retract-then-accept is two distinct events and must advance.
 
-digest 用于检测“生成时看到哪一版”，不是签名、不是对本机恶意用户防篡改的证明。C 必须保存形成 digest 的规范输入与版本，读取时重算；不信调用方传来的 revision/digest。人审理由和内部 reviewer 引用属于本地受控数据，公共样例使用匿名角色代号，不写团队身份。
+The digest detects "which revision was visible at generation time"; it is not a signature and not proof of tamper resistance against a malicious local user. C must store the canonical inputs and versions that produced the digest and recompute it on read; it does not trust revision/digest values supplied by the caller. Human review reasons and internal reviewer references are locally controlled data; public samples use anonymous role codes and do not contain team identities.
 
-## 5. 单写者提交、崩溃与恢复
+## 5. Single-Writer Commit, Crash, and Recovery
 
-本地应用只有一个写者实例；第二个实例、第二个并发写命令遇锁就明确拒绝/只读，不假称支持多用户。UI 协调 A/C/E 写命令，模块仍各自拥有状态。
+The local application has exactly one writer instance; a second instance or a second concurrent write command that hits the lock is explicitly rejected / made read-only, and multi-user support is not pretended. The UI coordinates A/C/E write commands, while the modules still each own their own state.
 
-1. 写前校验合同/范围/权限；写到私有 staging，完成内容 hash/JSON 可读校验。
-2. 写不可变记录的新路径，再原子切换小指针或记录完整性标记；不以原子 rename 宣称完成多个存储引擎全事务。磁盘满或权限错不前移成功状态。
-3. 启动时只装载校验完整记录；孤儿 staging 不自动当成功，可保留隔离或由人工清理。schema/hash 不符进入只读 repair-needed。
-4. 长模型调用不持写锁：D 捕获 snapshot/review 版本后请求；A/C 可在等待期提交变化。D 在回包后必须重读并判 stale。
-5. 最终 freshness 检查与 E 报告提交在同一临界区；任何写入失败均不发“已发布”状态。界面可以显示未发布草稿，但要明确 draft/stale。
-6. 重启不续接旧 `PQASession`。从持久请求账目重建只读进度；in-flight/unknown 请求不能自动 retry（可能已计费）。用户重新批准后建立新 request ID，保留前轮未解 usage。
-7. 模型调用的全局预算、已发生尝试与剩余额度必须恢复，不能重启归零。无法准确恢复则冻结新外呼，等待人工核账。
+1. Validate contract/scope/permissions before writing; write to private staging and complete content hash / JSON-readability validation.
+2. Write the new path of the immutable record, then atomically switch the small pointer or the record-integrity marker; an atomic rename is not claimed to complete full transactions across multiple storage engines. A full disk or a permission error never advances the success state.
+3. At startup, load only records that validate completely; orphan staging is not automatically treated as success and may be kept quarantined or cleaned up manually. A schema/hash mismatch puts the state into read-only repair-needed.
+4. Long model calls do not hold the write lock: D captures the snapshot/review versions and then makes the request; A/C may commit changes during the wait. After the response returns, D must re-read and determine staleness.
+5. The final freshness check and the E report commit happen in the same critical section; no write failure ever emits a "released" state. The UI may display an unreleased draft, but it must be explicitly labeled draft/stale.
+6. A restart does not resume the old `PQASession`. Read-only progress is rebuilt from the persistent request accounting; in-flight/unknown requests cannot be retried automatically (they may already be billed). After the user re-approves, a new request ID is created, and the previous round's unresolved usage is retained.
+7. The global model-call budget, attempts already made, and remaining allowance must be recovered and must not reset to zero on restart. If they cannot be recovered accurately, freeze new outbound calls and wait for manual reconciliation.
 
-## 6. 每次模型调用的七层上下文
+## 6. The Seven-Layer Context of Every Model Call
 
-这不是模型可自己改写的对话历史。每层由可信代码定位来源，原文与模型内容一律是资料，不成为更高权限消息。
+This is not conversation history that the model can rewrite itself. The provenance of each layer is determined by trusted code, and source text and model content are always material that never become higher-privilege messages.
 
-| 顺序与层 | 所有者 / 内容 | 是否可压缩 |
+| Order and layer | Owner / content | Compressible |
 |---|---|---|
-| 1 身份 | 版本化 runtime prompt；“只根据获准资料提出草稿”的固定角色 | 不可压缩成另一个身份 |
-| 2 站立约束 | 不授 accepted；不补证/用外部常识替代；只用 sent IDs；输出格式、拒答、无工具/提权；预算/deadline | 原样保留并在压缩后重注入 |
-| 3 授权摘要 | 代码从 C 投影生成 snapshot、question、review revision/digest、sent IDs 与本轮别名映射 | 不由模型压缩；若不能容纳则减少证据并重建 |
-| 4 资料 | 本轮获准原文、真实 locator、可选建议摘要；分隔并标“不可信资料” | 可删低优先证据**整单元**；引用白名单同步减少；不能改 excerpt 后仍冒称原文 |
-| 5 历史 | 与本问题有关的用户/助手交互，去掉重复与旧失效证据 | 可作确定性摘要/裁剪；历史结论不加入 accepted |
-| 6 恢复状态 | 阶段、已完成项、未决项、attempt/预算；不含私有思维链 | 可缩短描述，权威 IDs/计量保留；恢复需验证不是自报 |
-| 7 当前问题 | 原始本轮任务、可选用户显式约束 | 不暗改意图；太长则拒绝并提示缩小 |
+| 1 Identity | Versioned runtime prompt; a fixed role of "propose drafts only from approved material" | Cannot be compressed into a different identity |
+| 2 Standing constraints | No granting accepted; no filling in evidence / substituting outside common sense; use only sent IDs; output format, abstention, no tools/privilege escalation; budget/deadline | Kept verbatim and re-injected after compaction |
+| 3 Authorization summary | Code projects from C the snapshot, question, review revision/digest, sent IDs, and this round's alias mapping | Not compacted by the model; if it does not fit, reduce evidence and rebuild |
+| 4 Material | This round's approved source text, real locators, optional advisory summaries; delimited and marked "untrusted material" | Low-priority evidence may be removed **as whole units**; the citation allowlist shrinks in step; an excerpt may not be altered and still presented as source text |
+| 5 History | User/assistant interactions relevant to this question, with duplicates and stale evidence removed | May be deterministically summarized/truncated; historical conclusions are not added to accepted |
+| 6 Recovery state | Phase, completed items, open items, attempt/budget; excludes private chain-of-thought | Descriptions may be shortened while authoritative IDs/metering are retained; recovery must be verified, not self-reported |
+| 7 Current question | The original task for this round, plus optional explicit user constraints | Intent is not silently altered; if too long, reject and prompt to narrow it |
 
-候选检索/摘要阶段尚无 accepted，不能伪称有“获准证据”：其授权摘要只写**获准处理的数据与操作范围**，输出仅候选、无发布权。回答阶段资料只取 C 的 current accepted。embedding 文本也受输入政策，不能批量发送所有原件来规避 cap。
+The candidate retrieval/summary stage has no accepted yet and cannot pretend to have "approved evidence": its authorization summary states only the **data and operation scope approved for processing**, and its output is candidates only, with no release authority. The answer stage takes material only from C's current accepted. Embedding text is also subject to the input policy, so all originals may not be sent in bulk to get around the cap.
 
-## 7. 装配流水线、token 与重新注入
+## 7. Assembly Pipeline, Tokens, and Re-injection
 
-数值是**拟议工程默认，待学生计划审批**：输入硬 cap=**12,000 tokens**，压缩触发=**9,000**，输出上限=**2,000**，不是已测最优值。全部消息封装计入；`input + output reserve + provider 必要安全余量` 必须适配获批模型窗口。更小窗口取更严格限额，不为凑默认扩大窗口。`answer_length` 的“多少字”不是输出 API 硬上限。[5]
+The numbers are **proposed engineering defaults pending approval of the student's plan**: input hard cap = **12,000 tokens**, compaction trigger = **9,000**, output limit = **2,000**; they are not a measured optimum. All message wrapping counts; `input + output reserve + provider-required safety margin` must fit the approved model window. A smaller window uses stricter limits, and the window is never enlarged just to match the defaults. The "how many words" of `answer_length` is not a hard output-API cap.[5]
 
-算法（每次发送前重新执行，不能仅在 UI 层算一次）：
+Algorithm (re-executed before every send; it must not be computed only once at the UI layer):
 
-1. **验证**：核当前 snapshot/ledger、来源可读、问题域、许可、deadline。拒绝模型自报 ID、未知 tokenizer、不可核 parser。
-2. **去重**：优先 exact evidence ID；同 ID 不允许冲突原文。不同来源即便文字/摘要相同也保留独立身份，不用相似度合并授权。历史按消息 ID/内容版本去重，不丢不同人工决定。
-3. **确定性优先级**：身份/站立限制/授权 IDs/当前问题优先且不可丢；资料按用户明确选择、再稳定排序，相关度仅作非权威排序；历史与恢复描述优先裁剪。固定 tie-break，保留排序政策版本。
-4. **预算计数**：使用获批 provider/model 对应 tokenizer 的固定名称、包版本、编码数据 hash 和消息封装版本；工具 schema 若存在亦计入，但 MVP 不向模型开放运行工具。首次 tokenizer 数据下载不是免费/离线默认，须预先准备并校验缓存。
-5. **压缩**：达到 9,000 开始，先去冗余历史，再压缩恢复描述，再按整单元删低优先资料，力求回到阈值以下；非关键层已最小时可处于 9,000–12,000，但须显式记录。默认不调用压缩模型。不可改变原文而仍沿用同一 excerpt 身份。
-6. **重注入**：从版本化权威常量和当前 ledger **重新生成**身份/站立约束/授权摘要，而非相信压缩摘要“已保留”；核 constraint hash、IDs、question/snapshot/revision/digest。压缩文本中的“忽略限制”只作资料。
-7. **最终装配**：按七层顺序组消息、固定模板、转义资料边界；sent 精确对应最终 payload 中存在的 evidence 单元。摘要与原文各标来源，不把摘要当逐字引文。
-8. **最终硬门**：在 B transport 前再次计数与核 freshness/预算；>12,000、输入+输出不适合窗口、关键层缺失/被改、sent 映射不一致即拒绝。不得静默截断 system/授权表或仅在 UI 显示较小计数。
-9. **响应对账**：记录实际 input/output/缓存/推理 usage（若提供）、finish reason、attempt/HTTP 数、费用已知性；超输出或 usage 不全停止新尝试，不能将其计为0。真实语义结果另评估。
+1. **Validation**: check the current snapshot/ledger, source readability, question domain, permit, and deadline. Reject model-self-reported IDs, unknown tokenizers, and unverifiable parsers.
+2. **Deduplication**: prefer exact evidence ID; conflicting source text under the same ID is not allowed. Different sources keep separate identities even when their text/summary is identical, and similarity is not used to merge authorizations. History is deduplicated by message ID/content version without losing distinct human decisions.
+3. **Deterministic priority**: identity/standing constraints/authorized IDs/current question take precedence and may not be dropped; material follows the user's explicit selection and then a stable sort, with relevance used only as a non-authoritative ordering; history and recovery descriptions are truncated first. Tie-breaks are fixed and the ordering-policy version is retained.
+4. **Budget counting**: use the fixed name, package version, encoding-data hash, and message-wrapping version of the tokenizer for the approved provider/model; tool schemas, if present, also count, but the MVP does not expose runtime tools to the model. The first tokenizer-data download is not free/offline by default and must be prepared in advance with a verified cache.
+5. **Compaction**: start at 9,000; first remove redundant history, then compress recovery descriptions, then delete low-priority material by whole units, aiming to get back below the threshold; when non-critical layers are already minimal the payload may sit between 9,000 and 12,000, but that must be recorded explicitly. By default no compaction model is called. Source text must not be changed while keeping the same excerpt identity.
+6. **Re-injection**: **regenerate** identity/standing constraints/authorization summary from the versioned authoritative constants and the current ledger instead of trusting a compacted summary that claims they were "preserved"; verify the constraint hash, IDs, and question/snapshot/revision/digest. An "ignore the constraints" string inside compacted text is material only.
+7. **Final assembly**: build messages in seven-layer order with fixed templates and escaped material boundaries; sent corresponds exactly to the evidence units present in the final payload. Summaries and source text each carry their own provenance label, and a summary is not treated as a verbatim quotation.
+8. **Final hard gate**: before B transport, count again and check freshness/budget; reject when >12,000, when input+output does not fit the window, when a critical layer is missing/altered, or when the sent mapping is inconsistent. Silently truncating the system/authorization table, or showing a smaller count only in the UI, is not allowed.
+9. **Response reconciliation**: record actual input/output/cache/reasoning usage (if provided), finish reason, attempt/HTTP counts, and whether cost is known; if output is exceeded or usage is incomplete, stop new attempts and do not count them as 0. The actual semantic result is assessed separately.
 
-上游默认 serializer 的 top-N/cutoff 并不表达这些规则（`settings.py:1191–1250`）；因此必须走 custom serializer 和网关最后一跳，不能只在 prompt 写数字。[5]
+The top-N/cutoff of the upstream default serializer does not express these rules (`settings.py:1191–1250`); a custom serializer and the gateway's final hop are therefore mandatory, and writing the numbers into the prompt is not enough.[5]
 
-## 8. 表示缓存与版本失效
+## 8. Representation Cache and Version Invalidation
 
-表示指纹至少覆盖：source version、parser 名/版本/配置、chunk 配置与规范化政策、embedding provider/model/维度/配置、摘要 prompt/model、tokenizer/装配政策版本。此指纹与 snapshot ID **分别记录**，防止“来源没变所以旧 embedding 一定可用”的误判。
+A representation fingerprint covers at least: source version, parser name/version/configuration, chunk configuration and normalization policy, embedding provider/model/dimensions/configuration, summary prompt/model, and tokenizer/assembly policy version. This fingerprint and the snapshot ID are recorded **separately**, to prevent the false inference that "the source did not change, so the old embedding is certainly still usable".
 
-只在指纹完全相等时复用表示；缺字段、模型未知或 schema 不兼容都视作 miss，必须在获批预算下重建。候选摘要缓存无审核权；新快照不自动迁移 accepted。旧版本读取以只读兼容层或副本迁移，禁止就地“更新”历史源、决定或报告。
+A representation is reused only when the fingerprints are fully equal; a missing field, unknown model, or incompatible schema counts as a miss and must be rebuilt within the approved budget. The candidate-summary cache carries no review authority; a new snapshot does not automatically migrate accepted. Older versions are read through a read-only compatibility layer or migrated as copies, and historical sources, decisions, or reports must not be "updated" in place.
 
-## 9. 留存、删除与隐私
+## 9. Retention, Deletion, and Privacy
 
-以下为默认**提案**，实际保留期限由学生和数据持有人批准，未经批准不自动删除来源或历史：
+The following are default **proposals**; actual retention periods are approved by the student and the data holder, and sources or history are not deleted automatically without that approval:
 
-| 数据 | 提案保留与清理 | 隐私 / 导出政策 |
+| Data | Proposed retention and cleanup | Privacy / export policy |
 |---|---|---|
-| 原件、快照、证据、ledger、报告 | 项目期间保留；终止后由持有人决定归档/删除；历史不由日常清缓存修改 | 默认仅本机；默认导出 ID/版本/locator 和必要短引文，不整篇 PDF |
-| 可重建 embedding/解析/摘要 cache | 人工或明确策略清理；清理前确认非唯一原文/审核副本 | 可能包含敏感文本表示，不能当无隐私“缓存”公开 |
-| requests / attempt 账目 | 至少保留到计费与请求状态核清；unknown 不清零 | 只留必要模型标识/usage/状态/摘要，不存 key/header/完整配置 |
-| 普通诊断日志 | 提案滚动 30 日；实际启用前批准；不自动删除安全事故证据 | 白名单字段；禁止完整问题/原文/主机绝对路径/私有推理 |
-| staging/quarantine | 不自动加载；人工核实后删除或留证 | 与正常导出隔离，界面不默认暴露 |
+| Originals, snapshots, evidence, ledger, reports | Retained for the duration of the project; after termination the holder decides on archiving/deletion; history is not modified by routine cache clearing | Local-only by default; exports carry IDs/versions/locators and necessary short quotations by default, not whole PDFs |
+| Rebuildable embedding/parse/summary cache | Cleared manually or by explicit policy; before clearing, confirm it is not the only copy of source text / review data | May contain sensitive text representations and must not be published as a privacy-neutral "cache" |
+| requests / attempt accounting | Retained at least until billing and request status are reconciled; unknown is never zeroed | Stores only the necessary model identifier/usage/status/summary, never keys/headers/full configuration |
+| Ordinary diagnostic logs | Proposed 30-day rotation; approved before actual enablement; security-incident evidence is not deleted automatically | Allowlisted fields; complete questions/source text/host absolute paths/private reasoning are prohibited |
+| staging/quarantine | Not loaded automatically; deleted or kept as evidence after manual verification | Isolated from normal exports; not exposed by default in the UI |
 
-用户主动请求删除工作区/敏感记录是独立受控操作：显示会失去哪些追溯信息、得到明确确认后处理；可保留无敏感内容 tombstone 说明缺失，不偷偷改写旧报告为另一来源。MVP 不承诺法务级安全擦除或向量物理清除；如需此能力，重开 ADR 与 INV-05 的保留政策。
+A user-initiated request to delete a workspace or sensitive records is a separate controlled operation: show what traceability will be lost, obtain explicit confirmation, and then act; a tombstone without sensitive content may be kept to explain the absence, and old reports are never covertly rewritten to another source. The MVP does not promise forensic-grade secure erasure or physical vector removal; if that capability is needed, reopen the ADR and the INV-05 retention policy.
 
-导出做字段白名单，不 dump 全配置/环境；异常信息和 URL query 也须脱敏。测试只用合成 sentinel，无真实凭据或成员身份。主机上能改文件的本地用户仍可能破坏数据，hash 检错不等于认证系统。
+Exports use a field allowlist and do not dump full configuration/environment; exception messages and URL queries must also be redacted. Tests use only synthetic sentinels, with no real credentials or member identities. A local user on the host who can modify files may still corrupt data; hash-based error detection is not an authentication system.
 
 ## Sources
 
-[1] urn:sha256:6af742d3cbc0973b056a084ba54ff413a5885b1bb4d6a97b0b08b93f64f2ef7e — CS5351-2026-2027-project.pdf（本地原文提取，10页）
-[3] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/docs.py — 固定基线 src/paperqa/docs.py
-[4] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/types.py — 固定基线 src/paperqa/types.py
-[5] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/settings.py — 固定基线 src/paperqa/settings.py
-[9] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/readers.py — 固定基线 src/paperqa/readers.py
+[1] urn:sha256:6af742d3cbc0973b056a084ba54ff413a5885b1bb4d6a97b0b08b93f64f2ef7e — CS5351-2026-2027-project.pdf (extracted from the local original, 10 pages)
+[3] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/docs.py — pinned baseline src/paperqa/docs.py
+[4] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/types.py — pinned baseline src/paperqa/types.py
+[5] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/settings.py — pinned baseline src/paperqa/settings.py
+[9] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/readers.py — pinned baseline src/paperqa/readers.py

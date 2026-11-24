@@ -1,53 +1,53 @@
-# 架构证据日志
+# Architecture evidence log
 
-> 这份日志区分**读到的事实、设计推断、计划验收与真实执行**。不代替 D5 原始 OpenCode 会话、学生干预/批准、逐PR memo 或 D6 贡献记录。课程项目第 5 页把 evaluation logbook 列为 optional，本轮提供以方便审计；不伪称已经做过完整运行实验。[1]
+> This log separates **facts read, design inferences, planned acceptance and real execution**. It does not replace the D5 raw OpenCode session, student interventions/approvals, per-PR memos or the D6 contribution record. Page 5 of the course project lists the evaluation logbook as optional; it is provided this round for auditability, and no claim is made that a complete run experiment has been done. [1]
 
-## 1. 本轮实际材料与结果
+## 1. Actual material and results this round
 
-| Evidence ID | 实际工作 / 可复核定位 | 允许结论 | 不允许升级成 |
+| Evidence ID | Actual work / checkable location | Permitted conclusion | Must not be upgraded to |
 |---|---|---|---|
-| EV-ARCH-01 | 完整读取课程 `project.txt`（PDF页1–10）与 `introduction.txt`（PDF页1–27）；来源摘要见source-register | 架构和待确认点依据课程原文，引用使用PDF页码 | 未实时核Canvas更新，不给确切截止日或复用许可保证 |
-| EV-ARCH-02 | 只读 `git rev-parse HEAD` 返回 `c692d0dfeac4a0296599f7fe21a253a58b7ac12a`；当时 `git diff --name-only <baseline> -- src/paperqa packages tests` 无输出 | 架构起草开始时核心/包/上游测试未见相对基线差异 | 不代表整个初始化最终diff、依赖兼容或模型运行 |
-| EV-ARCH-03 | 直接读固定 `docs.py:156–721`、`types.py:155–526`、`settings.py`指定段、`core.py:227–400`、`readers.py:92–143`、SearchIndex两个loader、Agent控制链 | 基线调用点、Context身份、sent缺口、隐式调用和pickle范围可定位 | 不是本机PaperQA2集成测试、漏洞利用或供应链完整审计 |
-| EV-ARCH-04 | 读取解包审计Markdown：01–06及最终scope/technical review；没有改审计原件 | 复用既有分析输入，保留候选/范围/证据等级教训 | 审计历史窄探针/上游CI不是本轮新运行 |
-| EV-ARCH-05 | 读取共享contracts与registry及已有contract/gate测试定义，对齐字段、INV与需求ID | 可核对架构和当前初始化合同语义；完整trace覆盖目标明确 | 测试定义存在不等于已运行或A–E已实现 |
-| EV-ARCH-06 | 根canonical、指向页及本目录架构Markdown由本任务创建；文件工具返回verified | 文档真实落盘、非只有计划 | 文档创建不等于学生批准、OpenCode强制权限或远端门禁 |
+| EV-ARCH-01 | Read `project.txt` (PDF pages 1–10) and `introduction.txt` (PDF pages 1–27) of the course in full; see source-register for the source summary | The architecture and open points rest on the course text, and citations use PDF page numbers | Canvas updates were not checked live; no exact deadline or reuse-permission guarantee is given |
+| EV-ARCH-02 | Read-only `git rev-parse HEAD` returned `c692d0dfeac4a0296599f7fe21a253a58b7ac12a`; at that time `git diff --name-only <baseline> -- src/paperqa packages tests` produced no output | No difference from the baseline was seen in the core/packages/upstream tests when architecture drafting began | Does not represent the final diff of the whole initialization, dependency compatibility or model runs |
+| EV-ARCH-03 | Read the fixed `docs.py:156–721`, `types.py:155–526`, the specified sections of `settings.py`, `core.py:227–400`, `readers.py:92–143`, the two SearchIndex loaders and the Agent control chain directly | Baseline call sites, Context identity, the sent gap, implicit calls and the pickle scope can be located | Not a local PaperQA2 integration test, an exploit or a full supply-chain audit |
+| EV-ARCH-04 | Read the unpacked audit Markdown: 01–06 plus the final scope/technical review; the audit originals were not modified | Reuses the existing analysis input and keeps the lessons on candidates/scope/evidence level | The audit's historical narrow probes/upstream CI are not new runs of this round |
+| EV-ARCH-05 | Read the shared contracts and registry plus the existing contract/gate test definitions, aligning fields, INVs and requirement IDs | The semantics of the architecture and the current initialization contracts can be checked; the goal of full trace coverage is clear | Test definitions existing does not mean they have run or that A–E are implemented |
+| EV-ARCH-06 | The root canonical, the pointing page and the architecture Markdown in this directory were created by this task; the file tool returned verified | The documents are genuinely on disk, not merely planned | Document creation is not student approval, enforced OpenCode permissions or remote gates |
 
-源码与审计引用见 [source-register.md](source-register.md)。本轮没有 import/运行 `paperqa`、没有运行模型/embedding/metadata API、没有读取凭据、没有改原课程/审计文件、没有git commit/push；这是本架构子任务的动作范围，不冒充对其他并行任务的全局网络审计。
+Source and audit citations: [source-register.md](source-register.md). This round did not import/run `paperqa`, did not run model/embedding/metadata APIs, did not read credentials, did not modify the original course/audit files and did not git commit/push; this is the action scope of the architecture subtask and does not pretend to be a global network audit of other parallel tasks.
 
-## 2. 设计结论与证据缺口
+## 2. Design conclusions and evidence gaps
 
-| 结论 | 当前等级 | 下一项验收 / 停止条件 |
+| Conclusion | Current level | Next acceptance / stop condition |
 |---|---|---|
-| 五模块薄适配比重写/多用户服务更适合当前范围 | 定性设计推断；非测量 | 学生审核ADR，模块计划/测试事前批准 |
-| 人审ledger+来源hash+freshness能约束定义好的发布边界 | 可检验设计，待实现 | T-INV-01…08的运行时正负例，不能只看Pydantic |
-| 12k/9k/2k可作为工程默认 | 未批准的提案；非实测最优 | 固定tokenizer边界/重注入；模型窗口/输出参数真实核对 |
-| B网关覆盖工厂/SDK/HTTP与所有表示调用 | 设计合同，外部依赖内部未核 | 调用清单逐项spy；发现旁路就保持该路径关闭 |
-| 本地单写者文件存储可用于MVP | 设计假设 | 半写/锁/竞态/恢复测试；失败则收窄或重开持久化ADR |
-| 历史可定位且默认匿名安全导出 | 设计合同 | 原件hash/locator/导出脱敏与许可测试；不能猜论文许可 |
-| 编码角色路径表能落入OpenCode2配置 | 主控工具事实+计划约束；本子任务未执行权限探针 | 实际版本/schema/加载与允许/拒绝回执，shell旁路亦核 |
+| The five-module thin adapter suits the current scope better than a rewrite/multi-user service | Qualitative design inference; not measured | Student reviews the ADR; module plan/tests approved in advance |
+| Human review ledger + source hash + freshness can constrain the defined release boundary | Testable design, awaiting implementation | Runtime positive and negative cases for T-INV-01…08, not just Pydantic |
+| 12k/9k/2k can serve as engineering defaults | Unapproved proposal; not a measured optimum | Fixed tokenizer boundary/reinjection; real verification of the model window/output parameters |
+| The B gateway covers factory/SDK/HTTP and every represented call | Design contract; internals of external dependencies not verified | Spy on each item of the call list; keep that path closed if a bypass is found |
+| Local single-writer file storage is usable for the MVP | Design assumption | Half-write/lock/race/recovery tests; if it fails, narrow it or reopen the persistence ADR |
+| History is locatable and anonymized export is safe by default | Design contract | Original hash/locator/export redaction and license tests; paper licenses cannot be guessed |
+| The coding-role path table can be expressed in the OpenCode2 configuration | Controller tool fact + plan constraint; this subtask ran no permission probes | Actual version/schema/loading and allow/deny receipts, including the shell bypass |
 
-## 3. 真实模型与性能结果：不填假数据
+## 3. Real model and performance results: no fake data
 
-| 项目 | 本文状态 | 为什么不能写PASS |
+| Item | Status in this document | Why PASS cannot be written |
 |---|---|---|
-| PaperQA2完整依赖安装/底层API真实离线集成 | 本架构子任务未执行 | 源码支持Python3.14不等于全部native/parser运行兼容 |
-| 新旧方案延迟/token/成本改善 | **未测量** | 无相同数据/模型/硬件的真实对照，不填百分比 |
-| PERF-01 合同100次往返≤2秒 | 以主控真实基准回执为准；本文未代跑 | 不从设计阈值或单测存在推断达标，也不外推为RAG速度 |
-| 真实embedding/summary/answer及固定语义eval | **未授权/未执行本子任务** | 需provider/model/数据/金额与请求数批准；stub只测策略 |
-| D5 OpenCode原始监督会话与学生干预 | **未产生于本子任务** | 不能从架构起草日志合成学生会话或审批 |
-| 六类GitHub gate全部远端阻断及分支保护 | **本子任务未验证** | 本地脚本或YAML不能替代required checks与失败PR证据 |
+| Full PaperQA2 dependency install/real offline integration of the low-level API | Not executed by this architecture subtask | Source support for Python 3.14 does not mean all native/parser runs are compatible |
+| Latency/token/cost improvement of the new vs old approach | **Not measured** | No real comparison on the same data/model/hardware, so no percentage is filled in |
+| PERF-01 100 contract round trips ≤2 seconds | Follows the controller's real benchmark receipt; not run here | Not inferred from the design threshold or the existence of a unit test, and not extrapolated to RAG speed |
+| Real embedding/summary/answer and fixed semantic eval | **Not authorized/not executed by this subtask** | Requires approval of provider/model/data/amount and request count; a stub tests policy only |
+| D5 raw OpenCode supervised session and student interventions | **Not produced by this subtask** | A student session or approval cannot be synthesized from an architecture drafting log |
+| All six GitHub gates blocking remotely and branch protection | **Not verified by this subtask** | A local script or YAML cannot replace required checks and failing-PR evidence |
 
-## 4. 证据追加规则
+## 4. Rules for appending evidence
 
-新的真实验证条目必须含：执行范围、命令/工具、源码commit或文件版本、fixture/eval版本、模型/回放身份、环境、真实输出定位、失败/skip/unknown、结论与不能外推范围。涉及模型还需实际provider/model、attempt/usage/finish reason和费用已知性；涉及审批需可信人审来源，不自填approved。
+A new real verification entry must contain: execution scope, command/tool, source commit or file version, fixture/eval version, model/replay identity, environment, real output location, failures/skip/unknown, the conclusion and the scope it must not be extrapolated to. Model-related entries also need the actual provider/model, attempt/usage/finish reason and whether the cost is known; approval-related entries need a trusted human-review source and must not self-fill approved.
 
-文档校验、契约测试、上游离线集成、真实语义eval、远端门禁各自一条证据链，不互相替代。修订后按新版本核验，保留旧失败，不把计划改写成过去完成时。
+Document validation, contract tests, upstream offline integration, real semantic eval and remote gates each have their own evidence chain and do not substitute for each other. Re-verify against the new version after a revision, keep old failures, and do not rewrite a plan into the past tense.
 
-## 5. 本次文档校验记录
+## 5. Record of this document validation
 
-已执行一次必要的文档一致性检查：13份Markdown均非空；相对链接与围栏检查无错误；27项registry需求对应27行trace；INV-01至08齐全；13个来源编号均可解析、Sources映射一致；未发现私人绝对路径。只读Git检查返回固定baseline，`src/paperqa`、`packages`、原`tests`相对baseline变更路径为空。检查进程退出码0、errors为空。该结果仅覆盖文档/追踪/引用/链接与冻结路径，不代表应用运行、模型评测、实际OpenCode权限或远端门禁已通过。
+One necessary documentation consistency check was executed: all 13 Markdown files are non-empty; the relative-link and fence checks report no errors; 27 registry requirements correspond to 27 trace rows; INV-01 to 08 are complete; all 13 source numbers resolve and the Sources mapping is consistent; no private absolute paths were found. The read-only Git check returns the fixed baseline, and the changed paths of `src/paperqa`, `packages` and the original `tests` relative to the baseline are empty. The check process exit code was 0 with errors empty. This result covers only documents/trace/citations/links and the frozen paths; it does not mean the application runs, model evaluation, actual OpenCode permissions or remote gates have passed.
 
 ## Sources
 
-[1] urn:sha256:6af742d3cbc0973b056a084ba54ff413a5885b1bb4d6a97b0b08b93f64f2ef7e — CS5351-2026-2027-project.pdf（本地原文提取，10页）
+[1] urn:sha256:6af742d3cbc0973b056a084ba54ff413a5885b1bb4d6a97b0b08b93f64f2ef7e — CS5351-2026-2027-project.pdf (local text extraction, 10 pages)

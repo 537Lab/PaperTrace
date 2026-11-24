@@ -1,29 +1,29 @@
-# 六类门禁：执行入口与真实边界
+# Six gate categories: execution entry points and real boundaries
 
-依据：本学期 Project Requirement Sheet p10；p6 D4 要求完整既往测试。实现是 `scripts/gates.py`，细节分别见 [事前批准](test-approval.md)、[真实语义评估](../../test/evaluation/README.md)、[完整回归](full-regression.md)。
+Basis: this semester's Project Requirement Sheet p10; p6 D4 requires complete prior tests. The implementation is `scripts/gates.py`; details are in [test approval](test-approval.md), [real semantic evaluation](../../test/evaluation/README.md), and [full regression](full-regression.md) respectively.
 
-| 门禁 | 可执行逻辑 | 不得误读 |
+| Gate | Executable logic | Must not be misread |
 |---|---|---|
-| test-approval | 原生 GitHub 测试提案/实现 PR、独立 review、SHA/blobs、服务器时序、安全 ADR/人审 | 没有真实学生批准仍 BLOCKED |
-| static | Ruff/mypy、依赖锁闭包、固定上游、AST/API 契约、敏感启发式、实际 OpenCode 配置 | 静态 PASS 不是安全认证或运行时沙箱 |
-| schema | 实际 JSON Schema、唯一 ID、invariant ==0、来源可定位、禁止外部 refs | 不证明业务 fit criterion 已实现 |
-| semantic | 产品 AI 差异触发、GitHub artifact 与真实授权/逐项评分/原阈值 | 不适用差异 NOT_REQUIRED；mock 不证明质量 |
-| regression | 三来源全收集/执行、base node 清单、live 授权、skip/xfail/xpass 拒绝 | initialization 永远不是 full |
-| ai-log | base 后真实新增语义披露；禁止只换 ID/删旧记录 | 内容真实性仍需人审 |
+| test-approval | Native GitHub test proposal/implementation PR, independent review, SHA/blobs, server timing, security ADR/human review | Still BLOCKED without real student approval |
+| static | Ruff/mypy, dependency lock closure, pinned upstream, AST/API contracts, sensitive heuristics, actual OpenCode configuration | Static PASS is not a security certification or a runtime sandbox |
+| schema | Actual JSON Schema, unique IDs, invariant ==0, locatable sources, external refs forbidden | Does not prove that business fit criteria are implemented |
+| semantic | Product AI diff triggers, GitHub artifact and real authorization/per-case scoring/original thresholds | NOT_REQUIRED for inapplicable diffs; mocks do not prove quality |
+| regression | All three sources collected/executed, base node list, live authorization, skip/xfail/xpass rejection | initialization is never full |
+| ai-log | Real newly added disclosure after base; only swapping IDs / deleting old records is forbidden | Content truthfulness still requires human review |
 
 ```sh
-.venv/bin/python scripts/gates.py --gate schema --base <上一轮完整40位SHA>
+.venv/bin/python scripts/gates.py --gate schema --base <previous full 40-char SHA>
 .venv/bin/python scripts/gates.py --gate static --scope full --base <baseSHA>
-.venv/bin/python scripts/gates.py --gate all --scope full --base <baseSHA> --head <headSHA> --pr-number <PR号> --runtime-python <runtime解释器> --upstream-python <上游解释器>
+.venv/bin/python scripts/gates.py --gate all --scope full --base <baseSHA> --head <headSHA> --pr-number <PR number> --runtime-python <runtime interpreter> --upstream-python <upstream interpreter>
 ```
-占位符必须替换。`--head` 省略时检查实际 worktree；提供时执行输入须与该 head 相同。base 不是祖先时明确 BLOCKED 提示同步分支，模块本地开发不必因此停下。退出码 0=选定范围全部 PASS/确不适用；1=FAIL；2=证据/授权/环境 BLOCKED。`all` 不再硬编码永远失败，也不抹掉任一未满足项。
+Placeholders must be replaced. When `--head` is omitted, the actual worktree is checked; when it is provided, the executed input must match that head. When base is not an ancestor, an explicit BLOCKED message says to sync the branch; local module development need not stop because of it. Exit codes: 0 = every gate in the selected scope PASS or confirmed inapplicable; 1 = FAIL; 2 = evidence/authorization/environment BLOCKED. `all` is no longer hardcoded to always fail, and it does not erase any unmet item.
 
-## CI 信任与首次采纳
+## CI trust and first adoption
 
-六个稳定 job 在PR/review阶段从精确base checkout `.control` 验证候选`target`；main push/手动main复查使用已合入main的控制程序，元数据门禁先从真实合并记录恢复原PR的base/head并重验原批准。直接push或缺来源不因此通过，静态/Schema/回归/披露实际检查新main。GitHub 只读 token 只进入元数据核对步骤，不带 token 跑目标测试；不使用 pull_request_target。PR/review和main push会触发检查；功能分支push不再与PR重复运行。回归在 macOS runner 执行真实 OpenCode sandbox 测试，使用核实存在的 `@opencode/cli@2.0.12`，会消耗现有 Actions 配额，不开启新套餐/自动购买额度。目标测试的 socket guard 不是 OS 隔离。
+Six stable jobs validate the candidate `target` from the exact base checkout `.control` at the PR/review stage; main push and manual main re-checks use the control program already merged into main, and the metadata gates first restore the original PR's base/head from the real merge record and re-verify the original approval. A direct push or a missing source does not pass on that account, and static/Schema/regression/disclosure actually check the new main. The GitHub read-only token enters only the metadata verification step; target tests are never run with the token; pull_request_target is not used. PR/review and main push trigger checks; feature-branch pushes no longer run redundantly with the PR. Regression runs the real OpenCode sandbox tests on a macOS runner with the verified-existing `@opencode/cli@2.0.12`; it consumes the existing Actions quota and does not enable a new plan or auto-purchase credits. The socket guard of the target tests is not OS isolation.
 
-工作流本身仍可能被 PR 修改，不能把 base 脚本读回说成不可绕过保护。私有仓库分支保护当前 API 403，Actions 可见红绿不等于 required checks 生效。最简路线是人工独立 PR review；学生/教师自行核实 Education 的 Pro/Team 权益后再启用、读回并做真实违规/合法对照。
+The workflow itself can still be modified by a PR, so reading the base script back cannot be presented as unbypassable protection. Private-repository branch protection currently returns API 403, and visible red/green in Actions does not mean required checks are in effect. The simplest route is manual independent PR review; enable, read back, and validate protection with real violating/legitimate control cases only after students/teachers themselves verify the Education Pro/Team entitlements.
 
-首次修复 PR 的 base 尚是旧验证器，不能由新代码自发批准自己；真实缺失的事前批准/模型证据/完整上游结果都保留。须真人审查采纳后，未来 PR 才由这版 base verifier 验证。不伪造追溯批准；本轮代理不合并main。真实人员的有限检查、Approve及首次合并步骤见[一次性采纳](minimal-gates.md#pr-1-的一次性首次采纳bootstrap)，未得到课程接受依据就不绕过真实红灯。
+The base of the first fix PR is still the old verifier, so the new code cannot approve itself; the genuinely missing prior approval / model evidence / complete upstream results are all retained. Future PRs are validated by this base verifier only after a real person has reviewed and adopted it. No retroactive approval is fabricated; this round's agent does not merge main. For the real person's limited checks, Approve, and the first merge steps, see [one-time adoption](minimal-gates.md#one-time-first-adoption-of-pr-1-bootstrap); do not bypass a genuine red light without a basis for course acceptance.
 
-当前结果只在 [INITIALIZATION_STATUS.md](../../INITIALIZATION_STATUS.md) 维护；历史日志在 artifacts 保留，不冒充本次结果。
+Current results are maintained only in [INITIALIZATION_STATUS.md](../../INITIALIZATION_STATUS.md); historical logs are kept in artifacts and are not passed off as results of this round.

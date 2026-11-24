@@ -154,3 +154,95 @@ entries:
   - 生成、引用解析、freshness/token、预算与发布门均未实现
   - 静态导入扫描只是补充观察，不证明零出站尝试
   - 本条于 2026-11-19 应 reviewer 要求追加到共享日志；本披露不构成任何批准存在的证据
+- entry_id: D-RELEASE-20261123-01
+  timestamp: '2026-11-23T13:06:03+08:00'
+  tool: OpenCode desktop session, agent role papertrace-build-D (source implementation stage), session ses_df9385cc9ffeXneA5e41reGvzw
+  model: deepseek-flash (provider deepseek, variant max; runtime label not independently verified)
+  purpose: Implement the deterministic D release check in its blocked-only scope and expose it through the D entry point; does not implement the final publication transaction
+  scope:
+  - src/papertrace/answer/ (release decision, service wiring, package exports)
+  - docs/team/designs/module-D/20261123-d-release-gate-plan.md
+  - docs/team/designs/module-D/20261123-d-release-gate-implementation.md
+  status: implementation-complete-pr-open-draft-approved-not-merged
+  student_decisions:
+  - The student approved the release-check implementation after the test approval on PR #24.
+  - The student fixed the scope to the blocked-only decision; the final publication transaction and the compare-and-commit boundary remain with the A/C/E and application owners.
+  approvals:
+  - 'Test approval: PR #24 carried the approved test version that this implementation inherits.'
+  - 'Implementation review: GitHub review 6018723258 requested changes on the ADR-001 scope; the 24 November readback recorded the same head as APPROVED, and the PR remains an open draft.'
+  verification:
+  - 'Candidate offline run: 454 passed, 2 skipped, including 29 release-check tests.'
+  - 'Targeted Ruff, mypy (12 files), schema and AI-use-log checks passed locally.'
+  - 'Remote static analysis, full regression and semantic evaluation were not green at the head; no merge was attempted.'
+  limitations:
+  - No real model call and no final publication transaction in this round.
+  - The release decision stays blocked / PUBLICATION_COMMIT_UNAVAILABLE by design.
+  - The upstream full regression was not green; the semantic gate has no bound real run.
+- entry_id: D-FIX-20261124-01
+  timestamp: '2026-11-24T12:25:27+08:00'
+  tool: OpenCode desktop session, agent role papertrace-build-D (source implementation stage), session ses_df432d66affeKQLMHJb0TYkNc6
+  model: deepseek/deepseek-flash (OpenCode CLI 2.3.0; provider identity not independently attested)
+  purpose: Repair the duplicate-sent failure path so a rejected draft keeps validated accounting; limited to two D source files
+  scope:
+  - src/papertrace/answer/generation.py
+  - src/papertrace/answer/b_gateway_adapter.py
+  status: implementation-complete-fix-approved-open-draft-not-merged
+  student_decisions:
+  - The student authorized the narrow repair after the six regression cases were approved on PR #49.
+  - The student required duplicate evidence to remain a rejection and reserved verification for a separate run.
+  approvals:
+  - 'Test approval: PR #49 at 476fbae91d6d56988bdfd89c5c3004c49b05f44a, GitHub review 6033407385, before any source edit.'
+  - 'Implementation review: PR #50 at 8f0866675157b3e8fdce264ba3cd6e65e8e3892f, GitHub review 6037341203; the PR remains an open draft.'
+  verification:
+  - 'Six approved cases: three valid-accounting cases failed on #43 and pass on #50; three invalid-accounting controls pass on both.'
+  - '259 D/C tests passed in the locked runtime with an isolated metadata overlay; 24 D and B/D boundary tests passed offline.'
+  - 'An independent B-side replay reported 451 passing B/C/D/E checks; the E-side replay preserved 1, 0 and null through save, reopen and export.'
+  limitations:
+  - No real product model was called; the real-provider semantic evaluation was not run.
+  - Static analysis, full regression and semantic evaluation remained failing at the candidate; the public page wiring is not accepted.
+  - This entry does not claim a merge or a human approval beyond the recorded reviews.
+- entry_id: PREP-20261125-01
+  timestamp: '2026-11-25T03:25:00+08:00'
+  tool: DeepSeek Harness agent session (submission preparation with delegated translation workers; not an OpenCode student development session)
+  model: deepseek-flash (runtime-reported; provider identity not independently verified)
+  purpose: Prepare the D5 annotated transcript, the D6 personal reflection and the D report section; translate submission files to English; build the ZIP acceptance checklist
+  scope:
+  - transcripts/60588464-Yu-Wenyan.md
+  - docs/ and repository prose files
+  - README.md, AGENTS.md, Report.md
+  - test/fixtures/contracts and test/evaluation/cases.json
+  - artifacts/verification annotations
+  status: preparation-assistance-not-human-approval
+  student_decisions:
+  - The student requested the English conversion and the D5/D6 preparation.
+  - No student approval of tests, architecture or a merge is implied by this entry.
+  approvals: []
+  verification:
+  - 'Translation structure check: 66 files matched heading, fence and link counts; no CJK outside two upstream fixtures.'
+  - 'Offline suite after the fixture and case changes: 362 passed, 2 skipped, 1 failed only because the sandbox denies ps.'
+  - 'Contract tests: 149 passed; YAML and JSON files re-parsed; ZIP checker 31 pass, 1 warn, 2 fail (Report placeholder, transcripts 1/5).'
+  limitations:
+  - No product model was called and no provider credential was read.
+  - This is not a D5 transcript and not a substitute for student OpenCode supervision.
+  - The translation changed test fixture identifiers and two test files; that change is recorded here rather than presented as an approved test revision.
+  - The exact Codex/DSH session identifier is not retrievable from this interface; update this entry if an export becomes available.
+- entry_id: SUBMISSION-EN-20261125-01
+  timestamp: '2026-11-25T04:50:00+08:00'
+  tool: DeepSeek Harness agent session (submission english conversion)
+  model: deepseek-flash (runtime-reported; provider identity not independently verified)
+  purpose: Convert the repository submission materials to English, and keep the audit log, the fixed evaluation set and the startup prompt append-only
+  scope:
+  - docs/ai-use-log.en.md
+  - docs, team and tooling prose
+  - README.md, AGENTS.md, architecture-blueprint.md, Prompt.md
+  status: translation-assistance-not-human-approval
+  student_decisions:
+  - The student asked for the repository materials to be in English.
+  - 'The student accepted the review comment that docs/ai-use-log.yaml, test/evaluation/cases.json and prompts/prompt_v1.0.yaml stay byte-identical; the first two are reverted and this log only appends.'
+  approvals: []
+  verification:
+  - 'Every historical entry is byte-identical to the version before this branch; the D-RELEASE, D-FIX and PREP entries appended earlier on this branch are unchanged, and this entry is the only new one in this revision.'
+  - 'scripts/gates.py --gate ai-log passes against base c3817ae.'
+  limitations:
+  - The canonical log keeps its original wording; the English rendering is a separate file.
+  - This entry records no approval of a test revision and no human sign-off of the human-maintained rules files.

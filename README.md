@@ -1,28 +1,58 @@
 # PaperTrace
 
-**Evidence Review Workbench**：在本地整理获准文献，检索候选证据，由人审核后受控生成回答，并保留可追溯历史。PaperTrace 扩展固定的 PaperQA2 基线，不重新实现检索引擎，也不把模型输出当作人工批准或科学事实证明。
+PaperTrace is an evidence-review workbench built on a pinned PaperQA2 baseline. It imports local papers, retrieves candidate evidence, lets a human accept or exclude each item, generates an answer only from accepted evidence, and stores a traceable research record. It extends PaperQA2 rather than replacing it.
 
-## 开始
+## Architecture
 
-新成员、协作者和贡献者统一从 **[团队启动入口](TEAM_START_HERE.md)** 开始。仓库为私有，须先由所有者邀请。启动命令、环境边界和待单独批准的 PaperQA2 运行依赖见入口链接的命令页。
+The system is split into five modules. A owns the library and document versions; B owns retrieval and the single PaperQA2 adapter; C owns the review ledger; D owns answer preparation and the deterministic release gate; E owns the saved research record and export. Shared data definitions live only in `src/papertrace/contracts.py`.
 
-## 五个功能
+The model is advisory. Only a human review decision can mark evidence as accepted, an empty accepted set must stop before any generation call, and a draft may be released only when `cited ⊆ sent ⊆ approved` and the review and snapshot identities are still current. D enforces these checks; the UI and serialized contracts cannot grant authorization.
 
-A 文献库与版本 → B 检索与 PaperQA2 适配 → C 原文比较与人工审核 → D 获准证据回答与确定性发布门 → E 研究历史与导出。每个功能由成员完整负责需求、设计、受监督开发、正负测试、自己的界面与 PR；过程审查/集成角色轮换。分工和计划从[统一入口](TEAM_START_HERE.md)进入。
+## Project layout
 
-## 当前工程边界
+- `src/papertrace/` — the five modules and the shared contracts.
+- `src/paperqa/`, `packages/`, `tests/` — the frozen upstream baseline.
+- `test/offline/` — deterministic tests; `test/live/` — tests that need separately approved provider access.
+- `docs/req/` — machine-readable requirements and the PRD.
+- `docs/architecture/` — blueprint, ADRs, invariants, trace matrix, memory, permissions, runtime policies, evaluation.
+- `docs/code-governance/` — structural, verification and tool rules.
+- `docs/team/` — module charters, integration contract and design records.
+- `docs/ci/` — gate definitions and the full-regression procedure.
+- `transcripts/` — annotated student–agent sessions.
+- `prompts/` — versioned runtime prompts.
 
-- 五个业务模块尚待成员实现；文档、契约或测试通过不能当作可运行的正式 Streamlit 应用。
-- 唯一上游 PaperQA2 集成边界归 B；D 通过中立端口和 fake 先独立开发自身授权、预算、引用与发布逻辑。
-- 没有人审决定时证据为 pending；无获准证据时生成调用数必须为零；可发布回答要求 `cited ⊆ sent ⊆ approved`，并通过快照/审核版本新鲜度检查。
-- 默认按路径拒绝读写。任务书里的候选目录不是自动授权；每轮 Plan 须列出精确文件和工具权限并由非作者批准。
-- 上游核心由现有 `frozen_check` 固定基线保护，普通模块 PR 不改。必要兼容修复须独立 ADR + 人工 PR，明确更新 `frozen_check` fitness rule/比较口径并跑受影响回归；口头批准不能让当前 CI 通过，不新增旁路授权平台。
-- 六类课程门禁不删减、不降级、不以 `skip` 或文档存在冒充通过。真实状态以 `docs/ci/gates.md` 和验证证据为准；远端强制保护须经真实配置和阻断演练验证。
+## Running the tests
 
-## 目录索引
+The offline suite is deterministic and blocks sockets:
 
-- [五人工作计划](TEAM_WORK_PLAN.md)：固定 ownership、协作轮换、D1–D9 与六类门禁。
-- `docs/team/module-A.md` … `module-E.md`：五份可认领、可 fake 独立开发的功能任务书。
-- `docs/team/integration-contract.md`：共享模型、模块交接和契约变更规则。
-- `docs/architecture/`、`docs/req/`、`docs/code-governance/`：架构、需求和治理事实源。
-- `docs/ci/gates.md`、`INITIALIZATION_STATUS.md`：真实验证状态，不从 README 推断状态。
+```sh
+.venv/bin/python -m pytest -c papertrace.pytest.ini test/offline
+```
+
+The live suite needs separately approved provider access, data, model, call budget and a time limit. No credentials or approvals are committed, so it must not be run to make a gate green:
+
+```sh
+.venv/bin/python -m pytest -c papertrace.pytest.ini test/live
+```
+
+The full suite adds the team runtime/integration tests and the upstream `tests/` and `packages/` suites in their own environments. It is driven by `scripts/full_regression.py` against a real previous commit, or by the regression gate:
+
+```sh
+.venv/bin/python scripts/full_regression.py --base <40-char-sha> \
+  --runtime-python .venv-runtime/bin/python \
+  --upstream-python .venv-upstream/bin/python \
+  --output .local/full-regression
+.venv/bin/python scripts/gates.py --gate regression --scope full
+```
+
+See `docs/ci/full-regression.md` for the environment setup and the rules on skips, deselection and live tests.
+
+## Blocking gates and branch protection
+
+The CI pipeline implements six blocking gates: test approval before implementation, static analysis (lint, types, architecture, dependency and permission checks), schema validation of the requirements registry, semantic evaluation for prompt or model changes, full prior regression, and an AI-use log update on every code or prompt change. A change that fails any gate cannot merge.
+
+Branch protection requires the CI checks to pass. Changes to safety-critical paths also require human review with an accompanying architecture decision; a role name, a passing script or a document cannot substitute for that approval.
+
+## Repository
+
+The real project repository is <https://github.com/537Lab/PaperTrace>. Current gate results and known failures are reported in `docs/ci/gates.md` and `INITIALIZATION_STATUS.md`; a document describing a gate is not evidence that the gate passed.

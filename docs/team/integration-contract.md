@@ -1,147 +1,147 @@
-# PaperTrace｜集成合同与契约变更流程
+# PaperTrace | Integration contract and contract change process
 
-## 0. 本文件的效力与当前阶段
+## 0. Force of this document and current phase
 
-本文件是五模块共同遵守的**语义交接合同**，用于需求/测试审批和后续实现。本轮只建立共享契约、合成 fixtures 和离线 gate，**业务调用与编排尚未实现**；本文件不另造共享模型，也不把设计 port 写成已可调用。
+This document is the **semantic handover contract** shared by all five modules, used for requirement/test approval and subsequent implementation. This round establishes only the shared contract, synthetic fixtures, and offline gates; **business calls and orchestration are not yet implemented**. This document does not create separate shared models, nor does it present design ports as already callable.
 
-门禁定义与实际运行状态见 [`../ci/gates.md`](../ci/gates.md)；任务书的测试案例和本文件的交互表均是实现合同，不代表已运行或通过。
+Gate definitions and actual run status are in [`../ci/gates.md`](../ci/gates.md); both the test cases in the assignment document and the interaction tables in this document are implementation contracts and do not mean they have been run or passed.
 
-- 类型、字段、枚举、序列化与身份算法的事实源：`src/papertrace/contracts.py` 及其共享测试/规范 fixtures。
-- 需求与不变量的事实源：`docs/req/requirements.yaml`、`docs/architecture/invariants.md`；架构/权限以 `architecture-blueprint.md`、ADR、permission-model 为准。
-- 文字与真实共享契约不一致时，以**已批准的真实 contracts 文件**作为程序接口依据，立刻登记冲突；这不是削弱不变量的许可。缺少实现安全规则所需字段时，阻止相关集成/发布，走本页第 8 节变更流程，不在模块里偷偷补兼容字段或默认批准。
-- `INV-01`–`INV-08`、`QA-01`、`PERF-01`、`COST-01`、`SEC-01`、`GOV-01`–`GOV-04` 的编号/含义不在本页重排。模块测试用这些真实 ID 与 registry 对齐。
+- Source of truth for types, fields, enums, serialization, and identity algorithms: `src/papertrace/contracts.py` and its shared test/canonical fixtures.
+- Source of truth for requirements and invariants: `docs/req/requirements.yaml`, `docs/architecture/invariants.md`; architecture and permissions follow `architecture-blueprint.md`, ADRs, and permission-model.
+- When the prose conflicts with the real shared contract, the **approved real contracts files** are the basis for program interfaces, and the conflict must be registered immediately; this is not a license to weaken invariants. When fields needed to implement a safety rule are missing, block the affected integration/release, follow the change process in section 8 of this page, and do not quietly add compatibility fields or default-approve inside a module.
+- The numbering and meaning of `INV-01`–`INV-08`, `QA-01`, `PERF-01`, `COST-01`, `SEC-01`, `GOV-01`–`GOV-04` are not rearranged on this page. Module tests align with the registry using these real IDs.
 
-## 1. 模块所有权、允许依赖与 UI 边界
+## 1. Module ownership, allowed dependencies, and UI boundary
 
-| 模块 | 权威所有权 | 向外只提供 | 绝不能做 |
+| Module | Authoritative ownership | Provides outward only | Must never do |
 |---|---|---|---|
-| A `library` | 文献逻辑身份、内容版本、导入状态、快照 | 版本固定的 CorpusSnapshot；受限文件访问/状态信息 | 直接导入 `paperqa`；把部分失败称为完整库；替 C 批准证据 |
-| B `retrieval` | PaperQA2 映射、检索执行、受控生成的底层适配 | EvidenceRecord；中立生成端口的原始结果/实际发送及引用映射 | 产生人工 accepted；发布答案；返回跨模块可变 Docs/PQASession |
-| C `review` | 人工决定与追加式审核 ledger | ReviewDecision 集合；可重放 revision/digest；有效决定投影 | 以 AI 分数自动批准；原地覆盖历史决定；修改文献版本 |
-| D `answer` | 获准集/发送集/引用集；调用授权、上下文策略与确定性发布门 | AnswerDraft、ReleaseDecision 及核查原因 | 直接导入 `paperqa`；取回未审核证据；用模型自评代替门禁 |
-| E `reports` | 研究历史、追溯存储与导出 | 绑定原快照/ledger/draft/release 的研究记录与导出件 | 重新生成答案；将 blocked 草稿升级为 released；回写审核 |
+| A `library` | Literature logical identity, content version, import status, snapshots | Version-pinned CorpusSnapshot; restricted file access/status information | Import `paperqa` directly; call a partial failure a complete library; approve evidence on behalf of C |
+| B `retrieval` | PaperQA2 mapping, retrieval execution, low-level adaptation for controlled generation | EvidenceRecord; raw results from the neutral generation port / actually sent and citation mapping | Produce human accepted; release answers; return cross-module mutable Docs/PQASession |
+| C `review` | Human decisions and the append-only review ledger | ReviewDecision sets; replayable revision/digest; effective-decision projection | Auto-approve from AI scores; overwrite historical decisions in place; modify literature versions |
+| D `answer` | Approved set / sent set / cited set; call authorization, context policy, and the deterministic release gate | AnswerDraft, ReleaseDecision, and the verification reasons | Import `paperqa` directly; fetch unreviewed evidence; replace the gate with a model self-assessment |
+| E `reports` | Research history, trace storage, and export | Research records and exports bound to the original snapshot/ledger/draft/release | Regenerate answers; promote a blocked draft to released; write back into review |
 
-**只有 B 可以在团队新增源码中 import `paperqa`。**固定上游源码自己的 import 不受这条新增代码限制；不能为了结构检查去修改上游。D 是回答功能 owner，B 维护第三方适配/调用：D 决定获准输入、预算、提示词和发布，B 不获得批准/放行权。B-only 是代码依赖边界，不是禁止 A/D 阅读上游源码；A/D 可在本轮 Plan 明列且获准的精确只读路径内核实行为，但不得直接 import/调用上游。
+**Only B may import `paperqa` in newly added team source code.** The frozen upstream source's own imports are not subject to this new-code restriction; upstream must not be modified for the sake of structural checks. D is the owner of the answer capability and B maintains the third-party adaptation/calls: D decides approved inputs, budget, prompts, and release, and B does not gain approval/release authority. B-only is a code dependency boundary, not a ban on A/D reading upstream source; A/D may verify behavior within the exact read-only paths explicitly listed and approved in this round's Plan, but must not directly import/call upstream.
 
-各模块不通过 import 邻居的私有实现调用。后续应用 orchestration 以依赖注入/中立端口传递共享模型，负责安排顺序与一致性读取；端口由相应业务 owner 提案并在 Plan 获批，**不是本轮预先实现一个跨模块大服务**。例如 D 的离线测试可注入 fake 生成端口，不依赖 B 完工。
+Modules do not call one another by importing a neighbor's private implementation. Later application orchestration passes shared models through dependency injection/neutral ports and is responsible for ordering and consistent reads; ports are proposed by the relevant business owner and approved in a Plan, **not implemented in advance this round as one large cross-module service**. For example, D's offline tests can inject a fake generation port and do not depend on B being finished.
 
-UI 仅展示状态、收集操作、调用应用编排：
+The UI only displays state, collects operations, and calls application orchestration:
 
-- 各人 view 位于自己的模块目录，接受中立输入/命令，不各写一套审批状态机。
-- A 的首个装配 PR 连接导航和依赖注入；入口/编排的实际路径在该 PR 的批准计划中明确，其他人不同时改同一入口。
-- “按钮不可点击”不是安全控制；绕过 UI 直接调服务，审核和发布约束仍须生效。
-- Streamlit session state 只能缓存展示状态，不能成为权威 ledger、快照或 ReleaseDecision。
+- Each person's view lives in their own module directory, accepts neutral inputs/commands, and does not each write its own approval state machine.
+- A's first assembly PR wires navigation and dependency injection; the actual entry/orchestration paths are specified in that PR's approved plan, and others do not change the same entry point at the same time.
+- "The button is not clickable" is not a security control; calling the service directly while bypassing the UI must still be subject to review and release constraints.
+- Streamlit session state may only cache display state and cannot become the authoritative ledger, snapshot, or ReleaseDecision.
 
-## 2. 五个共享模型的语义责任
+## 2. Semantic responsibilities of the five shared models
 
-本表描述语义，不是另一份字段定义；实现时直接读 contracts 的字段名和校验器。
+This table describes semantics, not another field definition; when implementing, read the field names and validators directly from contracts.
 
-| 模型 | 生产者 → 消费者 | 必须保持的语义 | 拒绝/失效条件 |
+| Model | Producer → consumer | Semantics that must hold | Rejection/invalidation conditions |
 |---|---|---|---|
-| `CorpusSnapshot` | A → B/C/D/E | 逻辑文献 ID 与 SHA256 内容版本分开；快照内容 hash 稳定；`documents` 只含 `status="ready"` 的 DocumentVersion，不随当前库原地变化；失败/处理中信息留在 A 的导入记录而非塞进快照 | 文件内容与版本不符、来源不可访问、批次不完整且流程不允许、无法核验身份 |
-| `EvidenceRecord` | B → C/D/E | 绑定 snapshot、doc、version、locator、原文；摘要/相关度为建议；稳定 evidence ID 由这五项按共享算法计算 | 外来快照、版本不存在、原文/定位缺失或无法核验、身份 hash 不符 |
-| `ReviewDecision` | C（仅 human 操作）→ D/E | 按 snapshot、question、evidence 作用域追加接受/排除/重置 pending；不抹掉旧记录；ledger revision/digest 可重放。没有决定是 pending，不是 accepted；`actor_kind="human"` 的字段校验本身不证明操作真实性 | 非 human 来源、越界 evidence/问题、旧 revision 写入冲突、重放摘要不一致 |
-| `AnswerDraft` | D（经 B 底层调用）→ 发布核查/E | 绑定问题、snapshot、审核版本、实际输入证据与原始引用映射；草稿不自动有发布资格 | 未知引用、上下文污染、生成错误/截断、关联状态变化 |
-| `ReleaseDecision` | D 的确定性门 → UI/E | 明示能否发布及原因；与被判定的特定 draft、快照和审核版本绑定；非模型自评 | 不能重现三集关系、新鲜度/身份核验失败、未授权调用等均 fail closed |
+| `CorpusSnapshot` | A → B/C/D/E | The logical literature ID is separate from the SHA256 content version; the snapshot content hash is stable; `documents` contains only DocumentVersion with `status="ready"` and does not change in place with the current library; failure/in-progress information stays in A's import records instead of being stuffed into the snapshot | File content does not match the version, source inaccessible, batch incomplete and the process does not allow it, identity cannot be verified |
+| `EvidenceRecord` | B → C/D/E | Binds snapshot, doc, version, locator, and source text; summary/relevance are advisory; the stable evidence ID is computed from these five items by the shared algorithm | Foreign snapshot, nonexistent version, missing or unverifiable source text/locator, identity hash mismatch |
+| `ReviewDecision` | C (human operations only) → D/E | Appends accept/exclude/reset-to-pending within the snapshot, question, and evidence scope; does not erase old records; ledger revision/digest are replayable. No decision means pending, not accepted; field validation of `actor_kind="human"` does not by itself prove the operation is genuine | Non-human source, out-of-scope evidence/question, write conflict on an old revision, replay digest mismatch |
+| `AnswerDraft` | D (through B's low-level calls) → release verification/E | Binds the question, snapshot, review version, actually input evidence, and raw citation mapping; a draft does not automatically qualify for release | Unknown citation, context contamination, generation error/truncation, change in associated state |
+| `ReleaseDecision` | D's deterministic gate → UI/E | States explicitly whether release is possible and why; bound to the specific judged draft, snapshot, and review version; not a model self-assessment | Inability to reproduce the three-set relation, freshness/identity verification failure, unauthorized calls, etc. all fail closed |
 
-业务状态的**显示标签**可以是“等待/导入中/可用/失败”“待审/接受/排除”“草稿/阻断/可发布”，但传输枚举一律使用 contracts 的真实定义，不把中文 UI 标签当 schema 值。
+Business states may have **display labels** such as "waiting/importing/available/failed", "pending/accepted/excluded", and "draft/blocked/releasable", but wire enums always use the real definitions in contracts; Chinese UI labels are not schema values.
 
-当前 v1 的关键实际值：ReviewDecision 为 `pending/accepted/excluded` 且 `actor_kind="human"`；AnswerDraft 为 `draft/abstained/failed`；ReleaseDecision 为 `released/blocked`。`stale` 是阻断原因/展示状态，不是可擅加的 ReleaseDecision 枚举。所有五模型显式 `schema_version=1`、未知字段拒绝。原始模型回复、usage、表示指纹、导入失败清单等不在五模型里的信息，应由 owner 在获批端口/版本化记录包中另存，不往 frozen 模型加 extra 字段。
+Key actual values in the current v1: ReviewDecision is `pending/accepted/excluded` with `actor_kind="human"`; AnswerDraft is `draft/abstained/failed`; ReleaseDecision is `released/blocked`. `stale` is a blocking reason/display state, not a ReleaseDecision enum that may be added at will. All five models explicitly set `schema_version=1` and reject unknown fields. Information not in the five models, such as raw model replies, usage, representation fingerprints, and import failure lists, should be stored separately by the owner in approved ports/versioned record bundles; do not add extra fields to frozen models.
 
-### 身份与摘要规则
+### Identity and digest rules
 
-1. 逻辑文献 ID 代表同一文献条目；SHA256 代表文件内容版本。文件名、标题、DOI、上游 MD5 和 `dockey` 都不能单独替代内容版本。
-2. snapshot 身份来自共享合同规定的内容 hash，不拿当前时间、随机数或列表显示序号替代。文件顺序、规范化和编码规则调用共享实现；不得各模块各写一个哈希算法。
-3. evidence 身份来自 `(snapshot, doc, version, locator, 原文)` 的共享 hash 算法。原文是来源文本，不是模型摘要；改变其中任何有意义的来源内容应产生新身份。不要截取摘要前缀充当稳定 ID。
-4. `SourceLocator` 必须有完整的 1-based inclusive 页范围或行范围，同时带 `chunk_id`、`parser_name`、`parser_version`；只有 chunk 名还不满足当前合同。只有页范围就不能捏造精确句子 offset；上游不能提供可验证行范围时，B 应从受控源文本建立映射，无法做到则显式失败/先审合同，不伪造行号。
-5. 相同内容的重复导入行为由 A 的策略明确区分幂等复用与新逻辑条目；绝不静默覆盖旧历史。已保存的研究记录只读原版本，不自动迁移到最新 snapshot。
+1. The logical literature ID represents the same literature entry; SHA256 represents the file content version. File name, title, DOI, upstream MD5, and `dockey` cannot individually substitute for the content version.
+2. Snapshot identity comes from the content hash specified by the shared contract and is not replaced by the current time, a random number, or a display index in a list. File order, normalization, and encoding rules call the shared implementation; modules must not each write their own hash algorithm.
+3. Evidence identity comes from the shared hash algorithm over `(snapshot, doc, version, locator, source text)`. The source text is the source passage, not a model summary; changing any meaningful source content must produce a new identity. Do not use a prefix of a summary as a stable ID.
+4. `SourceLocator` must have a complete 1-based inclusive page range or line range, together with `chunk_id`, `parser_name`, and `parser_version`; a chunk name alone does not yet satisfy the current contract. With only a page range, a precise sentence offset must not be fabricated; when upstream cannot provide a verifiable line range, B should build the mapping from the controlled source text, and if that is impossible it must fail explicitly/review the contract first rather than fabricate line numbers.
+5. Repeated import of identical content is handled by A's policy, which explicitly distinguishes idempotent reuse from a new logical entry; old history is never silently overwritten. Saved research records read only their original version and are not automatically migrated to the latest snapshot.
 
-## 3. 后续应用编排的六次交接
+## 3. The six handovers of later application orchestration
 
-下列为**设计交互**，不是已实现函数签名。批准计划须把它们映射到最小端口、输入/输出、错误与可测试的调用计数；不要让 UI 直接拼接五套可变对象。
+The following are **design interactions**, not implemented function signatures. The approved plan must map them to minimal ports, inputs/outputs, errors, and testable call counts; do not let the UI directly assemble five sets of mutable objects.
 
-| 次序 | 调用方 / owner | 输入 | 输出与必须检查 | 失败后的动作 |
+| Step | Caller / owner | Input | Output and mandatory checks | Action after failure |
 |---|---|---|---|---|
-| 1 文库准备 | 编排 → A；A 经中立摄取端口调用 B | 用户明确选定的本地允许文件、人工元数据、预期版本 | 各文件导入结果和固定 snapshot；A 决定库状态，B 只报告解析/索引结果 | 保留失败清单，禁止暗中扩大到用户目录；未完成不可标完整 |
-| 2 候选检索 | 编排 → B | 固定 snapshot、问题、批准的检索配置 | 合法 EvidenceRecord 集合，来源均属于 snapshot，原文/摘要分开 | 空集正常返回“无证据”；错误显式失败，不自动请求全库回答 |
-| 3 人工审核 | view → 编排 → C | evidence ID、human 选择/理由、预期 ledger revision | 新 ReviewDecision 和新 revision/digest；读回确认 | 旧 revision 冲突不覆盖；保留表单并要求刷新确认 |
-| 4 受控生成 | 编排 → D → B 的中立生成端口 | 固定 snapshot、该版本人工 ledger、问题、获准证据、上下文/预算策略 | D 记录 approved；记录最终序列化后 sent；B 新建过滤 session，仅执行 aquery 并回传原始结果 | 空 approved/sent 时端口调用数为零；未知/过期/预算错误均停止，不能再搜证据 |
-| 5 发布核查 | 编排 → D，向 A/C 读当前 token | 草稿、实际输入/原始引用、开始与结束的 snapshot/review token | 确定性 ReleaseDecision；通过才作为发布候选 | 保留草稿及具体阻断原因，不删除未知引用后假称通过 |
-| 6 保存/导出 | 编排 → E | 不可变 snapshot、evidence、ledger、draft、release 及必要运行元数据 | 历史可回读；导出保持同一版本/状态/引用映射，发布提交与 token 比较处于一致性边界 | 缺原版本则显式 incomplete/blocked，不用当前库替代，不把 blocked 冒充 released |
+| 1 Library preparation | Orchestration → A; A calls B through the neutral ingestion port | Locally allowed files explicitly selected by the user, human metadata, expected version | Per-file import results and a pinned snapshot; A decides library state, B only reports parse/index results | Keep the failure list, never quietly expand to the user's directories; incomplete work must not be marked complete |
+| 2 Candidate retrieval | Orchestration → B | Pinned snapshot, question, approved retrieval configuration | A valid set of EvidenceRecord, all sources belonging to the snapshot, source text/summary kept separate | An empty set returns "no evidence" normally; errors fail explicitly and do not automatically request a whole-library answer |
+| 3 Human review | view → orchestration → C | evidence ID, human choice/reason, expected ledger revision | A new ReviewDecision and a new revision/digest; read back to confirm | A conflict on an old revision is not overwritten; keep the form and require a refresh confirmation |
+| 4 Controlled generation | Orchestration → D → B's neutral generation port | Pinned snapshot, the human ledger at that revision, question, approved evidence, context/budget policy | D records approved; records sent after final serialization; B creates a new filtered session, executes only aquery, and returns the raw result | With empty approved/sent the port call count is zero; unknown/stale/budget errors all stop the flow, and no further evidence search is allowed |
+| 5 Release verification | Orchestration → D, reading current tokens from A/C | Draft, actual input/raw citations, snapshot/review tokens at start and end | A deterministic ReleaseDecision; only a pass becomes a release candidate | Keep the draft and the specific blocking reason; do not delete unknown citations and then claim a pass |
+| 6 Save/export | Orchestration → E | Immutable snapshot, evidence, ledger, draft, release, and necessary run metadata | History can be read back; export keeps the same version/state/citation mapping, and the release commit and token comparison sit within one consistency boundary | If the original version is missing, mark it explicitly incomplete/blocked; do not substitute the current library and do not pass off blocked as released |
 
-B 的解析/索引准备与检索可能有独立错误或费用；A 的“导入”操作不因此被视为免费离线。默认仍使用 fake 摄取/检索端口，批准业务依赖和 live 前不能真实调用。
+B's parse/index preparation and retrieval may have independent errors or costs; A's "import" operation is therefore not considered free or offline. Fake ingestion/retrieval ports remain the default, and real calls are not allowed before business dependencies and live use are approved.
 
-## 4. B/D 之间最重要的调用约束
+## 4. The most important call constraints between B and D
 
-固定上游源码在 `src/paperqa/docs.py` 已核对：`aquery` 在 contexts 为空时可能再次 `aget_evidence`；`pre/post` 可能额外请求模型；session 可复用旧 contexts；格式化会处理未知引用但不证明语义支持。因此不能只写“提示词要求只用获准证据”。
+The frozen upstream source has been checked at `src/paperqa/docs.py`: when contexts are empty, `aquery` may call `aget_evidence` again; `pre/post` may make extra model requests; a session can reuse old contexts; formatting handles unknown citations but does not prove semantic support. It is therefore not enough to write "the prompt requires using only approved evidence".
 
-后续 B 适配器必须在 D 的授权边界内执行：
+The later B adapter must operate within D's authorization boundary:
 
-- 摄取/检索路线采用 `Docs.aadd` 与 `Docs.aget_evidence`；不用 `agents.ask`、`run_agent`、CLI 自治流程或“fake agent”。fake agent 仍可能请求真实模型。
-- 生成路线采用 `Docs.aquery`，**每次新建仅含 D 选定证据的 session**，不接收/复用旧 session 或 B 检索时的全量 contexts。
-- 显式 `answer.get_evidence_if_no_contexts=false`、`prompts.pre=None`、`prompts.post=None`；不附带旧答案、未审核会话历史或隐藏背景来源。其他模型角色与客户端初始化同样要受网络/预算边界控制，不能因为某角色“应当不用”就默认它无外连。
-- 由 D 决定层级上下文、预算/裁剪、约束再注入和提示词版本；B 按批准策略序列化并记录**最终实际送出的**来源 ID 与引用 key 映射。serializer 的排序、cutoff、`answer_max_sources` 可能使 sent 小于 approved，不能只记录过滤前列表。
-- B 返回模型原始输出及引用映射，D 在格式化清理未知引用之前完成解析/核查。未知 key 不能先静默删除再当作“未引用”；上游 `has_successful_answer` 不是 ReleaseDecision。
-- B/D 的测试要能截获发送内容，证明排除与 pending 原文没有流入请求。测试 fake 不能只返回“OK”而不观察输入。
+- The ingestion/retrieval route uses `Docs.aadd` and `Docs.aget_evidence`; it does not use `agents.ask`, `run_agent`, autonomous CLI flows, or a "fake agent". A fake agent may still request a real model.
+- The generation route uses `Docs.aquery`, **creating a new session each time that contains only the evidence D selected**, and does not accept/reuse an old session or the full contexts from B's retrieval.
+- Explicitly set `answer.get_evidence_if_no_contexts=false`, `prompts.pre=None`, `prompts.post=None`; do not attach old answers, unreviewed conversation history, or hidden background sources. Other model roles and client initialization are likewise subject to network/budget boundaries; a role must not be assumed to have no outbound connectivity just because it "shouldn't need one".
+- D decides the tiered context, budget/truncation, constraint re-injection, and prompt version; B serializes per the approved policy and records the **finally actually sent** source IDs and citation key mapping. The serializer's ordering, cutoff, and `answer_max_sources` may make sent smaller than approved, so it is not enough to record the pre-filter list.
+- B returns the raw model output and citation mapping, and D completes parsing/verification before formatting removes unknown citations. Unknown keys must not be silently deleted first and then treated as "not cited"; upstream `has_successful_answer` is not a ReleaseDecision.
+- B/D tests must be able to intercept the sent content and prove that excluded and pending source text never flows into the request. A test fake must not just return "OK" without observing its input.
 
-## 5. 三个集合、ledger token 与并发失效
+## 5. The three sets, ledger tokens, and concurrent invalidation
 
-- `approved`：属于所选 snapshot 和 question 作用域，且在指定 ledger revision/digest 下由 human 有效接受的证据 ID 集合。排除和无决定均不在其中；另一问题的决定不能直接挪用。
-- `sent`：经过本次预算、排序、过滤、序列化后实际发送的证据 ID 集合；正文里若混入其他证据来源，即使没有显式 ID 也属于泄漏，须阻断。
-- `cited`：从原始生成结果解析并可靠映射的实际引用 ID 集合；未知引用不能映射为任意获准 ID。
+- `approved`: the set of evidence IDs that belong to the selected snapshot and question scope and were validly accepted by a human at the specified ledger revision/digest. Excluded and undecided items are not included; decisions for another question cannot be reused directly.
+- `sent`: the set of evidence IDs actually sent after this round's budgeting, ordering, filtering, and serialization; if other evidence sources are mixed into the body, that is a leak even without explicit IDs and must be blocked.
+- `cited`: the set of actually cited IDs parsed from the raw generation result and reliably mapped; an unknown citation must not be mapped to an arbitrary approved ID.
 
-发布至少要求 `cited ⊆ sent ⊆ approved`，并满足 registry 的其他 fit criteria。三集关系只能证明来源授权/结构，**不能证明每项自然语言主张被原文支持**；忠实度、相关性和安全逃逸还需固定集语义评估与人工核查。
+Release requires at least `cited ⊆ sent ⊆ approved` plus satisfaction of the registry's other fit criteria. The three-set relation only proves source authorization/structure; **it cannot prove that each natural-language claim is supported by the source text**; faithfulness, relevance, and safety escapes still require fixed-set semantic evaluation and human review.
 
-生成开始捕获 `(snapshot 内容身份, ledger revision, ledger digest)`，生成完成与最终保存/发布时重新核对。revision/digest 都须与原始 ledger 可重放一致；“只是另一条证据被改了”也不能擅自忽略整体审核版本变化。
+Generation start captures `(snapshot content identity, ledger revision, ledger digest)` and re-checks it at generation completion and at final save/release. Both revision/digest must be replay-consistent with the original ledger; "only a different piece of evidence changed" is no reason to ignore an overall review-version change.
 
-为避免“核对之后、保存之前”又被修改，批准的编排设计须为最终发布提交选择一个一致性机制（如单进程锁内比较后提交，或带预期 token 的 compare-and-swap），用可控并发 fixture 验证。此设计不能只做两次没有提交保护的普通读。A/C/E 提供必要端口，D 保持唯一发布判断；UI 不能补一个 `if accepted` 替代它。
+To prevent modification between "after verification" and "before save", the approved orchestration design must choose a consistency mechanism for the final release commit (for example, compare-then-commit inside a single-process lock, or compare-and-swap with expected tokens) and verify it with a controllable-concurrency fixture. This design must not be just two ordinary reads with no commit protection. A/C/E provide the necessary ports, and D remains the sole release decision; the UI must not add an `if accepted` in place of it.
 
-任何 token 改变、文献撤销、来源丢失、ledger 冲突或解析失败：本次 draft 保留但不发布，要求用户在新版本重新审核/生成；不自动把旧批准迁到新 snapshot。历史发布记录保留当时有效状态与版本，可显示“与当前版本不同”，不能篡改历史。
+Any token change, literature retraction, lost source, ledger conflict, or parse failure: this round's draft is kept but not released, and the user is required to re-review/regenerate on the new version; old approvals are not automatically migrated to the new snapshot. Historical release records keep the state and version that were valid at the time and may show "different from the current version", but history must not be tampered with.
 
-## 6. 错误、离线隔离与可观测信息
+## 6. Errors, offline isolation, and observable information
 
-| 情况 | 必须向调用方/用户呈现 | 禁止的 fallback |
+| Situation | Must be presented to the caller/user | Forbidden fallback |
 |---|---|---|
-| 部分导入失败、文件被替换 | 哪些项失败、当前版本/完整性、允许的显式重试 | 沿用同名缓存并宣称全库完成 |
-| 检索无结果/解析错误 | 区分空集与执行失败，保留来源和阶段 | 开启自治 Agent 到网上寻找答案 |
-| ledger 写冲突/非 human 决定 | 刷新后重新确认；拒绝无效写 | 覆盖最新决定、把模型建议当确认 |
-| approved/sent 为空 | 不可回答及原因，模型调用数零 | 调用模型“说明为什么没证据” |
-| 请求超时/限流/金额耗尽 | 失败阶段、真实尝试和成本，草稿不发布 | 无批准重试、换 provider、换模型 |
-| 未知引用/生成中 token 变化 | 具体阻断原因、保留原草稿与版本 | 删掉引用、取最新 ledger 自动放行 |
-| 历史文件丢失/导出目标不安全 | 记录不完整或拒绝路径，原记录不受影响 | 读取个人目录补原文、覆盖不相关文件 |
+| Partial import failure, file replaced | Which items failed, current version/integrity, allowed explicit retry | Reuse a same-named cache and claim the whole library is complete |
+| Retrieval returns nothing / parse error | Distinguish an empty set from an execution failure, keep the source and the stage | Start an autonomous Agent to search the web for an answer |
+| Ledger write conflict / non-human decision | Re-confirm after refresh; reject the invalid write | Overwrite the latest decision, treat model suggestions as confirmation |
+| approved/sent empty | Not answerable and the reason, model call count zero | Call the model to "explain why there is no evidence" |
+| Request timeout / rate limit / budget exhausted | Failure stage, real attempts and cost, draft not released | Retry without approval, switch provider, switch model |
+| Unknown citation / token change during generation | The specific blocking reason, keep the original draft and version | Delete the citation, take the latest ledger and let it through automatically |
+| Historical file missing / unsafe export target | Record as incomplete or refuse the path; the original record is unaffected | Read a personal directory to fill in the text, overwrite unrelated files |
 
-日志仅记录允许的 ID、状态、阶段、版本、计数与脱敏错误。原文/问题/答案可能有隐私，完整运行证据放受控研究记录，不默认打印全量 settings、绝对个人路径或 credentials。禁止导入外来的 pickle 缓存；不从真实 `~/.pqa` 继承状态。
+Logs record only permitted IDs, states, stages, versions, counts, and redacted errors. Source text/questions/answers may contain private data, so full run evidence goes into controlled research records; do not print full settings, absolute personal paths, or credentials by default. Importing foreign pickle caches is forbidden, and state is never inherited from the real `~/.pqa`.
 
-## 7. 共享 fixtures 与集成验收
+## 7. Shared fixtures and integration acceptance
 
-先使用 `test/fixtures/contracts/` 的规范 fixtures；其 wrapper 的 `data` 才是共享模型输入，synthetic 元信息不能传入 `extra="forbid"` 模型。模块测试拟放 `test/offline/test_library.py`、`test_retrieval.py`、`test_review.py`、`test_answer.py`、`test_reports.py`（后四项同目录），模块专属合成材料拟放 `test/fixtures/<module>/`；在 Plan 一次确认对应模块范围；范围内正常创建测试/fixtures 不逐文件重复审批，共享 fixtures 改动仍需受影响 owner 审查。不要修改共享 fixture 的预期迁就实现；身份由真实模型/共享算法算，不能手填看似合法的随机 hash。
+Start from the canonical fixtures in `test/fixtures/contracts/`; only the `data` of their wrapper is input to the shared models, and synthetic metadata cannot be passed into `extra="forbid"` models. Module tests are planned for `test/offline/test_library.py`, `test_retrieval.py`, `test_review.py`, `test_answer.py`, and `test_reports.py` (the last four in the same directory), and module-specific synthetic material is planned for `test/fixtures/<module>/`; confirm the corresponding module scope once in the Plan. Within that scope, normal creation of tests/fixtures does not require per-file re-approval, but changes to shared fixtures still need review by the affected owner. Do not modify shared fixture expectations to accommodate an implementation; identities are computed by the real models/shared algorithms and must not be filled in by hand with plausible-looking random hashes.
 
-最低跨模块场景：
+Minimum cross-module scenarios:
 
-1. 正常链：同一 snapshot 的两条候选，一条 human 接受、一条排除；只发送/引用获准项，E 读回同一版本。
-2. 默认 pending：全无审核或仅有模型高分；D 调用计数为零，E 可保存失败原因但无 released。
-3. 预算裁剪：approved 多于 sent；模型引用未发送但已批准的证据仍须阻断。
-4. 未知引用：保存原始输出，不能依赖上游清理后的答案做唯一检查。
-5. 中途撤销/替换：在请求执行时换文献或写新审核 revision；旧草稿不得发布，历史不覆盖。
-6. 身份篡改/串快照：同名不同内容、不同 snapshot 复用 evidence、错误 locator/原文 hash、冲突 ledger 均被拒绝。
-7. 失败与恢复：一项导入失败、检索错误、模型超时、导出路径穿越/已有文件冲突；无隐式成功、无非预期覆盖。
-8. 不经过 UI 调服务仍执行同样的授权/发布门；全程 synthetic 且外部模型调用为零。
+1. Normal chain: two candidates from the same snapshot, one accepted by a human and one excluded; only approved items are sent/cited, and E reads back the same version.
+2. Default pending: no review at all or only a high model score; D's call count is zero, and E may save the failure reason but has no released.
+3. Budget truncation: approved is larger than sent; the model citing approved-but-unsent evidence must still be blocked.
+4. Unknown citation: save the raw output; do not rely on the upstream post-cleanup answer as the only check.
+5. Retraction/replacement mid-flight: replace the literature or write a new review revision while the request is executing; the old draft must not be released and history is not overwritten.
+6. Identity tampering/cross-snapshot: same name with different content, evidence reused across snapshots, wrong locator/source text hash, and conflicting ledgers are all rejected.
+7. Failure and recovery: one import fails, retrieval error, model timeout, export path traversal/existing file conflict; no implicit success and no unexpected overwrite.
+8. Calling the service without going through the UI still enforces the same authorization/release gates; everything is synthetic and external model calls are zero.
 
-每个用例写真实 requirement/invariant ID、断言和违反该规则时测试会失败的证据。离线 fixture 集成不是 live 模型质量测评。运行入口与实际 gate 状态见 [../ci/gates.md](../ci/gates.md)。
+Each case states the real requirement/invariant ID, its assertions, and the evidence that the test fails when that rule is violated. Offline fixture integration is not a live model-quality evaluation. Run entry points and actual gate status are in [`../ci/gates.md`](../ci/gates.md).
 
-## 8. 契约变更：提出 → 批准 → 同步 → 复验
+## 8. Contract change: propose → approve → sync → re-verify
 
-任何字段/枚举、hash/规范化算法、默认状态、审核 authority、集合关系、端口或异常语义改变，都不能口头决定：
+Any change to fields/enums, hash/normalization algorithms, default states, review authority, set relations, ports, or exception semantics may not be decided verbally:
 
-1. **提出人建变更记录/后续 issue：**写当前合同版本或提交、需求 IDs、问题复现、旧/新序列化样例、受影响消费者、兼容/迁移方案、失败风险。尚无 GitHub 时保留本地讨论和 diff，不伪造 issue URL。
-2. **通知所有受影响 owner：**至少生产者和每个消费者确认；快照、审核或发布安全含义变化须 ADR、真实人工批准，批准人不能是本变更作者。指明冻结期间哪些工作可继续 fixture 开发、哪些集成暂停。
-3. **先批准测试再实现：**给旧/新规范 fixture、兼容/拒绝旧格式测试、至少一个负例和跨模块回归；按工作计划轮换安排事前测试批准、独立 reviewer 和集成人。
-4. **独立共享契约 PR：**最小修改 contracts、schema/fixtures/测试、受影响 requirements、ADR、invariants、trace matrix、运行策略及本页；显式写新版本和旧记录处理，不混入大批业务功能。
-5. **按依赖同步：**契约先合并，再由 A–E 各自同步映射/测试；安全不兼容旧结果默认 blocked，不自动转换 accepted/released。共享文件指定一位临时编辑者，其他 owner 给补丁，避免互相覆盖。
-6. **复验并解除冻结：**完整离线回归和门禁；prompt/model 受影响时追加经授权 live 固定集评估。读回真实接口与记录，非作者审查批准后才解除对应集成冻结。记录谁批准什么版本及证据，不用“大家默认同意”。
+1. **The proposer creates a change record/follow-up issue:** write down the current contract version or commit, requirement IDs, problem reproduction, old/new serialization samples, affected consumers, compatibility/migration plan, and failure risks. When GitHub is not yet available, keep the local discussion and diff and do not fabricate an issue URL.
+2. **Notify every affected owner:** at least the producer and each consumer must confirm; a change in the safety meaning of snapshots, review, or release requires an ADR and a genuine human approval, and the approver cannot be the author of the change. State which work may continue as fixture development during the freeze and which integrations are paused.
+3. **Approve tests before implementing:** provide old/new canonical fixtures, tests that accept/reject the old format, at least one negative case, and cross-module regression; rotate upfront test approval, the independent reviewer, and the integrator according to the work plan.
+4. **A separate shared-contract PR:** minimally update contracts, schema/fixtures/tests, affected requirements, ADRs, invariants, the trace matrix, runtime policy, and this page; explicitly state the new version and how old records are handled, and do not mix in a large batch of business features.
+5. **Sync by dependency:** merge the contract first, then let A–E each sync their mappings/tests; results that are safely incompatible default to blocked and are not automatically converted to accepted/released. Assign one temporary editor for shared files, with other owners supplying patches, to avoid overwriting each other.
+6. **Re-verify and lift the freeze:** full offline regression and gates; when prompts/models are affected, add an authorized live fixed-set evaluation. Read back the real interfaces and records, and lift the corresponding integration freeze only after a non-author has reviewed and approved. Record who approved which version and the evidence; "everyone implicitly agreed" is not acceptable.
 
-### 上游兼容修复与固定基线
+### Upstream compatibility fixes and the pinned baseline
 
-普通模块 PR 保持固定 PaperQA2 基线，由现有 `frozen_check` 按当前 fitness rule/比较口径保护。必要兼容修复须另开 ADR + 人工 PR，明确更新该 rule/比较口径、说明受影响源码/所有者并运行负测及受影响回归；仅口头批准不能让当前 CI 通过。不得在业务 PR 裸改或绕过 gate，也不新增旁路授权平台。A/D 对上游的精确只读检查按各自获批 Plan 提出；B-only 仍只约束新增源码的 import/adapter 实现位置。
+Ordinary module PRs keep the pinned PaperQA2 baseline, protected by the existing `frozen_check` under the current fitness rule/comparison definition. A necessary compatibility fix requires a separate ADR + human PR that explicitly updates that rule/comparison definition, names the affected source/owners, and runs negative tests plus the affected regression; verbal approval alone cannot make the current CI pass. Do not modify or bypass the gate in a business PR, and do not add a side-channel authorization platform. A/D raise precise read-only checks of upstream under their own approved Plans; B-only still constrains only the import/adapter implementation location in newly added source.
 
-契约变更不会转移长期功能 ownership；支持角色轮换也不会允许集成人未经作者/审批修改别人的业务边界。
+A contract change does not transfer long-term feature ownership; rotating support roles also does not permit an integrator to modify someone else's business boundary without the author's or approval's consent.
