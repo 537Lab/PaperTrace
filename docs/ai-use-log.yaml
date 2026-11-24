@@ -276,3 +276,25 @@ entries:
   limitations:
   - No existing approved tests, protected verifier, schema, workflow, prompt or product code changed.
   - No actual model calls or authorization; no student OpenCode transcript claimed.
+
+- entry_id: SHARED-EVAL-CANDIDATE-20261124-03
+  timestamp: '2026-11-24T13:10:00Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Draft approved immutable artifact transport correction and offline fixed-request planning
+  scope:
+  - scripts/semantic_evidence.py
+  - test/evaluation/report-schema.json
+  - test/evaluation/evaluator.py
+  status: candidate-awaiting-student-supervised-opencode-and-independent-verification
+  approvals:
+  - PR 51 exact c3e40aaa12dbc2ab7b5398ca3a989758a4fb641a test proposal approved by reviews 6038165664 and 6038425485.
+  verification:
+  - Retained all approved tests and plan blobs; schema changes only required artifact_id membership and verifier checks optional legacy ID against server ID.
+  - Request preparation is pure and produces expected envelopes, not observed requests or provider calls.
+  - Candidate not locally executed in locked runtime.
+  limitations:
+  - Direct ChatGPT candidate due to unavailable local OpenCode bridge; not a genuine supervised OpenCode transcript.
+  - Existing gate 1 classifies all test paths as approved tests, including runtime evaluator/schema paths; candidate may be blocked and requires separately reviewed exact-path classification correction, never bypass.
+  - No workflow, actual product serialization, real authorization, call, response, rating, artifact or semantic PASS.
+  - Separate preflight, budget and human intake tests and protected implementation review required before live workflow adoption.
