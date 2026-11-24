@@ -240,3 +240,20 @@ entries:
   limitations:
   - 这不是新的功能改动
   - 新的实现 PR 仍等待另一位没有编写这些源码的同学批准最新提交
+
+- entry_id: SHARED-EVAL-CONTROL-TEST-20261124-01
+  timestamp: '2026-11-24T13:10:00Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Propose exact-path evaluator and schema implementation classification regression tests
+  scope:
+  - test/offline/test_evaluation_control_paths.py
+  - docs/team/designs/shared-evaluation/control-path-plan.md
+  status: test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Read existing Gate 1 implementation and synthetic approval fixture, identified unconditional changed test path check.
+  - Nine new synthetic test nodes proposed; no local Ruff or pytest execution claimed.
+  limitations:
+  - No protected source, dataset, previous tests, workflow or model calls changed.
+  - Not a genuine student-supervised OpenCode implementation transcript.
