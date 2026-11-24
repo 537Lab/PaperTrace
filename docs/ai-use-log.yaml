@@ -4,7 +4,7 @@ entries:
   timestamp: '2026-11-13T11:42:18.324716+00:00'
   tool: Hermes Agent Desktop (initialization assistance, not OpenCode student session)
   model: gpt-6.1-sol (runtime-reported, no separate provider verification)
-  purpose: Course source-text checking, an independent Git baseline, architecture and team materials, shared contracts and the offline test foundation
+  purpose: 课程原文核对、独立Git基线、架构与团队材料、共享契约和离线测试基础
   scope:
   - docs
   - shared-contracts
@@ -12,18 +12,18 @@ entries:
   status: initialization-assisted-not-student-approved
   approvals: []
   verification:
-  - The real execution logs are kept in artifacts/verification; what passed and what was not executed is subject to the final status report
+  - 真实执行日志保存在artifacts/verification；具体通过与未执行以最终状态报告为准
   limitations:
-  - No PaperQA2 model was called and no provider credentials were read in this round
-  - This round did not approve tests/plans on the student's behalf
-  - This round is not a student OpenCode supervision session or a personal contribution
-  - The protected-file write tool once returned a confirmation timeout, but a read-only check-back showed that AGENTS.md did in fact already exist; the write was not retried and was not treated as student human approval
-  - The five modules' business logic awaits member development; GitHub creation/push/branch protection await authorization
+  - 本轮未调用PaperQA2模型或读取提供商凭据
+  - 本轮未替学生进行测试/计划批准
+  - 本轮不是学生OpenCode监督会话或个人贡献
+  - 保护文件写入工具曾返回确认超时，但只读回查AGENTS.md实际已存在；未重试写入，未将其视为学生人工批准
+  - 五模块业务待成员开发，GitHub创建/推送/分支保护待授权
 - entry_id: INIT-20261113-02
   timestamp: '2026-11-13T12:14:15Z'
   tool: Hermes delegate_task / parent verification
   model: gpt-6-luna (runtime-selected subagent); gpt-6.1-sol (parent)
-  purpose: One read-only consistency review of the specified team documents; verify and fix the stale statement about the initial C/D review revision
+  purpose: 对指定团队文档做一次只读一致性复核；核实并修复C/D初始审核revision的陈旧说明
   scope:
   - docs/team/module-C.md
   - docs/team/module-D.md
@@ -31,17 +31,17 @@ entries:
   status: completed-ai-review-not-human-approval
   approvals: []
   verification:
-  - The subtask completed, with actual task metadata model=gpt-6-luna; the parent checked each item and found
-  - Direct pytest exited 0 with 170 passed; Ruff and mypy passed; the source freeze and the 46 required files checked out
+  - 子任务已完成，实际任务元数据model=gpt-6-luna；主控逐项核对发现
+  - 直接pytest退出0，170 passed；Ruff及mypy通过；源码冻结与46项必需文件核对通过
   limitations:
-  - The AI document review is not a student's prior test approval, a human PR APPROVE or a D5 session
-  - Limited to the specified documents; no real PaperQA2 model evaluation, GitHub write or full upstream regression was performed
-  - Coding/review assistant inference consumes its channel quota; the COST-01 zero-call claim covers only product initialization verification and offline tests
+  - AI文档审查不是学生事前测试批准、PR人工APPROVE或D5会话
+  - 仅指定文档范围；未进行PaperQA2真实模型评估、GitHub写入或完整上游回归
+  - 编码/审查助手推理消耗其渠道额度；COST-01零调用仅指产品初始化验证和离线测试
 - entry_id: UNBLOCK-20261114-01
   timestamp: '2026-11-14T10:40:02.555991+00:00'
   tool: Hermes Agent Desktop with parallel implementation and independent AI verification
   model: gpt-6.1-sol (parent runtime-reported); delegated model identities not independently verified
-  purpose: Fix the development permissions, implement GitHub evidence and full regression checks, verify the fixed PaperQA2 offline interface, and simplify the team entry
+  purpose: 修复开发权限、实现GitHub证据和完整回归校验、验证固定PaperQA2离线接口、简化团队入口
   scope:
   - development-governance-and-OpenCode-configuration
   - executable-CI-evidence-verifiers-and-regression-runner
@@ -49,20 +49,20 @@ entries:
   - team-onboarding-and-module-taskbooks
   status: engineering-repair-not-student-approval
   approvals:
-  - The user authorized PaperTrace project-scope fixes, dependency installation, commits on a dedicated branch and a PR; this is not a course student's prior test approval
+  - 用户授权PaperTrace项目范围修复、依赖安装、专用分支提交及PR；不是课程学生事前测试批准
   verification:
-  - The original 170 initialization offline tests were re-run and passed; the original upstream core, packages, tests, pyproject and uv.lock have no diff
-  - The gates and the full regression runner's targeted positive/negative tests ran for real; results are subject to this round's artifacts and the final acceptance
-  - The specific OpenCode simulation, the real-object PaperQA2 offline path, the GitHub checks and the unfinished conditions are recorded separately and not conflated
+  - 原始170项初始化离线测试复跑通过；原上游核心、包、测试、pyproject和uv.lock无diff
+  - 门禁与完整回归执行器定向正负测试真实运行，结果以本轮artifacts及最终验收为准
+  - 具体OpenCode模拟、PaperQA2真实对象离线链路、GitHub检查与未完成条件分别记录，不混称
   limitations:
-  - Does not develop the formal A–E business logic for the student, does not sign student test or plan approvals, and does not impersonate a formal D5 OpenCode contribution
-  - Does not read private model credentials and makes no unauthorized paid or private-data calls; mock output is not a real semantic quality evaluation
-  - CI visibility does not equal enforced branch protection; the private repository protection API still returns a plan-limitation 403
+  - 不替学生开发A–E正式业务、不签署学生测试或计划批准、不冒充D5正式OpenCode贡献
+  - 不读取私人模型凭据、不进行未获准收费或私人数据调用；mock输出不是真实语义质量评估
+  - CI可见状态不等于分支保护强制生效；私有仓库保护API仍返回套餐限制403
 - entry_id: CLOSEOUT-20261114-01
   timestamp: '2026-11-14T13:19:37.142685+00:00'
   tool: Hermes Agent Desktop with bounded configuration helper and independent AI review
   model: gpt-6.1-sol (parent runtime-reported); gpt-6-luna (delegation metadata, not separate provider attestation)
-  purpose: Continuing from 931cea6, only closing out the semantic verifier's request material, the actual runtime dependency binding and the accurate triggering of Gate4
+  purpose: 续接931cea6，仅收尾语义验证器的请求材料、实际运行依赖绑定及Gate4准确触发
   scope:
   - scripts/semantic_evidence.py
   - scripts/semantic_changes.py
@@ -70,41 +70,41 @@ entries:
   - semantic-schema-contract-and-positive-negative-regressions
   status: engineering-repair-not-student-approval
   approvals:
-  - The user authorized continuing the local dedicated-branch fixes, verification, push and creation of a human-review PR; merging to main is not allowed
+  - 用户授权继续本地专用分支修复、验证、推送和创建人工审核PR；不得合并main
   verification:
-  - The request substitution and the lock change that rebound the head and let it pass wrongly, and the false trigger from unrelated tool configuration, were both reproduced first, then covered by positive/negative regression
-  - All team offline 299 passed, 0 skip; the original 250 items are retained; PaperQA2 offline integration 1 passed
-  - Ruff and mypy passed; the static gate and schema passed; the 83 packages of the actual isolated runtime were checked package by package against the lock
-  - Evidence for the independent review and the final commit is in artifacts/verification/closeout-semantic.json; this log does not masquerade as review approval
+  - 请求替换及改锁重绑定head误放行、无关工具配置误触发均先复现，再做正负回归
+  - 全部团队离线299 passed、0 skip；原250项保留；PaperQA2离线集成1 passed
+  - Ruff和mypy通过；静态门禁与schema通过；实际隔离runtime的83包与锁逐包核对通过
+  - 独立复核与最终提交对应证据见artifacts/verification/closeout-semantic.json，不以本日志冒充审核批准
   limitations:
-  - Does not ghost-write the formal A–E features, does not sign student test/plan approvals, and does not treat a mock tool session as D5 or as real model quality
-  - No product model was called and no private model credentials were used; the complete upstream's earlier real FAIL and the 9 unauthorized live items are not rewritten
-  - Adopting the new gates, real student approval, the model budget and independent scoring still need real people; no self-approved bootstrap
+  - 不代写A–E正式功能，不代签学生测试/计划批准，不把mock工具会话当D5或真实模型质量
+  - 未调用任何产品模型或使用私人模型凭据；完整上游此前真实FAIL及9个未授权live不改写
+  - 新门禁采纳、真实学生审批、模型预算及独立评分仍需真实人员；不自批bootstrap
 - entry_id: FINAL-CI-20261114-01
   timestamp: '2026-11-14T14:30:21.251883+00:00'
   tool: Hermes Agent Desktop with bounded read-only Scout and Verifier
   model: gpt-6.1-sol (parent runtime-reported); gpt-6-luna (delegation metadata)
-  purpose: Verify and fix the responsibilities of PR and main push events, preserve the real approval replay, and make the one-time human adoption and the five-member start entry explicit
+  purpose: 核验并修复PR和main push事件职责，保留真实审批回放，明确一次人工采纳与五人开工入口
   scope:
   - Actions-event-context-and-native-merged-PR-evidence-replay
   - existing-bootstrap-and-team-start-documents
   status: engineering-closeout-not-human-approval
   approvals:
-  - The user authorized closing out the existing branch/PR; merging to main, fabricating student approval and unauthorized costs are explicitly forbidden
+  - 用户授权现有分支/PR收尾；明确禁止合并main、伪造学生批准、未授权费用
   verification:
-  - A minimal old workflow and verifier path reproduced the push missing a PR number; then normal PR/main, reverted/unapproved changes/abnormal events and native API shapes were added as positive/negative tests
-  - All team offline 332 passed, 0 skip; the 299 items are retained; PaperQA2 offline smoke 1 passed; Ruff/mypy passed
-  - The actual bash selector, CLI context and post-merge semantic material replay all have synthetic Git history tests; the independent AI review is in this round's verification artifact
+  - 最小旧workflow及验证器路径复现push缺PR号，再加正常PR/main、撤销/未批准变更/异常事件与原生API形状正负测试
+  - 全部团队离线332 passed、0 skip；保留299项；PaperQA2离线smoke1 passed；Ruff/mypy通过
+  - 实际bash选择器、CLI上下文与合并后语义材料回放均有合成Git历史测试；独立AI复核见本轮验证artifact
   limitations:
-  - No real main merge was performed; the post-merge CI is only an offline event simulation and is not claimed to have run green on remote main
-  - Does not ghost-write the A–E business logic; the real Plan/test/PR review/D5 process and acceptance of the shared course starting point must be completed by the student/instructor
-  - The original full-upstream FAIL/time limit, the 9 unauthorized live items, the unevaluated real model quality and the private-protection limitation remain unchanged
-  - Does not set a bootstrap PASS by itself or remove the six gates; this round makes no product model credential/paid calls
+  - 未实施真实main合并；合并后CI仅离线事件模拟，不冒称已在远端main运行通过
+  - 不代写A–E业务；真实Plan/测试/PR审核/D5过程及课程共享起点接受边界须学生/教师完成
+  - 原full上游FAIL/限时、9 live未授权、真实模型质量未评估和私有保护限制保持不变
+  - 不自设bootstrap PASS或取消六门；本轮不使用产品模型凭据/收费调用
 - entry_id: D1-TESTPREP-20261117-01
   timestamp: '2026-11-17T06:07:18Z'
   tool: OpenCode desktop session, agent role papertrace-build-D (test-preparation stage)
   model: deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently verified)
-  purpose: Offline tests, synthetic fixtures and design records for module D slice 1 (the approval-eligibility gate and pre-generation abstention); does not implement src
+  purpose: 模块D切片1（获准资格门与生成前拒答）的离线测试、合成fixtures与设计记录；不实现src
   scope:
   - test/offline/test_answer.py
   - test/fixtures/answer/synthetic-corpus-a.txt
@@ -112,21 +112,21 @@ entries:
   - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
   status: test-preparation-complete-awaiting-independent-test-commit-approval
   approvals:
-  - The student approved the "module D test preparation only" scope in a self-contained message on 2026-11-17; this does not constitute test commit approval or source implementation approval
+  - 学生2026-11-17自包含消息批准“仅模块D测试准备”范围；不构成测试commit批准或源码实现批准
   verification:
-  - 'Local measurement (.venv, CPython 3.14.8, requirements-init.lock): single file 32 failed / 1 passed; full offline suite 32 failed / 331 passed / 2 skipped'
-  - All 32 failures are the expected missing-implementation assertions "proposed module papertrace.answer is not implemented", with no collection error
-  - ruff has 1 pre-existing error in the unmodified scripts/paperqa_smoke.py (I001); mypy 0; schema PASS
+  - 本地实测（.venv, CPython 3.14.8, requirements-init.lock）：单文件 32 failed / 1 passed；全套离线 32 failed / 331 passed / 2 skipped
+  - 32 个失败全部是“proposed module papertrace.answer is not implemented”的预期缺失实现断言，无 collection error
+  - ruff 1 个既有错误位于未修改的 scripts/paperqa_smoke.py（I001）；mypy 0；schema PASS
   limitations:
-  - Not a non-implementer's GitHub Approve, and does not prove the tests have been human-approved
-  - Did not write src/, and did not change shared contracts/dependencies/CI/permissions/shared fixtures/shared logs
-  - The downstream assertions remain unverified before implementation
-  - This entry was appended to the shared log on 2026-11-19 at the reviewer's request; this disclosure is not evidence that any approval exists
+  - 不是非实现者的GitHub Approve，不证明测试已被人工批准
+  - 未写src/，未改共享契约/依赖/CI/权限/共享fixture/共享日志
+  - 下游断言在实现前仍未验证
+  - 本条于 2026-11-19 应 reviewer 要求追加到共享日志；本披露不构成任何批准存在的证据
 - entry_id: D1-IMPL-20261118-01
-  timestamp: '2026-11-17T16:47:39Z'  # local time 2026-11-18 (UTC+8)
+  timestamp: '2026-11-17T16:47:39Z'  # 本机时间 2026-11-18 (UTC+8)
   tool: OpenCode desktop session, agent role papertrace-build-D (source implementation stage)
   model: deepseek-flash (provider deepseek; runtime label "DeepSeek V4.1 Flash 1017", not independently verified)
-  purpose: Implement module D slice 1 (reading the review projection, eligibility checks and pre-generation abstention); does not implement generation/release
+  purpose: 实现模块D切片1：读取审核投影、资格校验与生成前拒答；不实现生成/发布
   scope:
   - src/papertrace/answer/__init__.py
   - src/papertrace/answer/model.py
@@ -136,24 +136,24 @@ entries:
   - docs/team/designs/module-D/20261117-d-abstain-pre-generation-gate.md
   status: implementation-complete-awaiting-pr-review-not-merged
   student_decisions:
-  - The student approved this module's test preparation scope (2026-11-17), then approved installing the CPython 3.14 venv and requirements-init.lock
-  - The student confirmed that Li Yafei has approved the test proposal PR #3; this entry records only the student's account and fabricates no review URL/screenshot
-  - The student approved the slice-1 implementation scope and asked to keep the uncommitted .DS_Store deletion out of the commit
+  - 学生批准本模块测试准备范围（2026-11-17），随后批准 CPython 3.14 venv 与 requirements-init.lock 安装
+  - 学生确认李亚飞已批准测试提案 PR #3；本条只按学生转述记录，未补造 review URL/截图
+  - 学生批准切片1实现范围，并要求保留未提交的 .DS_Store 删除、不纳入提交
   approvals:
-  - 'Test commit approval: GitHub reviews.totalCount = 0 and the PR timeline has no review event, no non-author Approve of 29b2133 is recorded; that claim comes only from the student''s verbal account'
-  - 'Implementation scope: the student''s 2026-11-18 message; this does not constitute merge approval'
+  - '测试commit批准：GitHub reviews.totalCount = 0 且 PR timeline 无 review 事件，未记录任何非作者对 29b2133 的 Approve；该说法仅来自学生口头转述'
+  - 实现范围：学生2026-11-18消息；不构成 merge 批准
   verification:
-  - '.venv/bin/python -m pytest ... test/offline/test_answer.py → exit 0; 33 passed'
-  - '.venv/bin/python -m pytest ... test/offline → exit 0; 363 passed, 2 skipped (the skips are the pre-existing missing OpenCode executable)'
-  - 'ruff (run on the D files alone) → exit 0; the global run still fails on the unmodified scripts/paperqa_smoke.py I001'
-  - 'mypy src/papertrace → exit 0, 7 source files'
-  - 'scripts/gates.py --gate schema → exit 0, PASS'
+  - '.venv/bin/python -m pytest ... test/offline/test_answer.py → exit 0；33 passed'
+  - '.venv/bin/python -m pytest ... test/offline → exit 0；363 passed, 2 skipped（skip 为既有 OpenCode 可执行文件缺失）'
+  - 'ruff（D 文件单独运行）→ exit 0；全局运行仍因未修改的 scripts/paperqa_smoke.py I001 失败'
+  - 'mypy src/papertrace → exit 0，7 source files'
+  - 'scripts/gates.py --gate schema → exit 0，PASS'
   limitations:
-  - No product model was called; no new network calls (only the previously approved interpreter/dependency downloads)
-  - The real C integration is unverified: C PR #4 is still open and the projection mapping is a candidate interface
-  - Generation, citation parsing, freshness/token, budget and the release gate are all unimplemented
-  - The static import scan is only a supplementary observation and does not prove zero outbound attempts
-  - This entry was appended to the shared log on 2026-11-19 at the reviewer's request; this disclosure is not evidence that any approval exists
+  - 未调用产品模型；未新增网络调用（仅先前获批的解释器/依赖下载）
+  - 真实 C 集成未验证：C PR #4 仍 open，投影映射为候选接口
+  - 生成、引用解析、freshness/token、预算与发布门均未实现
+  - 静态导入扫描只是补充观察，不证明零出站尝试
+  - 本条于 2026-11-19 应 reviewer 要求追加到共享日志；本披露不构成任何批准存在的证据
 - entry_id: D-RELEASE-20261123-01
   timestamp: '2026-11-23T13:06:03+08:00'
   tool: OpenCode desktop session, agent role papertrace-build-D (source implementation stage), session ses_df9385cc9ffeXneA5e41reGvzw
@@ -226,3 +226,23 @@ entries:
   - This is not a D5 transcript and not a substitute for student OpenCode supervision.
   - The translation changed test fixture identifiers and two test files; that change is recorded here rather than presented as an approved test revision.
   - The exact Codex/DSH session identifier is not retrievable from this interface; update this entry if an export becomes available.
+- entry_id: SUBMISSION-EN-20261125-01
+  timestamp: '2026-11-25T04:50:00+08:00'
+  tool: DeepSeek Harness agent session (submission english conversion)
+  model: deepseek-flash (runtime-reported; provider identity not independently verified)
+  purpose: Convert the repository submission materials to English, and keep the audit log, the fixed evaluation set and the startup prompt append-only
+  scope:
+  - docs/ai-use-log.en.md
+  - docs, team and tooling prose
+  - README.md, AGENTS.md, architecture-blueprint.md, Prompt.md
+  status: translation-assistance-not-human-approval
+  student_decisions:
+  - The student asked for the repository materials to be in English.
+  - 'The student accepted the review comment that docs/ai-use-log.yaml, test/evaluation/cases.json and prompts/prompt_v1.0.yaml stay byte-identical; the first two are reverted and this log only appends.'
+  approvals: []
+  verification:
+  - 'Every historical entry is byte-identical to the version before this branch; the D-RELEASE, D-FIX and PREP entries appended earlier on this branch are unchanged, and this entry is the only new one in this revision.'
+  - 'scripts/gates.py --gate ai-log passes against base c3817ae.'
+  limitations:
+  - The canonical log keeps its original wording; the English rendering is a separate file.
+  - This entry records no approval of a test revision and no human sign-off of the human-maintained rules files.
