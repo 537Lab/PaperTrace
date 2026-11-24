@@ -213,3 +213,158 @@ def test_evaluation_workflow_has_only_manual_dispatch_and_separate_review_stage(
                 assert re.fullmatch(r"[^@]+@[0-9a-f]{40}", step["uses"])
                 if step["uses"].startswith("actions/checkout@"):
                     assert step["with"]["persist-credentials"] is False
+
+# The structural validator is itself exercised with synthetic positive and
+# mutated workflows, so a missing real workflow cannot hide weak assertions.
+def expression(value):
+    return "$" + "{{ " + value + " }}"
+
+
+READ_PERMISSIONS = {
+    "contents": "read", "actions": "read", "pull-requests": "read", "issues": "read",
+}
+STAGE_ENV = {
+    "PAPERTRACE_TARGET_PR": expression("inputs.target_pr"),
+    "PAPERTRACE_TARGET_HEAD": expression("inputs.target_head"),
+    "PAPERTRACE_AUTHORIZATION_REVIEW_ID": expression("inputs.authorization_review_id"),
+    "PAPERTRACE_RUN_ID": expression("github.run_id"),
+    "PAPERTRACE_RUN_HEAD": expression("github.sha"),
+    "GH_TOKEN": expression("github.token"),
+}
+STAGE_COMMANDS = {
+    stage: f"python test/evaluation/evaluator.py {stage}"
+    for stage in ("preflight", "collect", "finalize")
+}
+
+
+def assert_workflow_wiring(workflow):
+    jobs = workflow["jobs"]
+    assert set(jobs) == set(STAGE_COMMANDS)
+    assert jobs["collect"]["needs"] == "preflight"
+    assert jobs["finalize"]["needs"] == "collect"
+    # Default successful dependency semantics, not always()/failure() bypasses.
+    assert "if" not in workflow
+    for name, job in jobs.items():
+        assert "if" not in job
+        assert job.get("continue-on-error", False) is False
+        assert job.get("permissions", workflow.get("permissions")) == READ_PERMISSIONS
+        steps = job["steps"]
+        checkouts = [
+            (index, step) for index, step in enumerate(steps)
+            if step.get("uses", "").startswith("actions/checkout@")
+        ]
+        assert len(checkouts) == 1
+        checkout_index, checkout = checkouts[0]
+        assert checkout["with"]["ref"] == expression("github.sha")
+        assert checkout["with"]["persist-credentials"] is False
+        assert "repository" not in checkout["with"]
+        assert "path" not in checkout["with"]
+        stage_steps = [
+            (index, step) for index, step in enumerate(steps)
+            if step.get("run") == STAGE_COMMANDS[name]
+        ]
+        assert len(stage_steps) == 1, name
+        stage_index, stage_step = stage_steps[0]
+        assert checkout_index < stage_index
+        assert stage_step.get("if") is None
+        assert stage_step.get("continue-on-error", False) is False
+        assert "working-directory" not in stage_step
+        assert not job.get("defaults", {}).get("run", {}).get("working-directory")
+        assert not workflow.get("defaults", {}).get("run", {}).get("working-directory")
+        assert all(stage_step.get("env", {}).get(key) == value for key, value in STAGE_ENV.items())
+        for step in steps:
+            # No Actions expression is allowed in shell source (including
+            # alternate contexts); untrusted inputs enter only via env.
+            assert "$" + "{{" not in step.get("run", "")
+            assert step.get("continue-on-error", False) is False
+            if "uses" in step:
+                assert re.fullmatch(r"[^@]+@[0-9a-f]{40}", step["uses"])
+    assert jobs["collect"]["environment"] == "papertrace-evaluation-execution"
+    assert jobs["finalize"]["environment"] == "papertrace-independent-rating"
+
+
+def synthetic_wired_workflow():
+    workflow = {"permissions": dict(READ_PERMISSIONS), "jobs": {}}
+    for stage, command in STAGE_COMMANDS.items():
+        workflow["jobs"][stage] = {
+            "steps": [
+                {
+                    "uses": "actions/checkout@" + "a" * 40,
+                    "with": {"ref": expression("github.sha"), "persist-credentials": False},
+                },
+                {"run": command, "env": dict(STAGE_ENV)},
+            ],
+        }
+    workflow["jobs"]["collect"].update(
+        needs="preflight", environment="papertrace-evaluation-execution",
+    )
+    workflow["jobs"]["finalize"].update(
+        needs="collect", environment="papertrace-independent-rating",
+    )
+    return workflow
+
+
+def test_structural_contract_accepts_synthetic_exact_wiring():
+    assert_workflow_wiring(synthetic_wired_workflow())
+
+
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "missing-permissions", "write-permissions", "empty-permissions",
+        "missing-checkout", "branch-checkout", "missing-ref", "wrong-repo",
+        "missing-preflight", "missing-collect", "missing-finalize",
+        "missing-authorization-env", "wrong-head-env", "shell-input",
+        "shell-event-input", "bypass-dependency", "ignore-stage-failure",
+        "skip-stage", "wrong-directory",
+    ),
+)
+def test_structural_contract_rejects_unsafe_synthetic_wiring(fault):
+    workflow = synthetic_wired_workflow()
+    jobs = workflow["jobs"]
+    stage = jobs["collect"]["steps"][-1]
+    checkout = jobs["collect"]["steps"][0]
+    if fault == "missing-permissions":
+        del workflow["permissions"]
+    elif fault == "write-permissions":
+        jobs["collect"]["permissions"] = {"contents": "write"}
+    elif fault == "empty-permissions":
+        jobs["collect"]["permissions"] = {}
+    elif fault == "missing-checkout":
+        jobs["collect"]["steps"].pop(0)
+    elif fault == "branch-checkout":
+        checkout["with"]["ref"] = "main"
+    elif fault == "missing-ref":
+        del checkout["with"]["ref"]
+    elif fault == "wrong-repo":
+        checkout["with"]["repository"] = "other/repository"
+    elif fault.startswith("missing-") and fault[8:] in jobs:
+        jobs[fault[8:]]["steps"].pop()
+    elif fault == "missing-authorization-env":
+        del stage["env"]["PAPERTRACE_AUTHORIZATION_REVIEW_ID"]
+    elif fault == "wrong-head-env":
+        stage["env"]["PAPERTRACE_TARGET_HEAD"] = "main"
+    elif fault == "shell-input":
+        jobs["collect"]["steps"].append({"run": "echo " + expression("inputs.target_head")})
+    elif fault == "shell-event-input":
+        jobs["collect"]["steps"].append({
+            "run": "echo " + expression("github.event.inputs.target_pr"),
+        })
+    elif fault == "bypass-dependency":
+        jobs["collect"]["if"] = expression("always()")
+    elif fault == "ignore-stage-failure":
+        stage["continue-on-error"] = True
+    elif fault == "skip-stage":
+        stage["if"] = False
+    elif fault == "wrong-directory":
+        stage["working-directory"] = "untrusted"
+    else:
+        pytest.fail(f"Unknown synthetic mutation: {fault}")
+    with pytest.raises(AssertionError):
+        assert_workflow_wiring(workflow)
+
+
+def test_real_workflow_uses_exact_authorization_and_rating_cli_wiring():
+    path = ROOT / ".github/workflows/semantic-evaluation.yml"
+    assert path.is_file(), "IMPLEMENTATION_MISSING: evaluation workflow"
+    assert_workflow_wiring(yaml.safe_load(path.read_text(encoding="utf-8")))

@@ -273,3 +273,21 @@ entries:
   - Targeted pytest and Ruff not run locally; require independent review.
   limitations:
   - No existing tests, provider calls, workflow source, protected gate or dataset changed.
+
+- entry_id: SHARED-EVAL-WORKFLOW-TEST-20261124-03
+  timestamp: '2026-11-24T13:34:26.141Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Address E review gaps in workflow structural checks with positive and mutation controls
+  scope:
+  - test/offline/test_semantic_workflow_proposal.py
+  - docs/team/designs/shared-evaluation/workflow-plan-v1.md
+  status: revised-test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Read exact prior test proposal and E review message.
+  - Added 20 test nodes with synthetic valid wiring and 18 mutations, plus real workflow assertion.
+  - Current revision Ruff and pytest not yet executed in locked runtime.
+  limitations:
+  - Tests and plan only; no workflow source, existing approved tests, schema, data or provider call changed.
+  - Direct ChatGPT assistance, not a student-supervised OpenCode implementation transcript.
