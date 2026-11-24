@@ -303,3 +303,25 @@ entries:
   - '/Users/usagi/Documents/PaperTrace/.venv/bin/python scripts/gates.py --root "$PWD" --gate static --base "$(git rev-parse origin/main)" → 0，base 6235c33d460b48d1ff11a10624d1bcd5919ea4f0，head WORKTREE，lint、types、dependencies、frozen-baseline、architecture、contract-api、secrets、permissions 均 PASS。'
   limitations:
   - 本轮验证覆盖定向离线测试和本地静态门禁。完整回归、真实模型和 GitHub CI 未运行。
+- entry_id: SHARED-CI-SMOKE-LINT-FIX-20261124-02
+  timestamp: '2026-11-24T04:30:00Z'
+  tool: Antigravity
+  model: Claude Opus 5.5
+  purpose: 修正 PR #48 首版排序在 CI regression 环境下仍触发 Ruff I001 的环境依赖问题
+  scope:
+  - scripts/paperqa_smoke.py
+  - docs/ai-use-log.yaml
+  status: implementation-verified-locally
+  approvals:
+  - '沿用 PR #45 的测试审批：非作者 ziqilin669 于 2026-11-24T01:20:59Z 对精确 HEAD 48ff74d5a3702bb35e039514fcbda8bbd8589eca 提交 APPROVED，review PRR_kwDOVtJ17M8AAAABZ4v5hA；测试与计划文件未改动。'
+  - 用户（仓库所有者、A 模块负责人）授权本轮两个文件的修改、本地验证与推送；新提交仍需非作者在 GitHub 上重新审批。
+  - '计划偏差披露：PR #45 计划写明“仅排序九行 import 块”。由于 paperqa.version 的分类随生成文件变化，任何纯排序都无法同时通过 static-analysis 与 regression，本轮改为从 paperqa 导入同一 __version__。导入来源改变、绑定值不变；该偏差将在 PR #48 说明，须由复审同学确认接受。'
+  verification:
+  - '根因复现：src/paperqa/version.py 为 gitignore 的 setuptools_scm 生成文件。Ruff 0.17.5 在该文件不存在时把 paperqa.version 归为第三方，存在时归为第一方。CI regression 任务在 uv sync 后会生成该文件，因此首版 38876cdb 在 static-analysis 通过，但在 regression 的 test_paperqa_smoke_passes_configured_ruff_lint 中报 I001（远端 team-offline 356 passed / 2 failed，PR #45 为 357 / 1）。'
+  - '修正：改为 from paperqa import __version__ as PAPERQA_VERSION。paperqa/__init__.py 原本就从 paperqa.version 导出 __version__，取值不变；模块名 paperqa 的分类不依赖生成文件。'
+  - 'RUFF_NO_CACHE=true ruff check --config papertrace.ruff.toml scripts/paperqa_smoke.py 以及 src/papertrace test/offline scripts 全范围，在 version.py 缺失和存在两种状态下均 → 0。'
+  - 'test/offline/test_smoke_lint_baseline.py 在两种状态下均 2 passed。'
+  - 'scripts/full_regression.py run_suite team-offline（含 version.py，模拟 CI 状态）→ 358 passed / 0 failed。'
+  - 'scripts/full_regression.py run_suite team-runtime（requirements-runtime.lock 固定环境）新旧代码均 1 passed；paperqa_smoke.py --json 输出的 paperqa_source 新旧一致。'
+  limitations:
+  - 本地验证不覆盖 upstream 套件和远端 macOS runner；以 GitHub CI 实际结果为准。
