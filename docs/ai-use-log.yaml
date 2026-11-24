@@ -257,3 +257,22 @@ entries:
   limitations:
   - No protected source, dataset, previous tests, workflow or model calls changed.
   - Not a genuine student-supervised OpenCode implementation transcript.
+
+- entry_id: SHARED-EVAL-CONTROL-CANDIDATE-20261124-02
+  timestamp: '2026-11-24T13:34:49.961Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Draft implementation of approved exact evaluation control path classification
+  scope:
+  - scripts/gate_evidence.py
+  status: implementation-candidate-awaiting-student-supervised-opencode-and-independent-verification
+  approvals:
+  - PR 54 exact f20bd503462021782f5f5b0b64b05f843cc6a06d approved in review 6040093292.
+  verification:
+  - Reviewer reported 27 passed and two expected RED, Ruff passed for approved test proposal.
+  - Exact two control paths are exempt only from changed-tests comparison and are protected safety paths.
+  - Existing approved test and plan blobs retained; candidate not locally executed.
+  limitations:
+  - Direct ChatGPT candidate, not a supervised OpenCode transcript.
+  - Trusted base and independent current-head source review must judge this candidate, not itself.
+  - No gate adoption, merge, provider call or authorization.
