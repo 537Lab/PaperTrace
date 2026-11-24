@@ -257,3 +257,19 @@ entries:
   limitations:
   - No workflow code, provider calls, credential access, authorization, schema or existing test changes.
   - Not a genuine student-supervised OpenCode implementation transcript.
+
+- entry_id: SHARED-EVAL-WORKFLOW-TEST-20261124-02
+  timestamp: '2026-11-24T13:10:00Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Harden new workflow test fixtures before independent review
+  scope:
+  - test/offline/test_semantic_workflow_proposal.py
+  - docs/team/designs/shared-evaluation/workflow-plan-v1.md
+  status: revised-test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Added exact workflow path fixture and ten additional authorization, budget and rating negatives; total 24 proposed nodes.
+  - Targeted pytest and Ruff not run locally; require independent review.
+  limitations:
+  - No existing tests, provider calls, workflow source, protected gate or dataset changed.

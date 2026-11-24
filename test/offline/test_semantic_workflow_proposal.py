@@ -1,12 +1,13 @@
 """Offline contract for preflight and authenticated rating intake; never model calls."""
 
 import json
+import re
 from importlib import import_module
 from pathlib import Path
 
 import pytest
 import yaml
-from test_semantic_evidence import fixture
+from test_semantic_evidence import fixture, git
 
 ROOT = Path(__file__).resolve().parents[2]
 PREFIX = "/repos/537Lab/PaperTrace"
@@ -28,8 +29,31 @@ def evaluator_module(monkeypatch):
 
 def workflow_fixture(tmp_path):
     ctx, github = fixture(tmp_path)
+    # The legacy synthetic fixture uses evaluate.yml. Build an equivalent
+    # synthetic history with the exact dedicated workflow path under test.
+    prompt = ctx.read("prompts/runtime.txt", ref=ctx.head)
+    git(tmp_path, "checkout", "--detach", ctx.base)
+    git(
+        tmp_path, "mv", ".github/workflows/evaluate.yml",
+        ".github/workflows/semantic-evaluation.yml",
+    )
+    git(tmp_path, "commit", "-qm", "synthetic dedicated evaluation workflow")
+    ctx.base = git(tmp_path, "rev-parse", "HEAD").decode().strip()
+    (tmp_path / "prompts/runtime.txt").write_text(prompt, encoding="utf-8")
+    git(tmp_path, "add", ".")
+    git(tmp_path, "commit", "-qm", "synthetic candidate prompt")
+    ctx.head = git(tmp_path, "rev-parse", "HEAD").decode().strip()
+    pr = github.responses[f"{PREFIX}/pulls/20"]
+    pr["base"]["sha"], pr["head"]["sha"] = ctx.base, ctx.head
+    github.report["target"]["head_sha"] = ctx.head
+    for review in github.responses[f"{PREFIX}/pulls/20/reviews?per_page=100"]:
+        review["commit_id"] = ctx.head
     run = github.responses[f"{PREFIX}/actions/runs/401"]
-    run.update(status="in_progress", conclusion=None, updated_at="2026-11-13T10:21:00Z")
+    run.update(
+        status="in_progress", conclusion=None, updated_at="2026-11-13T10:21:00Z",
+        head_sha=ctx.head, path=".github/workflows/semantic-evaluation.yml",
+    )
+    github.responses[f"{PREFIX}/actions/artifacts/501"]["workflow_run"]["head_sha"] = ctx.head
     return ctx, github
 
 
@@ -50,7 +74,11 @@ def test_live_preflight_requires_exact_server_context(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize(
     "fault",
-    ("wrong-head", "wrong-event", "self-auth", "no-auth", "wrong-dataset", "read-only"),
+    (
+        "wrong-head", "wrong-event", "wrong-workflow", "self-auth", "no-auth",
+        "wrong-dataset", "read-only", "late-auth", "call-budget", "cost-budget",
+        "timeout-budget", "mock-provider",
+    ),
 )
 def test_preflight_rejects_invalid_authorization_before_provider_stage(tmp_path, monkeypatch, fault):
     evaluator = evaluator_module(monkeypatch)
@@ -61,6 +89,20 @@ def test_preflight_rejects_invalid_authorization_before_provider_stage(tmp_path,
         run["head_sha"] = "f" * 40
     elif fault == "wrong-event":
         run["event"] = "pull_request"
+    elif fault == "wrong-workflow":
+        run["path"] = ".github/workflows/evaluate.yml"
+    elif fault == "late-auth":
+        reviews[0]["submitted_at"] = "2026-11-13T10:20:45Z"
+    elif fault in {"call-budget", "cost-budget", "timeout-budget", "mock-provider"}:
+        authorization = json.loads(reviews[0]["body"].split(": ", 1)[1])
+        field, value = {
+            "call-budget": ("max_calls", 17),
+            "cost-budget": ("max_cost", -1),
+            "timeout-budget": ("timeout_seconds", 0),
+            "mock-provider": ("provider", "mock"),
+        }[fault]
+        authorization[field] = value
+        reviews[0]["body"] = "Evaluation authorization: " + json.dumps(authorization)
     elif fault == "self-auth":
         reviews[0]["user"]["login"] = "implementer"
     elif fault == "no-auth":
@@ -106,7 +148,13 @@ def test_rating_intake_uses_actual_independent_review(tmp_path, monkeypatch):
     assert adopted["ratings"] == ratings
 
 
-@pytest.mark.parametrize("fault", ("wrong-hash", "wrong-head", "self-review", "early", "missing"))
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "wrong-hash", "wrong-head", "wrong-run", "self-review", "early",
+        "missing", "duplicate", "wrong-rating-identity", "read-only",
+    ),
+)
 def test_intake_rejects_invalid_or_incomplete_human_review(tmp_path, monkeypatch, fault):
     evaluator = evaluator_module(monkeypatch)
     ctx, github, _ = rating_fixture(tmp_path)
@@ -116,6 +164,16 @@ def test_intake_rejects_invalid_or_incomplete_human_review(tmp_path, monkeypatch
         body["raw_sha256"] = "b" * 64
     elif fault == "wrong-head":
         review["commit_id"] = "f" * 40
+    elif fault == "wrong-run":
+        body["run_id"] = 402
+    elif fault == "duplicate":
+        body["ratings"][-1] = body["ratings"][0]
+    elif fault == "wrong-rating-identity":
+        body["ratings"][0]["reviewer"] = "other-student"
+    elif fault == "read-only":
+        github.responses[f"{PREFIX}/collaborators/independent-student/permission"] = {
+            "permission": "read",
+        }
     elif fault == "self-review":
         review["user"]["login"] = "implementer"
     elif fault == "early":
@@ -146,3 +204,12 @@ def test_evaluation_workflow_has_only_manual_dispatch_and_separate_review_stage(
     for job in jobs.values():
         for permission, value in job.get("permissions", workflow.get("permissions", {})).items():
             assert value in {"read", "none"}, permission
+
+    for name in ("preflight", "finalize"):
+        assert "secrets." not in json.dumps(jobs[name])
+    for job in jobs.values():
+        for step in job["steps"]:
+            if "uses" in step:
+                assert re.fullmatch(r"[^@]+@[0-9a-f]{40}", step["uses"])
+                if step["uses"].startswith("actions/checkout@"):
+                    assert step["with"]["persist-credentials"] is False
