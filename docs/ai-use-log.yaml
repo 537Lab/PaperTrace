@@ -433,3 +433,42 @@ entries:
   - 首次以系统 Python 执行 pytest 时缺少 --disable-socket 插件，两个测试命令均以4退出；改用现有项目环境后才通过。
   - 系统 Python 的全范围 Ruff 对未修改的 scripts/paperqa_smoke.py 报 I001；不将 A 范围 Ruff 通过冒充全范围通过。
   - 本记录不证明人工审查、完整上游回归、远端 CI 通过或已合并；本轮未新增付费产品调用。
+
+- entry_id: A-VIEW-TEST-20261123-01
+  timestamp: '2026-11-23T06:35:00+00:00'
+  tool: ChatGPT (GitHub connector and isolated pytest syntax/collection check)
+  model: GPT-6
+  purpose: Prepare A-only library view and controlled interaction tests; document the A/E handoff without implementing the view or changing the shared UI
+  scope:
+  - test/offline/test_library_view.py
+  - docs/team/designs/module-A/view-plan-v1.md
+  status: test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - The proposed 15 synthetic tests passed Python syntax validation and collected as 15 pytest nodes in an isolated environment using the real shared contracts copied from the E synthetic delivery
+  - Did not run assertions against actual A checkout; no A view implementation exists at proposal time, no real behavioral PASS is claimed
+  - The preceding approved A source and tests were not modified
+  limitations:
+  - This is ChatGPT-assisted test drafting and GitHub publishing, not an OpenCode student-supervised implementation session, course D5 transcript, or independent student test approval
+  - No live provider/model evaluation, private paper access, additional dependencies, public UI code or cross-module business edits
+  - A application navigation, B ingest receipt and E publishing/export permission require separate interface confirmation and applicable approval
+
+- entry_id: A-VIEW-REVIEW-FIX-20261123-01
+  timestamp: '2026-11-23T06:49:29Z'
+  tool: ChatGPT with connected GitHub review workflow and isolated local Python collection
+  model: GPT-6
+  purpose: Address independent reviewer changes requested for A view test proposal PR 30 at head 73adbac1
+  scope:
+  - test/offline/test_library_view.py
+  - docs/team/designs/module-A/view-plan-v1.md
+  status: revised-test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Preserved the 15 original tests and added one negative test requiring ValueError FRESHNESS_MISMATCH when current_snapshot and freshness token carry different snapshot identities
+  - Fixed the test file import grouping reported as Ruff I001
+  - Python syntax and isolated pytest collection with real shared contract module returned 16 collected and zero collection errors
+  limitations:
+  - No A view product implementation exists; behavioral assertions do not run, and collection is not evidence of functional PASS
+  - Isolated environment does not have Ruff installed; any lint pass must be confirmed by actual remote checks on the new head
+  - This ChatGPT review change is not a supervised OpenCode course transcript or human Approve
+  - No provider/model experiment, private source corpus, public UI or other-module code changes
