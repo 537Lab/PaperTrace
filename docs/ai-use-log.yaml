@@ -485,3 +485,40 @@ entries:
   - 对获批测试提交重放这 7 个失败节点，7 项均复现；证据与全量回归在相同本地验证环境运行。
   - 远端门禁、本次实现独立人审和最终合并待完成。
   - 在 f74c2e8f 获独立批准后复用已披露实现，计划内容及获批测试保持一致。
+- entry_id: B-TEST-20261124-QUAL02-ANSWER-REQUEST
+  timestamp: '2026-11-24T22:28:08+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为 B 侧最终回答请求序列化准备可独立审阅的 QUAL-02 离线测试
+  scope:
+  - test/offline/test_b_answer_request.py
+  - docs/team/designs/module-B/qual02-answer-request-test-plan.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户要求推进 B 侧可完成的工作，独立测试审批仍待队友在 GitHub 完成
+  - D 侧确认版本化 system 提示词路径及正文来源
+  verification:
+  - 以 PR 34 的 a9440e6767e9ba90642dbe5cf2bb46a526125540 为基线，B 定向离线复跑 73 项通过、4 项预期失败
+  - 三项在 Gate 4 的结构化 user 正文校验失败，一项确认版本化 system 文件缺失
+  - 新增测试通过 Ruff，真实产品模型调用为零
+  limitations:
+  - 评估版本的固定集 ID 绑定另由 B、D 和 evaluator 负责人协调
+  - 本次为 Codex 准备的测试提案，未修改源码或提示词
+- entry_id: B-TEST-20261124-QUAL02-SYSTEM-BINDING
+  timestamp: '2026-11-24T23:15:53+0800'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按 PR 57 的独立复审意见加固版本化 system 提示词绑定
+  scope:
+  - test/offline/test_b_answer_request.py
+  - docs/team/designs/module-B/qual02-answer-request-test-plan.md
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 队友对 df6bea5293b04113315b5ebcd91bb6dfa1f38e5a 提出 system 绑定修改意见
+  verification:
+  - 保留原测试节点。定向复跑 73 通过、4 项预期失败。Ruff 通过。
+  - 三组正负对照验证错误的捕获 system 均被拒绝；改写 TXT 或删除末尾换行均被拒绝。
+  limitations:
+  - 本次只修改测试和记录，真实模型调用为零。新 head 需独立复审。
