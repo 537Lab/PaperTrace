@@ -361,3 +361,21 @@ entries:
   limitations:
   - Test fixture and plan only; no business source or previously approved tests modified.
   - This is not a student-supervised OpenCode implementation transcript.
+
+- entry_id: SHARED-WORKBENCH-CANDIDATE-20261124-03
+  timestamp: '2026-11-24T13:10:00Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Draft approved workbench driver implementation on the exact reviewed PR 46 head
+  scope:
+  - src/papertrace/workbench.py
+  status: implementation-candidate-awaiting-student-supervised-opencode-and-independent-verification
+  approvals:
+  - PR 46 exact 167deaa8815f1b0b374ff7f51473599e9de7a297 independently approved, review 6038668242.
+  verification:
+  - Read approved tests and plan and actual app delegate before writing candidate.
+  - Existing approved tests and plan blobs retained; candidate not locally executed in the locked environment.
+  limitations:
+  - Local OpenCode connection failed; this candidate is direct ChatGPT generation, not a genuine student-supervised OpenCode implementation session.
+  - Do not present this candidate as course-compliant OpenCode evidence; student must supervise actual OpenCode development/adoption and retain raw evidence.
+  - No full UI, module assembly, network or live model calls; no merge.
