@@ -360,3 +360,29 @@ entries:
   - Direct ChatGPT candidate, not a supervised OpenCode transcript.
   - Trusted base and independent current-head source review must judge this candidate, not itself.
   - No gate adoption, merge, provider call or authorization.
+
+- entry_id: SHARED-EVAL-CONTROL-OPENCODE-ADOPTION-20261125-01
+  timestamp: '2026-11-24T21:20:43Z'
+  tool: OpenCode v2.0.12 (papertrace-verify)
+  model: openai/gpt-6.2-sol
+  purpose: Student-supervised OpenCode read-only verification and bounded adoption of PR #56 control-path classification change
+  scope:
+  - scripts/gate_evidence.py
+  - docs/team/designs/shared-evaluation/control-path-plan.md
+  - test/offline/test_evaluation_control_paths.py
+  - docs/ai-use-log.yaml
+  status: supervised-opencode-verified-awaiting-independent-review
+  approvals:
+  - PR #54 exact test anchor f20bd503462021782f5f5b0b64b05f843cc6a06d approved by Y15BeTa (review 6040093292).
+  - Student (537Lab) authorized this supervised OpenCode verification and adoption record without relaxing opencode.jsonc write protection on protected scripts/gate_evidence.py.
+  verification:
+  - 'OpenCode session ses_df0921808ffeN1TKs9WWjQST7e (agent: papertrace-verify, read-only) verified HEAD 8235aa3ed2eeae15203b701eca3f54343341f5b8 against origin/main 624bccb019e443bbc08a235d5f76f789e64bd543 with empty git status before and after.'
+  - 'Confirmed scripts/gate_evidence.py diff excludes only literal test/evaluation/evaluator.py and test/evaluation/report-schema.json from changed_tests while retaining both in PROTECTED_GATE_PATHS; test/evaluation/cases.json and all other verifier rules remain unchanged.'
+  - 'Confirmed docs/team/designs/shared-evaluation/control-path-plan.md and test/offline/test_evaluation_control_paths.py remain byte-identical to approved PR #54 commit f20bd503462021782f5f5b0b64b05f843cc6a06d.'
+  - 'python -m pytest -c papertrace.pytest.ini -q test/offline/test_gate_evidence.py test/offline/test_evaluation_control_paths.py -> exit 0 (29 passed in 4.41s).'
+  - 'RUFF_NO_CACHE=true python -m ruff check --config papertrace.ruff.toml src/papertrace test/offline scripts -> exit 0 (All checks passed!).'
+  - 'python scripts/gates.py --gate schema -> exit 0 (PASS, 27 requirements); python scripts/gates.py --gate ai-log -> exit 0 (PASS).'
+  limitations:
+  - opencode.jsonc intentionally denies editing protected scripts/gate_evidence.py; OpenCode executed in read-only papertrace-verify mode to audit and verify the existing bounded diff rather than rewriting the file directly.
+  - Read-only verification does not substitute for independent non-author GitHub approval on the final head SHA, nor does it cover remote CI or upstream regression.
+
