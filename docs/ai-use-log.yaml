@@ -485,3 +485,63 @@ entries:
   - 对获批测试提交重放这 7 个失败节点，7 项均复现；证据与全量回归在相同本地验证环境运行。
   - 远端门禁、本次实现独立人审和最终合并待完成。
   - 在 f74c2e8f 获独立批准后复用已披露实现，计划内容及获批测试保持一致。
+- entry_id: B-TEST-20261124-QUAL02-ANSWER-REQUEST
+  timestamp: '2026-11-24T22:28:08+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为 B 侧最终回答请求序列化准备可独立审阅的 QUAL-02 离线测试
+  scope:
+  - test/offline/test_b_answer_request.py
+  - docs/team/designs/module-B/qual02-answer-request-test-plan.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户要求推进 B 侧可完成的工作，独立测试审批仍待队友在 GitHub 完成
+  - D 侧确认版本化 system 提示词路径及正文来源
+  verification:
+  - 以 PR 34 的 a9440e6767e9ba90642dbe5cf2bb46a526125540 为基线，B 定向离线复跑 73 项通过、4 项预期失败
+  - 三项在 Gate 4 的结构化 user 正文校验失败，一项确认版本化 system 文件缺失
+  - 新增测试通过 Ruff，真实产品模型调用为零
+  limitations:
+  - 评估版本的固定集 ID 绑定另由 B、D 和 evaluator 负责人协调
+  - 本次为 Codex 准备的测试提案，未修改源码或提示词
+- entry_id: B-TEST-20261124-QUAL02-SYSTEM-BINDING
+  timestamp: '2026-11-24T23:15:53+0800'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按 PR 57 的独立复审意见加固版本化 system 提示词绑定
+  scope:
+  - test/offline/test_b_answer_request.py
+  - docs/team/designs/module-B/qual02-answer-request-test-plan.md
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 队友对 df6bea5293b04113315b5ebcd91bb6dfa1f38e5a 提出 system 绑定修改意见
+  verification:
+  - 保留原测试节点。定向复跑 73 通过、4 项预期失败。Ruff 通过。
+  - 三组正负对照验证错误的捕获 system 均被拒绝；改写 TXT 或删除末尾换行均被拒绝。
+  limitations:
+  - 本次只修改测试和记录，真实模型调用为零。新 head 需独立复审。
+- entry_id: B-CODEX-20261125-QUAL02-IMPLEMENTATION-CANDIDATE
+  timestamp: '2026-11-25T00:49:12+0800'
+  tool: Codex Desktop and OpenCode v2.0.12
+  model: Codex runtime model not independently attested; OpenCode used cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 为已获测试批准的 B→D JSON 出站路径验证本地实现候选
+  scope:
+  - src/papertrace/retrieval/service.py
+  - prompts/answer-system-v1.0.txt
+  - docs/ai-use-log.yaml
+  status: supervised-local-implementation-candidate
+  approvals:
+  - GitHub 非作者 537Lab 和 ziqilin669 对 PR 57 精确提交 70b16bb14ad24220985a2f562197cd56c1c71785 给出 Approve
+  - 用户明确授权两条 B 切片的本轮开发模型及源码范围
+  verification:
+  - B 定向 77 项通过，累计联调快照 B/D 定向 206 项通过
+  - 合成 QUAL-02 真正经过 D、B 与 PaperQA2，正序、逆序和裁剪均进入回答模型替身一次，空集零次
+  - B Ruff、src/papertrace mypy、schema 和 git diff 检查通过
+  - 全量离线 427 通过、6 失败，现存失败节点与基线一致
+  limitations:
+  - OpenCode 源码构建尝试因审批证据未被角色接受、权限中断和供应商 reasoning_text 错误未生成可用源码补丁。此候选源码由 Codex 编写，不能记为 OpenCode 生成的源码实现。
+  - OpenCode Verify 会话 ses_df18bb603ffeNUQ7AaNrsoumYG 建议在模型边界校验实际消息。Codex 落地此建议，经临时负对照验证 system 或 user 被替换时报拒绝且零模型调用。
+  - 保留获批测试和计划。固定评估集 ID 映射仍需 B/D/evaluator 协调，实际捕获使用规范 ID。
+  - 校验使用替身，真实产品模型调用为零，候选仅保存在本地。
