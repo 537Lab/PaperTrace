@@ -485,6 +485,65 @@ entries:
   - 对获批测试提交重放这 7 个失败节点，7 项均复现；证据与全量回归在相同本地验证环境运行。
   - 远端门禁、本次实现独立人审和最终合并待完成。
   - 在 f74c2e8f 获独立批准后复用已披露实现，计划内容及获批测试保持一致。
+
+- entry_id: B-TEST-20261124-TXT-INGEST
+  timestamp: '2026-11-24T01:34:00+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model identifier not independently attested
+  purpose: 按 A 在 Issue 29 确认的首轮 UTF-8 TXT 契约准备 B 摄取回执测试提案
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/a-b-txt-ingest-receipt-plan.md
+  - docs/ai-use-log.yaml
+  status: local-test-proposal-awaiting-independent-approval
+  approvals:
+  - A 负责人在 Issue 29 评论 7108692559 书面确认请求、回执和 TXT 首轮范围。
+  - 测试提案待非作者对精确提交独立批准。
+  verification:
+  - 使用初始化锁定依赖和 pytest-socket，70 项既有 B 用例通过，新增 7 项均在 Gateway.ingest 缺失处按预期失败。
+  - 测试 Ruff 和工作树差异检查通过。
+  limitations:
+  - Codex 起草测试和计划，本次未发起 OpenCode 或产品模型请求。
+  - 这批结果只证明测试收集和入口缺失，新增行为断言尚未执行。
+
+- entry_id: B-TEST-20261124-TXT-INGEST-REVIEW
+  timestamp: '2026-11-24T10:30:42+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model identifier not independently attested
+  purpose: 补齐 PR 47 独立复审要求的空 metadata、大写 TXT 和失败诊断脱敏测试
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/a-b-txt-ingest-receipt-plan.md
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 537Lab 在 PR 47 的 review 6032581502 对 0c1e8475 提出修改要求。
+  verification:
+  - 锁定环境 70 项既有 B 用例通过，8 项新增用例均在 Gateway.ingest 缺失处预期失败。
+  - 临时测试替身通过 8 项新用例，向回执、标准输出、标准错误和日志逐一注入合成路径时，均触发脱敏断言。
+  - Ruff、Schema、AI 使用披露和差异检查通过。
+  limitations:
+  - 临时替身不属于提交，生产摄取端口尚未实现。本轮未调用 OpenCode 或产品模型。
+- entry_id: B-OPENCODE-20261125-TXT-INGEST
+  timestamp: '2026-11-25T00:19:04+0800'
+  tool: OpenCode v2.0.12 and Codex Desktop
+  model: cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 实现已获批的 A→B UTF-8 TXT 摄取预检回执
+  scope:
+  - src/papertrace/retrieval/gateway.py
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-independent-review
+  approvals:
+  - GitHub 非作者 537Lab 正式批准 PR 47 精确提交 886e4d6578a1140b162f3c8506737dbfe6295af9
+  - 用户明确授权本轮开发模型及 #47 的获批 B 侧源码范围
+  verification:
+  - B 定向 78 项通过，合成材料 A→B CorpusService 接线复跑 1 项通过
+  - B Ruff、src/papertrace mypy、git diff 检查通过
+  - 全量离线 428 通过、6 失败，失败节点与共有 B 基线相同
+  limitations:
+  - OpenCode 会话 ses_df1b745c3ffecES4mT8qc7xdX6，EOS 期间 ECONNRESET，已输出完整补丁
+  - Codex 应用补丁，收紧文件名校验使其与共享文档 basename 约束一致，并运行离线验证
+  - 保留获批测试不变，真实产品模型调用为零
 - entry_id: B-TEST-20261124-QUAL02-ANSWER-REQUEST
   timestamp: '2026-11-24T22:28:08+08:00'
   tool: Codex Desktop

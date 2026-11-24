@@ -2270,3 +2270,103 @@ def test_generation_accounting_records_zero_when_aquery_skips_answer_model(
     assert result.accounting.provider == policy.provider
     assert result.accounting.model == policy.model
     assert result.accounting.answer_model_attempts == 0
+
+
+def _ingest_txt_request(source_name, source_bytes):
+    return {
+        "document_id": "doc-synthetic-ingest-a",
+        "version_sha256": hashlib.sha256(source_bytes).hexdigest(),
+        "source_name": source_name,
+        "source_bytes": source_bytes,
+        "metadata": {"label": "synthetic"},
+        "policy_ref": "synthetic-txt-policy",
+    }
+
+
+def _ingest_receipt(request):
+    fake = fake_module()
+    adapter = fake.FakeRetrievalAdapter()
+    factory = fake.FakeModelFactory()
+    reader = make_source_reader()
+    gateway = make_gateway(adapter=adapter, factory=factory, reader=reader)
+    ingest = getattr(gateway, "ingest", None)
+    assert callable(ingest), "Gateway.ingest must expose the A→B TXT receipt port"
+    receipt = ingest(request)
+    assert isinstance(receipt, dict)
+    assert_no_generation_outbound(factory, adapter)
+    assert reader.calls == []
+    return receipt
+
+
+@pytest.mark.parametrize(
+    ("source_name", "metadata"),
+    (("合成文献.txt", {"label": "synthetic"}), ("合成文献.TXT", {})),
+    ids=("lowercase", "uppercase-empty-metadata"),
+)
+def test_txt_ingest_receipt_binds_utf8_bytes_to_the_document_version(source_name, metadata):
+    """FR-A-01 / INV-02 / COST-01: validate controlled UTF-8 bytes locally."""
+    request = _ingest_txt_request(source_name, "合成证据。\n第二行。\n".encode())
+    request["metadata"] = metadata
+    expected_reference = f"txt-validated:{request['document_id']}:{request['version_sha256']}"
+
+    assert _ingest_receipt(request) == {
+        "document_id": request["document_id"],
+        "version_sha256": request["version_sha256"],
+        "status": "ready",
+        "stage": "parse",
+        "reason_code": None,
+        "representation_ref": expected_reference,
+    }
+
+
+def test_txt_ingest_reference_is_stable_and_changes_when_bytes_change():
+    """INV-02: repeat validation is deterministic and replacement changes identity."""
+    first = _ingest_txt_request("synthetic.txt", b"Synthetic first version.\n")
+    second = _ingest_txt_request("synthetic.txt", b"Synthetic second version.\n")
+    first_reference = _ingest_receipt(first)["representation_ref"]
+    assert first_reference == _ingest_receipt(dict(first))["representation_ref"]
+    assert first_reference != _ingest_receipt(second)["representation_ref"]
+
+
+_SYNTHETIC_PRIVATE_PATH = "/synthetic-private/unpublished/source.txt"
+_SYNTHETIC_SOURCE_EXCERPT = "SYNTHETIC_UNPUBLISHED_EXCERPT"
+
+
+@pytest.mark.parametrize(
+    ("source_name", "source_bytes", "bad_digest", "reason"),
+    (
+        ("synthetic.pdf", _SYNTHETIC_SOURCE_EXCERPT.encode(), False, "UNSUPPORTED_FORMAT"),
+        ("synthetic.txt", b"\xff\xfe" + _SYNTHETIC_SOURCE_EXCERPT.encode(), False, "INVALID_UTF8"),
+        ("synthetic.txt", b"", False, "EMPTY_TEXT"),
+        ("synthetic.txt", b"  \t\r\n", False, "EMPTY_TEXT"),
+        ("synthetic.txt", _SYNTHETIC_SOURCE_EXCERPT.encode(), True, "HASH_MISMATCH"),
+    ),
+    ids=("format", "utf8", "empty", "whitespace", "hash"),
+)
+def test_txt_ingest_returns_bounded_failed_receipt(
+    source_name, source_bytes, bad_digest, reason, capsys, caplog
+):
+    """FR-A-01 / INV-02 / SEC-01: reject invalid input without leaking diagnostics."""
+    request = _ingest_txt_request(source_name, source_bytes)
+    request["metadata"] = {
+        "synthetic_source_path": _SYNTHETIC_PRIVATE_PATH,
+        "synthetic_preview": _SYNTHETIC_SOURCE_EXCERPT,
+    }
+    if bad_digest:
+        request["version_sha256"] = "0" * 64
+
+    with caplog.at_level("DEBUG"):
+        receipt = _ingest_receipt(request)
+    captured = capsys.readouterr()
+    for channel in (repr(receipt), captured.out, captured.err, caplog.text):
+        assert _SYNTHETIC_PRIVATE_PATH not in channel
+        assert _SYNTHETIC_SOURCE_EXCERPT not in channel
+
+    assert receipt == {
+        "document_id": request["document_id"],
+        "version_sha256": request["version_sha256"],
+        "status": "failed",
+        "stage": "parse",
+        "reason_code": reason,
+        "representation_ref": None,
+    }
