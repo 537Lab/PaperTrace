@@ -1,12 +1,12 @@
 """GOV-02: artifact IDs are allocated after upload; fixtures never certify live calls."""
 
 import json
+from hashlib import sha256
 from importlib import import_module
 from pathlib import Path
 
 import pytest
-
-from test_semantic_evidence import fixture, module
+from test_semantic_evidence import canonical, fixture, module
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -66,3 +66,67 @@ def test_prepare_fixed_requests_preserves_actual_envelopes(monkeypatch):
             "question": case["input"]["question"],
             "approved_evidence": evidence,
         }
+
+
+@pytest.mark.parametrize(
+    ("fault", "status", "reason"),
+    [
+        ("quality", "FAIL", "frozen-quality-threshold-failed"),
+        ("rating", "FAIL", "invalid-item-rating-counts-or-rationale"),
+        ("request", "FAIL", "request-question-evidence-or-sent-ids-mismatch"),
+        ("excluded", "FAIL", "request-question-evidence-or-sent-ids-mismatch"),
+        ("missing-auth", "BLOCKED", "real-budget-authorization-review-missing"),
+        ("wrong-auth", "FAIL", "budget-authorization-not-independent-current-head-approve"),
+        ("review-hash", "FAIL", "independent-post-run-report-review-missing-or-wrong-hash"),
+        ("runtime", "FAIL", "runtime-installed-versions-do-not-match-lock"),
+        ("attempts", "FAIL", "incomplete-fixed-set-or-budget-exceeded"),
+        ("cost", "FAIL", "incomplete-fixed-set-or-budget-exceeded"),
+        ("timeout", "FAIL", "call-time-outside-authorization-run-or-deadline"),
+    ],
+)
+def test_omitted_id_does_not_weaken_original_validation(tmp_path, fault, status, reason):
+    """Each synthetic mutation must reach its specific invariant, not fail at schema."""
+    ctx, github = fixture(tmp_path)
+    report = github.report
+    del report["provenance"]["artifact_id"]
+    github.pack()
+    baseline = module().verify_semantic(ctx, github=github, pr_number=20)
+    # Keep the negative controls independent of the RED positive node:
+    # the new transport is required to reach the real common validation path.
+    assert baseline["status"] == "PASS", baseline
+    ratings = report["scores"]["independent_ratings"]
+    reviews = github.responses["/repos/537Lab/PaperTrace/pulls/20/reviews?per_page=100"]
+    first = report["runs"][0]
+    if fault == "quality":
+        ratings[0]["correct_citations"] = 0
+        report["scores"]["citation_precision"] = sum(
+            row["correct_citations"] for row in ratings
+        ) / sum(row["citation_count"] for row in ratings)
+    elif fault == "rating":
+        ratings[0]["rationale"] = " "
+    elif fault in {"request", "excluded"}:
+        payload = json.loads(first["request"][1]["content"])
+        if fault == "request":
+            payload["approved_evidence"][0]["text"] = "Substituted synthetic material."
+        else:
+            payload["approved_evidence"].append({"id": "ev-unapproved", "text": "Excluded material."})
+        first["request"][1]["content"] = json.dumps(payload, ensure_ascii=False)
+        first["prompt_sha256"] = sha256(canonical(first["request"])).hexdigest()
+    elif fault == "missing-auth":
+        reviews.pop(0)
+    elif fault == "wrong-auth":
+        reviews[0]["commit_id"] = "f" * 40
+    elif fault == "runtime":
+        report["runtime_environment"]["packages"]["litellm"] = "0.0.1"
+    elif fault == "attempts":
+        first["attempts"] += 1
+    elif fault == "cost":
+        first["cost"] = report["authorization"]["max_cost"] + 1
+    elif fault == "timeout":
+        first["finished_at"] = "2026-11-13T10:22:00Z"
+    github.pack()
+    if fault == "review-hash":
+        reviews[-1]["body"] = "Semantic report SHA256: " + "0" * 64
+    checked = module().verify_semantic(ctx, github=github, pr_number=20)
+    assert checked["status"] == status, checked
+    assert checked["details"]["reason"] == reason, checked

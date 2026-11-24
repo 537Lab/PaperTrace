@@ -14,3 +14,6 @@ The existing v3 verifier requires `report.provenance.artifact_id` inside the rep
 
 ## This PR
 Tests and plan only. Artifact ID regression includes legacy mismatch negative and server association/digest checks with the real verifier and existing synthetic GitHub fixture. Request-preparation contract covers the 18 exact serialized envelopes (no external calls). These fixtures are never real model evidence. Local/CI execution must be reported honestly; a pending test proposal is not a deployment.
+
+## Independent review response
+Preserve the six initial nodes and all existing semantic tests. Add eleven omitted-ID mutations for quality, rating rationale, actual request substitution and unauthorized evidence, missing/wrong-head authorization, report adoption hash, installed runtime versions, attempt count, cost and timeout. Each requires the omitted-ID positive control to reach PASS and then asserts the exact rejection reason; a schema error cannot satisfy a negative. The existing four transport negatives remain unchanged. Separate workflow preflight/intake tests still required before any dispatch. Review of df42a5c8 reported 43 pass / 2 expected RED and new-file Ruff I001. This revision fixes import grouping and extends the contract; new runtime and Ruff results are not yet independently verified.
