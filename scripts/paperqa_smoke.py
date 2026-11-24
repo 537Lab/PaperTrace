@@ -40,9 +40,9 @@ from lmi.types import LLMResult  # noqa: E402
 from pydantic import PrivateAttr  # noqa: E402
 
 from paperqa import Docs, Settings  # noqa: E402
+from paperqa import __version__ as PAPERQA_VERSION  # noqa: E402
 from paperqa.prompts import CANNOT_ANSWER_PHRASE  # noqa: E402
 from paperqa.types import PQASession  # noqa: E402
-from paperqa.version import __version__ as PAPERQA_VERSION  # noqa: E402
 
 APPROVED_FACT = (
     "AZURITE_FACT: Azurite is the pigment identified as stable deep blue indoors."
