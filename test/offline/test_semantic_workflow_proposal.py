@@ -255,7 +255,7 @@ def assert_workflow_wiring(workflow):
         ]
         assert len(checkouts) == 1
         checkout_index, checkout = checkouts[0]
-        assert checkout["with"]["ref"] == expression("github.sha")
+        assert checkout["with"].get("ref") == expression("github.sha")
         assert checkout["with"]["persist-credentials"] is False
         assert "repository" not in checkout["with"]
         assert "path" not in checkout["with"]
