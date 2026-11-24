@@ -1,66 +1,66 @@
-# PaperTrace｜工作计划与协作规则
+# PaperTrace | Work Plan and Collaboration Rules
 
-> 新成员从[团队唯一入口](TEAM_START_HERE.md)开始。本文件集中说明 ownership、角色轮换、课程证据和门禁；模块技术验收在各自任务书中。
+> New members start from the [team's single entry point](TEAM_START_HERE.md). This file concentrates on ownership, role rotation, course evidence, and gates; module technical acceptance lives in the individual task briefs.
 
-## 1. 目标和当前范围
+## 1. Goal and current scope
 
-PaperTrace 是本地科研证据审核台：导入授权文献、检索候选、由人审核、仅用获准证据回答，再保存可追溯研究历史。本轮建立的共享契约/测试/治理基础不是五模块业务，也不证明已有可运行的 Streamlit 正式应用。所有实现、审批、OpenCode 会话、模型评估和远端保护须分别以实际证据记录。
+PaperTrace is a local research-evidence review workbench: import authorized papers, retrieve candidates, have a human review them, answer using only accepted evidence, and then save a traceable research history. The shared contracts/tests/governance foundation established in this round is not the five-module business, and it does not prove that a runnable production Streamlit application exists. All implementations, approvals, OpenCode sessions, model evaluations, and remote protections must be recorded with actual evidence separately.
 
-固定上游为 `Future-House/paper-qa@c692d0dfeac4a0296599f7fe21a253a58b7ac12a`。普通功能 PR 不改其 `src/paperqa/`、`packages/`、原 `tests/`、`pyproject.toml`、`uv.lock`；这不是永久禁止必要修复。例外须走 [ADR-002](docs/architecture/adr/002-development-readiness.md) 的受审 patch 流程，不裸改、不绕过任何测试/权限门。
+The pinned upstream is `Future-House/paper-qa@c692d0dfeac4a0296599f7fe21a253a58b7ac12a`. Ordinary feature PRs do not change its `src/paperqa/`, `packages/`, original `tests/`, `pyproject.toml`, `uv.lock`; this is not a permanent ban on necessary fixes. Exceptions must go through the reviewed patch process in [ADR-002](docs/architecture/adr/002-development-readiness.md), without bare edits and without bypassing any test/permission gate.
 
-## 2. 五项功能 ownership 与并行接口
+## 2. Five-feature ownership and parallel interfaces
 
-| Owner | 端到端 Must 功能 | 边界与交接 |
+| Owner | End-to-end Must feature | Boundary and handover |
 |---|---|---|
-| A | 文献导入状态、逻辑身份、内容 SHA256 版本、不可变快照 | 输出 ready-only `CorpusSnapshot`；不 import `paperqa`，不替 C 审核 |
-| B | 检索候选、原文定位、PaperQA2 薄适配、受控调用/中立端口 | 团队唯一 `paperqa` import；不授予人审或发布权 |
-| C | 原文与摘要比较、明确人工接受/排除/重置、追加审核账本 | 输出可重放决定与 revision/digest；模型和 UI 状态不授权 |
-| D | 获准/实际发送/实际引用三集、受控回答、确定性发布门 | 自己拥有回答和 release；通过 B 端口执行，零获准时零工厂/SDK/HTTP 调用 |
-| E | 研究历史、来源追溯、JSON/Markdown 导出 | 读回原 snapshot/审核/回答/发布状态；不覆写历史、不升级授权 |
+| A | Paper import state, logical identity, content SHA256 version, immutable snapshots | Emits a ready-only `CorpusSnapshot`; does not import `paperqa` and does not review on C's behalf |
+| B | Candidate retrieval, source location, thin PaperQA2 adapter, controlled calls/neutral port | The team's only `paperqa` import; grants no human-review or release authority |
+| C | Source-text vs. summary comparison, explicit human accept/exclude/reset, append-only review ledger | Emits replayable decisions with revision/digest; models and UI state grant no authorization |
+| D | The accepted/actually sent/actually cited three sets, controlled answering, deterministic release gate | Owns answering and release itself; executes through B's port, with zero factory/SDK/HTTP calls when the accepted set is empty |
+| E | Research history, source traceability, JSON/Markdown export | Reads back the original snapshot/review/answer/release state; does not overwrite history or escalate authorization |
 
-共享模型唯一事实源是 `src/papertrace/contracts.py`。接口细节和错误语义见 [`docs/team/integration-contract.md`](docs/team/integration-contract.md)，需求/阈值见 `docs/req/requirements.yaml`，不要在任务书造第二份 registry。
+The single source of truth for shared models is `src/papertrace/contracts.py`. Interface details and error semantics are in [`docs/team/integration-contract.md`](docs/team/integration-contract.md); requirements/thresholds are in `docs/req/requirements.yaml`; do not build a second registry in the task briefs.
 
-### 可并行的 fake 开发路径
+### Parallel fake development paths
 
-先用 `test/fixtures/contracts/` 规范对象和各模块自写的 synthetic fixtures；共享 wrapper 的 `data` 才是模型输入。每个模块的关键 fake 及其可观察断言已列在任务书中：A fake parser/import port；B fake parser/retrieval/generation adapter；C fake candidate feed（不能返回权威 accepted）；D 记录最终输入和 attempt 计数的 fake generation port，且不依赖 B 完工；E 合法/blocked/abstained/failed 合成研究包。
+Start with the canonical objects in `test/fixtures/contracts/` and the synthetic fixtures written by each module; only the `data` of the shared wrapper is the model input. Each module's key fakes and their observable assertions are listed in its task brief: A fake parser/import port; B fake parser/retrieval/generation adapter; C fake candidate feed (which cannot return an authoritative accepted); D a fake generation port that records the final input and attempt counts and does not depend on B being finished; E synthetic research bundles in the valid/blocked/abstained/failed states.
 
-所有 fake 和材料都标记 synthetic，仅证明确定性接口、授权、失败和输入边界，不证明真实模型质量、许可或性能。B/D 真实 PaperQA2 离线集成与依赖、provider/model live 调用分别审批。D 可在其 Plan 精确列出的只读路径内审阅上游 API 行为，但不能直接导入 `paperqa`。
+All fakes and materials are marked synthetic; they prove only deterministic interfaces, authorization, failures, and input boundaries, not real model quality, licensing, or performance. Real PaperQA2 offline integration and dependencies for B/D, and provider/model live calls, are approved separately. D may review upstream API behavior within the read-only paths listed precisely in its Plan, but may not import `paperqa` directly.
 
-## 3. 最小工作流与权限
+## 3. Minimal workflow and permissions
 
-每个功能作者对需求、设计、监督 OpenCode、正负测试、自己的 view、PR 和演示负责；无“只写文档”成员。
+Each feature author is responsible for requirements, design, supervising OpenCode, positive and negative tests, their own view, the PR, and the demo; there is no "documents only" member.
 
-1. **Plan：**按唯一入口中的最小阅读集，列真实 FR/INV、输入/输出/失败、精确相对路径、fake 测试、依赖及副作用；停止等待审批。
-2. **先审后写：**监督学生批准计划后，OpenCode 仅准备模块测试/fixtures/设计记录，不写业务源码；测试提案 PR 可保持 open/RED。另一名未参与实现的同学在 GitHub 批准具体测试 commit 后，才写业务实现；一次确认本轮模块范围（可含明确目录规则及其新文件）和常用离线工具。范围内不逐文件/逐命令再批；扩到共享、其他模块、依赖、网络或费用时才重新确认。配置仍默认 `R=deny, W=deny`，显式白名单限定范围，不配置无条件 allow-all。
-3. **监督 Build：**学生本人使用课程要求的 OpenCode，逐步检查、干预并记录理由。需求、接口或安全语义改变，回到审批；不能先实现后补批准。
-4. **Verify：**保存真实命令、版本、退出码、范围与原始结果；跑相关负测、团队 offline 全 suite 与完整 prior regression。初始化 `.venv` 的 `test/offline` 只属于第一类，不是 full regression；三来源/collection parity/live BLOCKED 规则见 [`verification-constraints.md`](docs/code-governance/verification-constraints.md) 和 [`full-regression.md`](docs/ci/full-regression.md)。真实适用状态以 `docs/ci/gates.md` 与验证证据为准。
-5. **独立 PR：**非作者 reviewer 核查 diff、测试、权限、AI-use log、bug/debt、ADR 和 D1–D9。真实 GitHub 合并与保护另行验证。
+1. **Plan:** following the minimal reading set in the single entry point, list the real FRs/INVs, inputs/outputs/failures, exact relative paths, fake tests, dependencies, and side effects; then stop and wait for approval.
+2. **Review before writing:** after the supervising student approves the plan, OpenCode only prepares module tests/fixtures/design records and does not write business source code; the test proposal PR may stay open/RED. Only after another classmate who did not take part in the implementation approves the specific test commit on GitHub does business implementation begin; the module scope for this round (which may include explicit directory rules and their new files) and the common offline tools are confirmed once. Inside that scope there is no per-file/per-command re-approval; re-confirmation is required only when extending to shared code, other modules, dependencies, network, or cost. Configuration remains `R=deny, W=deny` by default, with explicit allowlists limiting the scope, and no unconditional allow-all is configured.
+3. **Supervised build:** the student themself uses the OpenCode required by the course, checking and intervening step by step and recording the reasons. If requirements, interfaces, or security semantics change, go back to approval; implementation cannot come first with approval filled in afterwards.
+4. **Verify:** save the real command, version, exit code, scope, and raw result; run the relevant negative tests, the team's full offline suite, and the full prior regression. The `test/offline` run on the initialized `.venv` belongs only to the first category, not to full regression; the three-source/collection parity/live BLOCKED rules are in [`verification-constraints.md`](docs/code-governance/verification-constraints.md) and [`full-regression.md`](docs/ci/full-regression.md). The real applicable status is determined by `docs/ci/gates.md` and the verification evidence.
+5. **Independent PR:** a non-author reviewer checks the diff, tests, permissions, AI-use log, bug/debt, ADRs, and D1–D9. Real GitHub merging and protection are verified separately.
 
-**每个 feature 都要有可定位的 requirement/invariant trace 和至少一个能在边界被破坏时失败的负测。**审核权威、来源身份、生成/发布、预算、权限、上游补丁、历史状态等安全关键改动须 ADR、负测、受影响 owner 和学生本人审查。人审后的规则变化须在一个 sprint 内同步；`.opencode/rules.md` 为 human-only，代理不可自改。
+**Every feature needs a locatable requirement/invariant trace and at least one negative test that fails when the boundary is broken.** Security-critical changes such as review authority, source identity, generation/release, budget, permissions, upstream patches, and historical state require an ADR, negative tests, review by the affected owner, and review by the student themself. Rule changes made after human review must be synchronized within one sprint; `.opencode/rules.md` is human-only and agents may not change it themselves.
 
-## 4. D1–D9 个人证据
+## 4. D1–D9 individual evidence
 
-每位成员仅提供自己模块实际发生的证据；规划内容不算已完成项。课程原文与待确认口径见 [`docs/sources/course-compliance.md`](docs/sources/course-compliance.md)。
+Each member provides only the evidence that actually occurred in their own module; planned content does not count as a completed item. The course text and the interpretations still to be confirmed are in [`docs/sources/course-compliance.md`](docs/sources/course-compliance.md).
 
-| 交付 | 每个模块作者要留下的真实证据 |
+| Deliverable | Real evidence each module author must leave |
 |---|---|
-| D1 需求 | Must FR、registry fit criterion、关联 INV/质量项、来源与测试追踪；不得另造需求表 |
-| D2 架构 | 本模块职责、接口/失败/状态/预算影响及必要 ADR；安全关键决策须人审 |
-| D3 编码治理 | 本轮精确路径/权限/工具、human-only 规则和边界验证；不宣称未执行的权限强制 |
-| D4 验证治理 | 事前批准版本、正负/回归结果、独立 review memo、真实 bug/debt |
-| D5 OpenCode 会话 | 学生监督形成的原始完整会话及真实人工干预。课程 p2“五份 annotated”与 p6 “一份 full raw/from scratch”口径须学生/教师核实；Hermes 初始化不能冒充 |
-| D6 过程报告 | 本人真实功能、可核对贡献和反思素材；最终身份由学生填。原文要求平均贡献 1.0、最多 10,000 词（不计图）、12pt 单倍行距超过 15 页；排版/交付由学生核实 |
-| D7 仓库/门禁 | 真实本地 diff、PR/CI、人审及保护阻断证据。私有仓库分支保护此前因 403 未生效；最终须重新回读和演练，不能标已完成 |
-| D8 源码/测试 | 本模块业务源码、自己的 view、合成 fixtures、正负/回归测试与可复现命令 |
-| D9 静态 Prompt | 从同一根 `Prompt.md` 真实启动，Plan 停止并等待测试/计划/权限批准，保留执行记录；不复制冲突 prompt |
+| D1 Requirements | Must FRs, registry fit criteria, associated INVs/quality items, source and test traces; do not build a second requirements table |
+| D2 Architecture | This module's responsibilities, interface/failure/state/budget impact, and necessary ADRs; security-critical decisions require human review |
+| D3 Coding governance | The exact paths/permissions/tools for this round, human-only rules, and boundary verification; do not claim permission enforcement that was not executed |
+| D4 Verification governance | The pre-approved version, positive/negative/regression results, an independent review memo, real bugs/debt |
+| D5 OpenCode sessions | The original complete sessions produced under student supervision, with the real human interventions. The course's p2 "five annotated" and p6 "one full raw/from scratch" interpretations must be verified by the student/instructor; the Hermes initialization cannot pass as them |
+| D6 Process report | The member's real feature, checkable contribution, and reflection material; the final identity is filled in by the student. The original text requires an average contribution of 1.0, at most 10,000 words (excluding figures), and more than 15 pages at 12pt single spacing; formatting/delivery is verified by the student |
+| D7 Repository/gates | Real local diffs, PR/CI, human review, and evidence of protection blocking. Private-repository branch protection did not take effect earlier because of a 403; it must be re-read and rehearsed at the end and cannot be marked complete |
+| D8 Source/tests | This module's business source code, its own view, synthetic fixtures, positive/negative/regression tests, and reproducible commands |
+| D9 Static Prompt | Genuinely started from the same root `Prompt.md`, with the Plan stopping to wait for test/plan/permission approval and the execution record kept; do not copy a conflicting prompt |
 
-**10 分钟 demo 单独提交，不放进 ZIP。**Introduction p20 要求学生真实监督 OpenCode；教师确切截止时间仍须查最新课程通知。不要虚构身份、贡献、批准、transcript、模型结果或 CI 结论。
+**The 10-minute demo is submitted separately and does not go into the ZIP.** Introduction p20 requires the student to genuinely supervise OpenCode; the instructor's exact deadline must still be checked against the latest course notice. Do not fabricate identities, contributions, approvals, transcripts, model results, or CI conclusions.
 
-## 5. 过程角色轮换（不转移功能 ownership）
+## 5. Process role rotation (does not transfer feature ownership)
 
-作者/共同实现者不能批准自己的测试或独立审查自己的 PR。事前测试批准者与最终 reviewer 可以是同一名非实现者；集成人可按实际空闲轮值，不要求每个小 PR 召集四名同学。下表是可选的首轮分担，不是额外门禁。
+An author/co-implementer cannot approve their own tests or independently review their own PR. The pre-test approver and the final reviewer may be the same non-implementer; the integrator may rotate according to actual availability, and four classmates do not have to be convened for every small PR. The table below is an optional first-round division of labor, not an additional gate.
 
-| 功能作者 | 首轮测试/计划批准 | 独立 reviewer | 集成人 |
+| Feature author | First-round test/plan approval | Independent reviewer | Integrator |
 |---|---|---|---|
 | A | B | C | D |
 | B | C | D | E |
@@ -68,23 +68,23 @@ PaperTrace 是本地科研证据审核台：导入授权文献、检索候选、
 | D | E | A | B |
 | E | A | B | C |
 
-后续可沿 A→B→C→D→E 顺移，缺席时由其他非实现者替补批准/审查；仅在独立性冲突时另排。不能把某人永久设为 CI/管理负责人。
+Later rounds may shift along A→B→C→D→E, and when someone is absent another non-implementer substitutes for approval/review; assign differently only on an independence conflict. No one may be made the permanent CI/management owner.
 
-## 6. 六类课程门禁（完整保留）
+## 6. The six course gate categories (kept in full)
 
-教师 Project p10 的六类门禁不可删、降级、用假结果替代，或因本轮未实现而标绿。每轮按真实适用条件分别报告：
+The six gate categories on p10 of the instructor's Project handout must not be deleted, downgraded, replaced with fake results, or marked green because they are not implemented this round. Report each one separately per round against the real applicable conditions:
 
-1. 实现前测试批准；
-2. 静态分析、类型/依赖及安全路径检查；
-3. 需求 schema；
-4. prompt/model 变化的真实语义评估；
-5. 完整 prior regression；
-6. 代码/prompt 变化对应的真实 AI-use log。
+1. test approval before implementation;
+2. static analysis, type/dependency, and security-path checks;
+3. requirements schema;
+4. real semantic evaluation for prompt/model changes;
+5. full prior regression;
+6. a real AI-use log corresponding to code/prompt changes.
 
-`NOT_REQUIRED`、skip、fake、文档中有 gate 名称或本地检查 ≠ 课程门禁通过；真实模型评估未获批/未执行须 BLOCKED。GitHub required checks/安全路径保护只有完成授权配置、读回并通过违规/合法对照 PR 演练后才可称生效。当前运行状态不在本文件复制，统一读 `docs/ci/gates.md`。
+`NOT_REQUIRED`, skip, fake, a gate name in a document, or a local check ≠ a passing course gate; a real model evaluation that is not approved/not run must be BLOCKED. GitHub required checks/security-path protection can be called in effect only after the authorized configuration is complete, read back, and validated with both violating and legitimate control PRs. The current runtime status is not copied into this file; read `docs/ci/gates.md` instead.
 
-## 7. 可裁剪范围与未决事项
+## 7. Trimmable scope and open items
 
-资源不足时先裁剪非 Must 的 UI 润色、自动化、多用户、云端、复杂报告平台，不减 D1–D9、六门禁、人工审批、确定性安全边界或真实证据。
+When resources are insufficient, trim non-Must items first — UI polish, automation, multi-user support, cloud, and complex reporting platforms — without cutting D1–D9, the six gates, human approval, the deterministic safety boundary, or real evidence.
 
-仍需学生确认：OpenCode/复用 PaperQA2 的边界、D5 transcript 口径、Week 13 的确切日期/时区及正式提交要求。课程介绍另要求 10 分钟 demo，单独于 ZIP；不得猜日期。
+Still to be confirmed by the student: the boundary for OpenCode/reusing PaperQA2, the D5 transcript interpretation, the exact date/time zone for Week 13, and the formal submission requirements. The course introduction also requires a 10-minute demo, separate from the ZIP; do not guess the date.

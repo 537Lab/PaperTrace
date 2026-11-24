@@ -1,37 +1,37 @@
-# Gate 1：事前测试批准（已实现验证器）
+# Gate 1: prior test approval (implemented verifier)
 
-实现：`scripts/gate_evidence.py`，由可信 base 的 `gates.py --gate test-approval` 调用。缺真实证据为 BLOCKED，矛盾/自批/撤销/错 SHA 为 FAIL；本地 `approved:true` 无效。
+Implementation: `scripts/gate_evidence.py`, called by `gates.py --gate test-approval` from the trusted base. Missing real evidence is BLOCKED; contradictions/self-approval/dismissal/wrong SHA are FAIL; a local `approved:true` is void.
 
-## 学生实际操作
+## What the student actually does
 
-1. 监督学生批准 Plan 和一次模块/离线工具范围；用 OpenCode **仅生成模块测试、合成 fixtures、设计计划**，此时禁止业务源码实现。
-2. 将这些内容推为测试提案 PR；可以保持 open 且 RED，**不要为了审批合并红测试**。计划放 `docs/team/designs/module-X/`，或 PR 正文独立一行 `Plan: <具体计划说明>`。每个 PR 如实追加 AI-use log。
-3. 另一位非实现者检查具体测试并在 GitHub `Approve`，批准必须指向提案当前 head。测试变了就重新批准。
-4. 从测试 head 开实现分支，批准之后才写业务代码并新建实现 PR。实现 PR 描述独立一行：
+1. The supervising student approves the Plan and one module/offline-tool scope; OpenCode is used to **generate only module tests, synthetic fixtures and design plans**, and business source implementation is forbidden at this point.
+2. Push this content as a test proposal PR; it may stay open and RED, **do not merge red tests just to get approval**. Put the plan in `docs/team/designs/module-X/`, or as a standalone line `Plan: <specific plan description>` in the PR body. Append the AI-use log truthfully to each PR.
+3. Another non-implementer checks the specific tests and `Approve`s on GitHub; the approval must point at the proposal's current head. If the tests change, approve again.
+4. Branch the implementation from the test head; only after approval, write business code and open the implementation PR. A standalone line in the implementation PR description:
    ```text
    Test approval PR: #123
    ```
-   用真实编号替换；不要照抄。测试/计划 blobs 保持相同，可以存在其他同学已合入的无关测试。实现 PR 合并后关闭未合并的测试提案，避免再次合并旧分支。
-5. 若测试 PR 本来就是全绿，也支持它先合并、再从更新后的 main 实现；不是强制合并测试 PR。
+   Replace it with the real number; do not copy it verbatim. The test/plan blobs stay identical; unrelated tests already merged by other students may be present. After the implementation PR is merged, close the unmerged test proposal to avoid merging the old branch again.
+5. If the test PR is green anyway, it is also supported to merge it first and then implement from the updated main; merging the test PR is not mandatory.
 
-## 机器核查与诚实边界
+## Machine checks and honest boundaries
 
-只读 GitHub API 核对同一私有仓库、实际 PR files、作者/commit 参与者、reviewer 的 write/maintain/admin 权限、当前有效 APPROVED、SHA 和撤销事件。GitHub 服务器 approve/PR created/merged 时间确认发布顺序；API commit 时间与本地 Git 对象相同且不早于审批作为附加检查。**Git 日期可伪造，不能单独证明第一次写代码的时间**；独立学生必须审查真实 OpenCode 过程。机器人/作者/共同实现者不能替代学生批准；无需自建账号服务或强制 allowlist。
+A read-only GitHub API check verifies the same private repository, the actual PR files, author/commit participants, the reviewer's write/maintain/admin permission, a currently valid APPROVED state, SHA and dismissal events. The GitHub server approve/PR created/merged times confirm the ordering of publication; the API commit time matching the local Git object and not preceding the approval is an additional check. **Git dates can be forged and cannot alone prove when the code was first written**; an independent student must review the real OpenCode process. Bots/authors/co-implementers cannot replace student approval; no self-built account service or mandatory allowlist is needed.
 
-安全路径还需实现 PR 正文 `Architecture decision: docs/architecture/adr/002-development-readiness.md`（改成实际适用 ADR）和当前 head 的独立人工 APPROVE。普通模块细节不逐项新建 ADR。批准者与最终 reviewer 可以是同一个非实现者。
+Safety paths additionally require the implementation PR body line `Architecture decision: docs/architecture/adr/002-development-readiness.md` (change it to the actually applicable ADR) and an independent human APPROVE on the current head. Ordinary module details do not get a new ADR each time. The approver and the final reviewer may be the same non-implementer.
 
-门禁/工作流自改必须由**未变的 base verifier**核查，候选代码不可自证。首次引入验证器的这份工程修复没有可追溯的学生事前批准，保持 BLOCKED 并交真人采纳；不倒签、不伪造 bootstrap PASS。
+Self-modification of gates/workflows must be checked by the **unchanged base verifier**; candidate code cannot certify itself. This engineering fix that first introduces the verifier has no traceable student prior approval, so it stays BLOCKED for human adoption; no backdating and no fabricated bootstrap PASS.
 
-本地复核命令（精确 40 位 SHA、真实 PR 号）：
+Local re-check command (exact 40-character SHA, real PR number):
 ```sh
-.venv/bin/python scripts/gates.py --gate test-approval --scope full --base <baseSHA> --head <headSHA> --pr-number <实现PR号>
+.venv/bin/python scripts/gates.py --gate test-approval --scope full --base <baseSHA> --head <headSHA> --pr-number <implementation PR number>
 ```
-不含 token 的离线 API fixtures 只是验证器正负测试，不是学生审批。
+Offline API fixtures without a token are only positive/negative tests of the verifier, not student approval.
 
-## 合并后的main检查不是另一轮事前批准
+## The post-merge main check is not another round of prior approval
 
-PR事件核对open PR；main push由`ci_events.py`从真实commit关联记录找到唯一merged PR，绑定事件before、merge SHA、原base/head和相同文件tree，再把原head交给同一批准验证器重验。不会只相信一个绿色check名称，也不会因为环境无PR编号而跳过。撤销/错SHA/未批准测试、未审合并冲突或无来源push仍拒绝。静态/Schema/完整回归/披露检查实际新main，语义报告仍绑定获批的原PR head。
+PR events check the open PR; for a main push `ci_events.py` finds the single merged PR from the real commit association record, binds the event before, the merge SHA, the original base/head and the identical file tree, then hands the original head to the same approval verifier for re-verification. It does not simply trust a green check name, and it does not skip because the environment lacks a PR number. Dismissed/wrong SHA/unapproved tests, unreviewed merge conflicts or sourceless pushes are still rejected. Static/Schema/full regression/disclosure check the actual new main, and the semantic report remains bound to the approved original PR head.
 
-实现合并后，可关闭仍open的旧RED测试提案；回放只接受`closed_at`不早于实现`merged_at`，且原批准/测试blobs仍一致。合并前关闭或撤销提案仍无效。推荐维护者等待main检查回执再关闭测试提案，以减少API时序混淆。
+After the implementation merges, an old RED test proposal that is still open may be closed; replay only accepts a `closed_at` not earlier than the implementation's `merged_at`, with the original approval/test blobs still identical. Closing or dismissing the proposal before the merge is still invalid. Maintainers are advised to wait for the main check receipt before closing the test proposal, to reduce API ordering confusion.
 
-首次工程采纳只执行[一次性人工步骤](minimal-gates.md#pr-1-的一次性首次采纳bootstrap)，不以它代替普通模块事前批准；新的main检查会保留首次修复原本缺少的真实证据，而非报`missing-pr-number`。
+The first engineering adoption performs only the [one-time human steps](minimal-gates.md#one-time-first-adoption-of-pr-1-bootstrap); it does not replace ordinary module prior approval. The new main check retains the real evidence the first fix originally lacked instead of reporting `missing-pr-number`.

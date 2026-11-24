@@ -1,59 +1,59 @@
-# PaperTrace｜团队唯一启动入口
+# PaperTrace | The Team's Single Entry Point
 
-本文件是新成员、模块作者和协作者的唯一入口。其他文档只解释单项命令、设计或交付规则，不要求按一条无限阅读链通读整个仓库。
+This file is the single entry point for new members, module authors, and collaborators. Other documents explain only a single command, design, or delivery rule, and you are not expected to read the whole repository along one endless reading chain.
 
-PaperTrace 是本地科研证据审核台：**A 文库 → B 检索 → C 人审 → D 受控回答/发布 → E 历史/导出**。业务功能尚待学生分别开发，不要把初始化契约或假数据当成正式应用。
+PaperTrace is a local research-evidence review workbench: **A library → B retrieval → C human review → D controlled answering/release → E history/export**. The business features are still to be developed by the students separately; do not mistake the initialization contracts or fake data for the production application.
 
-## 0. 当前可做与唯一一次采纳
+## 0. What can be done now, and the single adoption step
 
-PR [#1](https://github.com/537Lab/PaperTrace/pull/1) 是待真人审核的共享工程起点，**尚未合并，不是完整产品**。需要维护者与另一位真人按[一次性首次采纳步骤](docs/ci/minimal-gates.md#pr-1-的一次性首次采纳bootstrap)审核最新head和课程接受边界；代理不自批或代合并。远端初次base缺验证器、完整上游FAIL及真实学生/模型证据缺口均保留，不把红灯说成通过。
+PR [#1](https://github.com/537Lab/PaperTrace/pull/1) is the shared engineering starting point awaiting human review; **it is not merged yet and is not a complete product**. A maintainer and another human need to review the latest head and the course acceptance boundary following the [one-time first adoption steps](docs/ci/minimal-gates.md#one-time-first-adoption-of-pr-1-bootstrap); agents do not self-approve or merge on the student's behalf. The missing verifier on the remote first base, the full-upstream FAIL, and the gaps in real student/model evidence are all retained; a red light is not described as passing.
 
-收到邀请后可以立即认领、阅读任务书、做Plan和测试准备；正式源码实现仍等真实计划/测试批准。采纳前若必须提前建准备分支，从已审核的PR #1 head建 `plan/<模块>-<姓名>`，不要误从旧main开始；采纳后统一同步最新main，再建 `test/<模块>-<姓名>` 与 `feat/<模块>-<姓名>`。不需要再次初始化、等别的模块实现或搭新的审批工具。
+Once you receive the invitation you can claim a feature, read the task brief, and prepare a Plan and tests immediately; formal source implementation still waits for real plan/test approval. Before adoption, if a preparation branch truly must be created early, create `plan/<module>-<name>` from the reviewed PR #1 head, and do not mistakenly start from the old main; after adoption, everyone syncs the latest main and then creates `test/<module>-<name>` and `feat/<module>-<name>`. There is no need to initialize again, wait for other modules to be implemented, or build new approval tooling.
 
-## 1. 加入并验证初始化环境
+## 1. Join and verify the initialized environment
 
-团队仓库为私有：先请所有者邀请你的 GitHub 账号。克隆、Python/uv 环境及可直接运行的初始化测试命令见[启动命令页](docs/team/startup.md)。初始化依赖不等于 PaperQA2 或 Streamlit 业务环境；安装和 live 调用须另行批准。
+The team repository is private: first ask the owner to invite your GitHub account. The clone steps, the Python/uv environment, and the initialization test commands that can be run directly are on the [startup commands page](docs/team/startup.md). The initialization dependencies are not the PaperQA2 or Streamlit business environment; installation and live calls need separate approval.
 
-## 2. 认领一个完整功能
+## 2. Claim one complete feature
 
-| 成员 | 长期功能 ownership | 任务书 |
+| Member | Long-term feature ownership | Task brief |
 |---|---|---|
-| A | 文献库、逐项导入状态、内容版本和不可变快照 | [模块 A](docs/team/module-A.md) |
-| B | 候选检索、PaperQA2 唯一适配边界与受控调用端口 | [模块 B](docs/team/module-B.md) |
-| C | 原文/摘要比较、人工决定、可重放审核账本 | [模块 C](docs/team/module-C.md) |
-| D | 获准/发送/引用集合、预算与确定性发布门 | [模块 D](docs/team/module-D.md) |
-| E | 不可变研究历史、来源追溯与 JSON/Markdown 导出 | [模块 E](docs/team/module-E.md) |
+| A | Paper library, per-item import status, content versions, and immutable snapshots | [Module A](docs/team/module-A.md) |
+| B | Candidate retrieval, the single PaperQA2 adapter boundary, and the controlled call port | [Module B](docs/team/module-B.md) |
+| C | Source-text/summary comparison, human decisions, and a replayable review ledger | [Module C](docs/team/module-C.md) |
+| D | The accepted/sent/cited sets, budget, and the deterministic release gate | [Module D](docs/team/module-D.md) |
+| E | Immutable research history, source traceability, and JSON/Markdown export | [Module E](docs/team/module-E.md) |
 
-任务书是功能验收与无阻塞 fake 路径，不是实现授权。五人工作安排、角色轮换和课程交付见[工作计划](TEAM_WORK_PLAN.md)；共享对象及边界见[集成合同](docs/team/integration-contract.md)。
+The task brief defines feature acceptance and an unblocked fake path; it is not implementation authorization. For the five-person work arrangement, role rotation, and course deliverables see the [work plan](TEAM_WORK_PLAN.md); for shared objects and boundaries see the [integration contract](docs/team/integration-contract.md).
 
-## 3. 做最小必要阅读，然后停在 Plan
+## 3. Do the minimal necessary reading, then stop at Plan
 
-开始模块 Plan 前只读：
+Before starting a module Plan, read only:
 
-1. 根目录 `AGENTS.md` 与 `Prompt.md`（按其中入口执行；不得改写或绕过）。
-2. 自己的 `docs/team/module-X.md`、本模块相关的 `docs/req/requirements.yaml` 条目与 `src/papertrace/contracts.py`。
-3. `docs/team/integration-contract.md` 中与该模块接口/安全边界相关的部分。
+1. The root `AGENTS.md` and `Prompt.md` (follow the entry points in them; do not rewrite or bypass them).
+2. Your own `docs/team/module-X.md`, the `docs/req/requirements.yaml` entries relevant to this module, and `src/papertrace/contracts.py`.
+3. The parts of `docs/team/integration-contract.md` related to this module's interface/safety boundary.
 
-只在问题涉及某条架构决策、权限或验证时，读对应 ADR / `permission-model.md` / `verification-constraints.md`。无需为了启动而通读所有文档、上游测试或个人目录。冲突时记录问题并停下，不自行选宽松解释。
+Read the corresponding ADR / `permission-model.md` / `verification-constraints.md` only when a question involves a particular architecture decision, permission, or verification rule. There is no need to read all documents, upstream tests, or personal directories just to start. On conflict, record the question and stop; do not choose the looser interpretation yourself.
 
-用课程要求的 **OpenCode** 从根 `Prompt.md` 启动 Plan。Plan 必须列需求 ID、数据流/失败策略、正负测试、精确读写路径、工具/依赖/网络需求及 fake 验证方式，然后停止。**监督学生批准计划与一次模块/离线工具范围 → OpenCode 仅准备本模块测试（此时严禁业务实现）→ 非实现者在 GitHub 批准具体测试 commit → 受限业务 Build → Verify。测试提案 PR 可以保持 open/RED；不得合入红测试，也不逐文件反复审批。**
+Use the course-required **OpenCode** to start the Plan from the root `Prompt.md`. The Plan must list requirement IDs, data flow/failure strategy, positive and negative tests, exact read/write paths, tool/dependency/network needs, and how fakes are verified, and then stop. **The supervising student approves the plan and a one-time module/offline-tool scope → OpenCode prepares only this module's tests (business implementation is strictly forbidden at this point) → a non-implementer approves the specific test commit on GitHub → restricted business Build → Verify. The test proposal PR may stay open/RED; red tests must not be merged, and there is no repeated per-file approval.**
 
-## 4. 独立开发、监督与验证
+## 4. Independent development, supervision, and verification
 
-- 每个模块都有自己的合成合同对象和 fake 适配路径；可先完成服务、视图、边界测试，不等其他模块，也不需要模型。fake 只能证明接口、授权和输入观察，不证明真实模型质量。
-- B 独占新增团队代码中的 `import paperqa`，维护上游调用和中立端口；这不是禁止 A/D 在获批 Plan 明列的精确只读路径内审阅上游源码。D 用记录最终 payload 的 fake 端口并行开发自身授权、预算、引用与发布逻辑，不必等待 B 完工，也不能直接导入/调用 PaperQA2。
-- 有业务依赖、外呼、prompt、安全语义或共享合同变化时，按任务书/集成合同单独提案审批。安全关键变更须 ADR、至少一个会失败的负测和学生本人审核。
-- Build 必须由学生监督 OpenCode，保留真实完整会话和人工干预理由；Hermes 本轮初始化不是学生 OpenCode 贡献或 D5 会话。
-- Verify 按真实适用范围运行离线回归和全部六类课程门禁；不能删门、降级、以 `skip` / `NOT_REQUIRED` / fake / 文档存在冒充通过。实时结果见 [`docs/ci/gates.md`](docs/ci/gates.md)。
-- 独立审查者不能是作者或共同实现者；PR 与 D1–D9 证据按[交接清单](docs/team/handover-checklist.md)核对。
+- Each module has its own synthetic contract objects and fake adapter paths; services, views, and boundary tests can be completed first without waiting for other modules and without a model. A fake proves only interfaces, authorization, and input observation, not real model quality.
+- B exclusively owns `import paperqa` in newly added team code and maintains the upstream calls and the neutral port; this does not forbid A/D from reviewing upstream source within the exact read-only paths listed in an approved Plan. D develops its own authorization, budget, citation, and release logic in parallel using a fake port that records the final payload, without waiting for B to finish, and cannot import/call PaperQA2 directly.
+- Any change to business dependencies, outbound calls, prompts, safety semantics, or shared contracts is proposed and approved separately per the task brief/integration contract. A security-critical change requires an ADR, at least one negative test that will fail, and review by the student themself.
+- The Build must be OpenCode supervised by the student, keeping the real complete sessions and the reasons for human intervention; the Hermes initialization in this round is not a student OpenCode contribution or a D5 session.
+- Verify runs the offline regression and all six course gate categories within their real applicable scope; gates must not be deleted, downgraded, or passed off as passing through `skip` / `NOT_REQUIRED` / fake / the existence of a document. See [`docs/ci/gates.md`](docs/ci/gates.md) for live results.
+- An independent reviewer cannot be the author or a co-implementer; PRs and D1–D9 evidence are checked against the [handover checklist](docs/team/handover-checklist.md).
 
-## 5. 不可妥协的确定性边界
+## 5. Non-negotiable deterministic boundaries
 
-1. 文献逻辑身份、SHA256 内容版本、快照与证据来源身份不可混用；历史不以同名新文件替换。
-2. 没有有效 human `ReviewDecision` 即 pending；模型建议、UI 缓存或 `actor_kind="human"` 字段本身不构成真实审批。
-3. 无获准证据时，在模型工厂/SDK/HTTP 之前拒绝；不得为生成拒答理由调用模型或让 B 自动补证。
-4. 回答的 `cited ⊆ sent ⊆ approved`，且发布前后核对 snapshot 与 review revision/digest；任何变化都阻断旧草稿。
-5. 第三方索引、凭据、`.env`、个人目录、未许可论文内容和未经批准网络/模型调用均不进入开发流程。
-6. 上游核心由现有 `frozen_check` 固定基线保护，普通模块 PR 不改。确需兼容修复时，须独立 ADR + 人工 PR，明确更新 `frozen_check` fitness rule/比较口径并跑受影响回归；仅口头批准不能让当前 CI 通过。不新增旁路授权平台。
+1. A paper's logical identity, SHA256 content version, snapshot, and evidence source identity must not be conflated; history is not replaced by a new file with the same name.
+2. Without a valid human `ReviewDecision` the state is pending; model suggestions, UI caches, or the `actor_kind="human"` field alone do not constitute real approval.
+3. With no accepted evidence, refuse before the model factory/SDK/HTTP; a model must not be called to produce an abstention reason, and B must not be allowed to fetch evidence automatically.
+4. An answer has `cited ⊆ sent ⊆ approved`, and the snapshot and review revision/digest are checked before and after release; any change blocks the old draft.
+5. Third-party indexes, credentials, `.env`, personal directories, unlicensed paper content, and unapproved network/model calls all stay out of the development process.
+6. The upstream core is protected by the existing `frozen_check` pinned baseline and is not changed by ordinary module PRs. When a compatibility fix is genuinely needed, it requires a separate ADR + human PR that explicitly updates the `frozen_check` fitness rule/comparison basis and runs the affected regressions; verbal approval alone cannot make the current CI pass. No bypass authorization platform is added.
 
-课程尚待学生核实的事项包括 D5“五份 annotated”与“一份完整 raw/from-scratch”口径、基线复用边界、确切截止时间及最终交付格式。D6 身份、相对贡献（平均 1.0）和真实反思由学生本人填写；10 分钟 demo 与 ZIP 分开。不要替学生补写或宣称课程已完成。
+Items the course still needs the student to verify include the D5 "five annotated" vs. "one complete raw/from-scratch" interpretation, the baseline reuse boundary, the exact deadline, and the final delivery format. D6 identity, relative contribution (average 1.0), and genuine reflection are filled in by the student themself; the 10-minute demo is separate from the ZIP. Do not fill anything in on the student's behalf or claim the course is complete.

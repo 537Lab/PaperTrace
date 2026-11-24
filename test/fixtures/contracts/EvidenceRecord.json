@@ -4,9 +4,9 @@
   "contract": "EvidenceRecord",
   "data": {
     "schema_version": 1,
-    "snapshot_id": "snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5",
+    "snapshot_id": "snap-6f0d5ad0d5ce052433ff1169e741735fee5c3ecce63bd08aa8ebdf7eb51076da",
     "document_id": "doc-synthetic-a",
-    "version_sha256": "1f008283b605be4baa1da0f90d4204eda7d8dd66646135f8ba501830f9538e6c",
+    "version_sha256": "91bb7abcd33a9a87dd7945fe9815188a127fda09ae391f1a345fb872a4be3acf",
     "locator": {
       "schema_version": 1,
       "page_start": null,
@@ -17,10 +17,10 @@
       "parser_name": "synthetic-lines",
       "parser_version": "1.0"
     },
-    "excerpt": "SYNTHETIC：本行只是共享契约测试样例，不是真实论文或科学结论。",
+    "excerpt": "SYNTHETIC: this line is only a shared-contract test example, not a real paper or a scientific conclusion.",
     "retrieved_at": "2026-01-01T00:01:00Z",
-    "advisory_summary": "synthetic 手写摘要；没有审核权威。",
+    "advisory_summary": "Synthetic hand-written summary; no review authority.",
     "upstream_context_id": "synthetic-upstream-context-a",
-    "evidence_id": "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a"
+    "evidence_id": "ev-8017efe76fea1d9d93c149488f7c8fc0cc66f9f769f8969da8776ea48bc97b9e"
   }
 }

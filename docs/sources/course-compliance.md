@@ -1,18 +1,18 @@
-# 课程原文核对与适用边界
+# Course source verification and applicable boundaries
 
-核对日期：2026-11-13；读取本地PDF原件，未实时向Canvas核查修订。PDF内有xref/重复字典定义警告，通用抽取器失败后改用pypdf成功提取Project10页、Introduction27页；未擅自修复原件。摘要/交接指令不能替代原文。文件名、Canvas文件ID、SHA256与大小见`materials-manifest.json`。两份原件与审计交接zip只在本机忽略目录`.local/materials/`保全，未放进Git/团队交付包。
+Checked 2026-11-13; the local PDF originals were read, and revisions were not re-checked against Canvas in real time. The PDFs contain xref/duplicate dictionary definition warnings; after the generic extractor failed, pypdf successfully extracted the 10 Project pages and 27 Introduction pages; the originals were not repaired on our own initiative. Summaries/handover instructions cannot replace the original text. File names, Canvas file IDs, SHA256 and sizes are in `materials-manifest.json`. The two originals and the audit handover zip are preserved only in the machine-local ignored directory `.local/materials/` and were not put into Git or the team delivery package.
 
-- Project p3：真实AI组件+至少一个由确定性代码约束AI输出的安全边界。
-- Project p5：YAML PRD与registry都要有；分别为`docs/req/prd.yaml`与`requirements.yaml`。根blueprint是唯一正文，`docs/architecture/architecture-blueprint.md`指向它，兼顾p5与p9布局。
-- Project p5–6：架构、状态、上下文cap/压缩/关键约束重注入、默认无读写、Human-only规则、三级验证、每PRmemo、技术债与bug diary。
-- Project p2与p6：p2概述要求五份annotated transcript；p6 D5写一份完整raw/from scratch。采用每成员保留一份完整真实OpenCode会话的较充分方案；最终口径由教师确认，不伪造会话填空。
-- Project p4：建议轮换过程角色。五人固定功能ownership不变，测试批准/独立review/集成检查等过程角色轮换，避免把功能任务退化为只有管理。
-- Introduction p5、p20：考核基于OpenCode；明确期待AI生成、学生把精力放在控制与监督，不接受事后虚构人工控制。本轮初始化由Hermes辅助生成，**不是学生正式OpenCode开发/事前批准证据**。学生须确认其作为共享起点的使用边界，必要时在真实OpenCode监督会话中再生成/采纳；这不是已经完成。
-- Introduction p20：允许选择类似复杂度的其他项目，不仅限股票Agent。PaperQA2与五模块已由本轮委托确定，但教师对具体范围/扩展基线的最终认可仍需学生确认。
-- Introduction p7仅写Week13项目截止，未给精确日期。本材料不猜DDL；学生核对Canvas/教师最新通知。
-- Introduction p23：最终ZIP不含demo视频，另交10分钟demo，比较有/无新增需求的行为效果，并展示追溯与治理。初始化不伪造性能对照。
-- Project p6–7 D6：最终Report须真实姓名/学号、相对贡献（平均1.0）、每人反思；最多10000词（不含图），原文另写12pt单倍行距超过15页。300–500词是反思的举例，不自行改成硬区间。**本轮共享团队材料匿名，最终课程报告的真实身份与贡献必须由学生本人填写/确认**。
-- Project p10：六类门禁及分支保护是实际行为要求，不是文件名清单。私有仓库 https://github.com/537Lab/PaperTrace 已建立且六个 CI 检查已有真实历史运行（历史首跑3 success / 3 BLOCKED；当前实际状态以`INITIALIZATION_STATUS.md`与PR checks为准）；**分支保护与 required checks 仍未生效**（免费套餐私有仓库 403）。最小落地方案见`docs/ci/minimal-gates.md`，状态见`docs/ci/gates.md`。
+- Project p3: a real AI component plus at least one safety boundary in which deterministic code constrains AI output.
+- Project p5: both a YAML PRD and a registry are required, in `docs/req/prd.yaml` and `requirements.yaml` respectively. The root blueprint is the single source of the actual text, and `docs/architecture/architecture-blueprint.md` points to it, satisfying both the p5 and p9 layout.
+- Project p5–6: architecture, state, context cap/compression/key-constraint re-injection, no read/write by default, Human-only rules, three-tier verification, a memo per PR, technical debt and a bug diary.
+- Project p2 and p6: the p2 overview requires five annotated transcripts; p6 D5 requires one complete raw/from scratch one. The more thorough option is adopted, with each member keeping one complete real OpenCode session; the final reading is confirmed by the teacher, and no session is fabricated to fill the gap.
+- Project p4: rotating process roles is recommended. The fixed functional ownership of the five people stays unchanged, while process roles such as test approval/independent review/integration checking rotate, so that functional tasks do not degrade into management only.
+- Introduction p5, p20: assessment is based on OpenCode; AI generation is explicitly expected and students are expected to put their effort into control and supervision, and retrospectively invented human control is not accepted. This round's initialization was generated with Hermes assistance and **is not evidence of formal student OpenCode development or prior approval**. Students must confirm the boundary for using it as a shared starting point and, if necessary, regenerate/adopt it in a real supervised OpenCode session; this is not already done.
+- Introduction p20: other projects of similar complexity are allowed, not only stock agents. PaperQA2 and the five modules were fixed by this round's delegation, but the teacher's final acceptance of the specific scope/extension baseline still needs student confirmation.
+- Introduction p7 only states a Week 13 project deadline and gives no exact date. This material does not guess the DDL; students should check Canvas/the teacher's latest notice.
+- Introduction p23: the final ZIP does not contain the demo video; a 10-minute demo is submitted separately, comparing behavior with/without the newly added requirements and showing traceability and governance. The initialization does not fabricate a performance comparison.
+- Project p6–7 D6: the final Report requires real names/student IDs, relative contribution (average 1.0) and a reflection from each person; at most 10000 words (excluding figures), while the original separately specifies 12pt single spacing over 15 pages. The 300–500 words is an example for reflections and is not turned into a hard range on our own. **This round's shared team materials are anonymous; the real identities and contributions in the final course report must be filled in/confirmed by the students themselves.**
+- Project p10: the six gate categories and branch protection are actual behavior requirements, not a list of file names. The private repository https://github.com/537Lab/PaperTrace has been created and the six CI checks already have real historical runs (first historical run: 3 success / 3 BLOCKED; the current actual state follows `INITIALIZATION_STATUS.md` and the PR checks); **branch protection and required checks are still not in effect** (403 on a private repository under the free plan). The minimal implementation plan is in `docs/ci/minimal-gates.md` and the status is in `docs/ci/gates.md`.
 
-## 本轮交付不代表
-D1/D2/D3/D4/D7的基础材料已能建立；D5个人监督过程、D6正式报告、D8五模块业务及真实AI评估、D7远端保护仍有学生/授权/开发依赖。不能称“课程全部完成”或“拿去直接提交”。
+## What this round's delivery does not represent
+The base materials for D1/D2/D3/D4/D7 can already be established; D5's personal supervision process, D6's formal report, D8's five-module business logic and real AI evaluation, and D7's remote protection still depend on students/authorization/development. It cannot be called "the course is fully complete" or "ready to submit directly".

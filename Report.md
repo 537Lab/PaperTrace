@@ -1,7 +1,7 @@
-# PaperTrace 过程报告状态（D6尚未完成）
+# PaperTrace process report status (D6 not complete)
 
-这是正式报告的状态说明，不是可提交的D6报告。初始化已经准备架构、需求、共享接口与测试基础；五模块实现、真实OpenCode监督会话、成员反思及真实相对贡献尚未产生，不能代填。
+This file is a status note, not a submittable D6 report. The initialization prepared the architecture, requirements, shared contracts and offline test foundation. The five-module implementation, the real supervised OpenCode sessions, the member reflections and the real relative contributions have not been produced yet and must not be invented.
 
-正式报告应覆盖：需求变化与歧义解决；多轮架构设计/选择与证据触发的修订；测试批准/计划批准/开发/三级验证/独立审查；缺陷趋势、技术债、工效和token/时延/成本的真实测量；对照演示及人类发现而Agent未发现的问题；五位成员真实贡献与每人反思。课程Project p6–7、Introduction p23–25为依据。
+The final report must cover: requirement volatility and ambiguity resolution; the architecture rounds and the revisions driven by test evidence; test approval, plan approval, build, three-tier verification and independent review; defect trends, technical debt, engineering effort and real token, latency and cost measurements; the before/after demonstration and the problems humans caught that the agent did not; and five members' real contributions plus each member's reflection. The basis is the course Project description p6–7 and the Introduction p23–25.
 
-本轮共享文档不含姓名/学号/账号；D6最终版要求的身份和贡献，由学生本人确认后在最终提交件填写。未获课程认可前，不将Hermes初始化当作学生OpenCode开发，也不把本文件计入已完成的D6。
+This shared file contains no names, student numbers or accounts. The final D6 identities and contribution weights are confirmed by the students and entered in the submitted copy. Hermes initialization is not counted as student OpenCode development, and this file is not counted as a completed D6.

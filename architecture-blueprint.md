@@ -1,191 +1,191 @@
-# PaperTrace 架构蓝图（唯一权威正文）
+# PaperTrace Architecture Blueprint (single authoritative body)
 
-> 状态：**proposed-awaiting-human（等待学生本人审核）**；本文是开发约束，不是批准记录或已运行的 A–E 应用。
-> 固定上游：`Future-House/paper-qa@c692d0dfeac4a0296599f7fe21a253a58b7ac12a`。普通功能 PR 的固定 tag/commit 由现有 `frozen_check` 保护，不改上游源码/测试/锁。必要兼容修复须另开 ADR + 人工 PR，明确更新 fitness rule/比较口径并跑受影响回归；仅口头批准不能让当前 CI 通过，不增旁路授权平台。
-> 本轮只初始化文档、共享契约与工具；五模块业务实现、真实模型运行、课程正式开发会话及远端合并保护的验收均须分别完成。
+> Status: **proposed-awaiting-human** (awaiting review by the student themself); this document is a development constraint, not an approval record or an already-running A–E application.
+> Pinned upstream: `Future-House/paper-qa@c692d0dfeac4a0296599f7fe21a253a58b7ac12a`. The pinned tag/commit for ordinary feature PRs is protected by the existing `frozen_check`; do not change upstream source/tests/locks. Any necessary compatibility fix must open a separate ADR + human PR, explicitly update the fitness rule/comparison basis and run the affected regressions; verbal approval alone cannot make the current CI pass, and no bypass authorization platform is added.
+> This round only initializes documentation, shared contracts, and tooling; the five-module business implementation, real model runs, the course's formal development sessions, and acceptance of remote merge protection must each be completed separately.
 
-## 1. 读这份文件能决定什么
+## 1. What reading this file can decide
 
-PaperTrace 是 **Evidence Review Workbench（证据审核工作台）**：导入论文 → 检索候选证据 → 人工接受或排除 → 仅用获准证据生成回答 → 保存可追溯报告。选题和五个功能责任已确定；本架构、安全测试与每轮执行计划仍须人审，不能把“已选题”当作“已批准实现”。
+PaperTrace is an **Evidence Review Workbench**: import papers → retrieve candidate evidence → human accept or exclude → generate answers using only accepted evidence → save traceable reports. The topic and the five functional responsibilities are set; this architecture, the safety tests, and each round's execution plan still require human review, and "topic already chosen" must not be treated as "implementation already approved".
 
-架构约束的优先顺序：课程原文与明确授权 → 已审需求/不变量 → 本蓝图与 ADR → 共享数据契约 → 获批计划与测试 → 模块代码。冲突时停在计划阶段，提交差异，不让模型自行选择较宽松的解释。未批准的更改不能只靠改一份文档生效。
+Precedence of architectural constraints: course text and explicit authorization → reviewed requirements/invariants → this blueprint and ADRs → shared data contracts → approved plans and tests → module code. On conflict, stop at the planning stage, submit the difference, and do not let the model choose the looser interpretation itself. An unapproved change cannot take effect just by editing one document.
 
-团队唯一启动入口是 [`TEAM_START_HERE.md`](TEAM_START_HERE.md)。开始模块 Plan 前只读根 `AGENTS.md` / `Prompt.md`、本人任务书、相关 registry 与 `contracts.py`、集成合同相关部分；其余架构材料按实际问题查，不要求通读全仓库或沿固定清单无限阅读。此蓝图是深度设计参考，不是每个成员的先决阅读闸门。关键决策包括 [ADR-001](docs/architecture/adr/001-architecture.md) 与提案中的 [ADR-002](docs/architecture/adr/002-development-readiness.md)。
+The team's single startup entry point is [`TEAM_START_HERE.md`](TEAM_START_HERE.md). Before starting a module Plan, read only the root `AGENTS.md` / `Prompt.md`, your own task brief, the relevant registry entries and `contracts.py`, and the parts of the integration contract that apply; consult the rest of the architecture material against actual questions, without being required to read the whole repository or follow a fixed checklist indefinitely. This blueprint is a deep design reference, not a prerequisite reading gate for every member. Key decisions include [ADR-001](docs/architecture/adr/001-architecture.md) and the proposed [ADR-002](docs/architecture/adr/002-development-readiness.md).
 
-课程项目原文第 5 页要求架构单文件产物放在架构目录，第 9 页树又列根蓝图；本工程采用根文件作 canonical，`docs/architecture/architecture-blueprint.md` 仅作指向页，避免两份正文漂移。是否接受这一提交布局仍由学生向教师确认。[1]
+Page 5 of the original course project requires the single-file architecture artifact to be placed in the architecture directory, while the page 9 tree also lists a root blueprint; this project uses the root file as canonical, and `docs/architecture/architecture-blueprint.md` serves only as a pointer page, to avoid drift between two bodies of text. Whether this submission layout is acceptable is still for the student to confirm with the instructor. [1]
 
-## 2. 驱动因素、范围与不做项
+## 2. Drivers, scope, and non-goals
 
-| 架构驱动 | 设计响应 | 不承诺的内容 |
+| Architecture driver | Design response | What is not promised |
 |---|---|---|
-| 真正的 AI 功能且有确定性安全边界 | 复用 PaperQA2 检索/摘要/回答；人工审核和 D 发布门负责权威裁决 | 初始化契约测试不等于真实 AI 评测 |
-| 五人各有完整功能贡献 | A–E 各自负责需求、设计、监督开发、正负测试、PR；按接口集成 | 不把任何成员限定成只写文档或只跑 CI |
-| 初学者可维护、控制耦合 | Python 3.14、五模块、薄 Streamlit、本地文件状态、唯一 PaperQA2 适配边界 | 不引入前后端分离、大型数据库或微服务 |
-| 人审不能被模型替代 | `ReviewDecision` 追加账本是获准集合的唯一来源；D 检查新鲜度和三集合关系 | 不把相关度、流畅文字、模型自报成功当人审 |
-| 状态可核对 | 不可变来源、快照、证据与报告；改版产生新身份 | 不声称 SHA256 是恶意篡改签名或科学真伪证明 |
-| 成本与隐私 | 默认禁用所有模型；获准后每条出站路径先预算、再调用、后对账 | 不从上游 `session.cost=0` 推断零请求或免费 |
+| A real AI feature with a deterministic safety boundary | Reuse PaperQA2 retrieval/summarization/answering; human review and the D release gate hold authoritative adjudication | Initialization contract tests are not a real AI evaluation |
+| Each of the five members makes a full functional contribution | A–E each own requirements, design, supervised development, positive and negative tests, and PRs; integration is by interface | No member is limited to writing documents only or running CI only |
+| Beginner-maintainable, with controlled coupling | Python 3.14, five modules, thin Streamlit, local file state, a single PaperQA2 adapter boundary | No front-end/back-end split, large database, or microservices |
+| Human review cannot be replaced by a model | The append-only `ReviewDecision` ledger is the sole source of the accepted set; D checks freshness and the three-set relationship | Relevance, fluent text, and a model's self-reported success are not human review |
+| State can be checked | Immutable sources, snapshots, evidence, and reports; a revision produces a new identity | No claim that SHA256 is a malicious-tampering signature or a proof of scientific truth |
+| Cost and privacy | All models disabled by default; after approval every outbound path budgets first, calls second, reconciles third | Do not infer zero requests or free service from upstream `session.cost=0` |
 
-课程项目第 3 页明确要求真实 AI 组件以及 AI 输出受确定性代码约束的安全边界；第 5–6、10 页规定架构、负测、三层验证和门禁。教学介绍第 25 页提倡低耦合、清晰职责与低 token 消耗，但没有给本产品任何已测性能提升。[1][2]
+Page 3 of the course project explicitly requires a real AI component and a safety boundary in which AI output is constrained by deterministic code; pages 5–6 and 10 set out the architecture, negative tests, three-layer verification, and gates. Page 25 of the teaching introduction advocates low coupling, clear responsibilities, and low token consumption, but gives no measured performance improvement for this product. [1][2]
 
-**MVP 使用边界**：单机、单人、单写者；Streamlit 仅本机回环访问，不部署公网服务器，不接多用户。可导入本地获授权的 PDF/TXT；PDF 首选显式固定 PyPDF 文本解析，遇扫描件/错误定位明确失败，不默默换收费 OCR。原件许可逐件核查，默认不随 Git 提交。
+**MVP usage boundary**: single machine, single person, single writer; Streamlit is accessed only over local loopback, with no public server deployment and no multi-user support. Locally authorized PDF/TXT files may be imported; for PDF, an explicit pinned PyPDF text parse is preferred, and scanned files or wrong positioning fail explicitly rather than silently switching to paid OCR. Each source file's license is checked item by item, and by default nothing is committed with Git.
 
-**排除 MVP**：第三方/下载/共享的 pickle 索引导入；物理向量定点删除；跨存储事务；云端协作；全网论文自动获取；自动判定科学事实；多模态 enrichment；自主工具循环。移除文献只改变新快照，旧版本为历史追溯保留，不声称向量已物理擦除。
+**Excluded from the MVP**: import of third-party/downloaded/shared pickle indexes; physical point deletion of vectors; cross-store transactions; cloud collaboration; automatic acquisition of papers from the whole web; automatic determination of scientific facts; multimodal enrichment; autonomous tool loops. Removing a paper only changes a new snapshot; older versions are kept for historical traceability, and no claim is made that vectors were physically erased.
 
-## 3. 系统边界与五模块
+## 3. System boundary and the five modules
 
 ```mermaid
 flowchart TB
-    U[本机用户] --> UI[薄 Streamlit 界面\n不持有授权真相]
-    UI --> A[A library\n原件、版本、快照]
-    A -->|CorpusSnapshot + 已托管原件| B[B retrieval\n唯一 PaperQA2 适配边界]
-    B -->|EvidenceRecord 候选| C[C review\n人工决定追加账本]
-    U -->|明确接受或排除| C
-    C -->|当前快照、revision、digest、获准集合| D[D answer\n组装约束、发布门]
-    D -->|获准证据与调用许可| B
-    B -->|受控的全新 PQASession| PQ[冻结的 PaperQA2]
+    U[Local user] --> UI[Thin Streamlit UI\nholds no authorization truth]
+    UI --> A[A library\nsource documents, versions, snapshots]
+    A -->|CorpusSnapshot + managed source documents| B[B retrieval\nthe single PaperQA2 adapter boundary]
+    B -->|EvidenceRecord candidates| C[C review\nhuman decisions in an append-only ledger]
+    U -->|explicit accept or exclude| C
+    C -->|current snapshot, revision, digest, accepted set| D[D answer\nassembly constraints, release gate]
+    D -->|accepted evidence and call permits| B
+    B -->|controlled fresh PQASession| PQ[Frozen PaperQA2]
     PQ --> B
-    B -->|仅草稿和实际调用记录| D
-    D -->|AnswerDraft + ReleaseDecision| E[E reports\n只读历史、导出]
+    B -->|drafts and actual call records only| D
+    D -->|AnswerDraft + ReleaseDecision| E[E reports\nread-only history, export]
     E --> UI
-    B --> G[受控模型工厂 / 调用网关\n默认拒绝、预算、deadline、HTTP计量]
-    G -. 单独批准后才可出站 .-> M[明确批准的 provider/model]
-    A --> S[项目私有本地状态\n非 Git 提交物]
+    B --> G[Controlled model factory / call gateway\ndefault deny, budget, deadline, HTTP metering]
+    G -. outbound only after separate approval .-> M[Explicitly approved provider/model]
+    A --> S[Project-private local state\nnot a Git artifact]
     C --> S
     E --> S
 ```
 
-图中网关属于 **B 内部基础设施**，不是第六个业务模块。预算规则归 D 的调用计划、出站执行归 B；A 的入库表示、B 的检索/摘要、D 的回答都通过此边界。图没有授权绕行的预处理模型。
+In the diagram the gateway is **B-internal infrastructure**, not a sixth business module. Budget rules belong to D's call plan while outbound execution belongs to B; A's ingestion representation, B's retrieval/summarization, and D's answering all pass through this boundary. The diagram has no pre-processing model authorized to bypass it.
 
-| 元素 / 目标路径 | 负责与可写状态 | 输入 → 输出 | 不得做 |
+| Element / target path | Owns and writable state | Input → output | Must not do |
 |---|---|---|---|
-| A `src/papertrace/library/` | 导入状态、托管原件、logical ID、SHA256 version、不可变快照、当前快照指针 | 本地文件 → `CorpusSnapshot` | 不决定证据可接受；不直接导入 `paperqa` |
-| B `src/papertrace/retrieval/` | 解析/检索/模型适配、可重建表示缓存、调用账目 | 快照/问题 → `EvidenceRecord`；获准证据/许可 → 原始回答草稿 | 不写人审账本，不作发布裁决，不给模型文件/工具权限 |
-| C `src/papertrace/review/` | 展示原文/摘要差别、比较、接受/排除、追加 `ReviewDecision` | Evidence + 明确人工动作 → 当前审核投影 | 不允许模型、摘要、导入文件预填“已接受” |
-| D `src/papertrace/answer/` | 选获准集合、上下文预算、回答状态、引用与新鲜度校验 | 快照+审核投影+问题 → `AnswerDraft` / `ReleaseDecision` | 不直接导入 `paperqa`；不在拒答后补检索；不改人审 |
-| E `src/papertrace/reports/` | 不可变研究记录、历史视图、许可范围内的导出 | D 的决策与证据包 → 本地报告 | 不将 draft/stale 包装成 released，不覆盖旧报告 |
-| 共享 `contracts.py` | 唯一冻结数据定义；无业务逻辑与外呼 | 五种标准对象 | 不再造模块私有的同名合同 |
-| `app.py` 等薄 UI | 顺序调用、表单校验、状态显示和单写者锁协调 | 用户操作 → 模块命令 | `session_state` 不是持久授权账本；不缓存可跨轮复用的 PQASession |
+| A `src/papertrace/library/` | Import state, managed source documents, logical ID, SHA256 version, immutable snapshot, current snapshot pointer | Local files → `CorpusSnapshot` | Does not decide whether evidence is acceptable; does not import `paperqa` directly |
+| B `src/papertrace/retrieval/` | Parsing/retrieval/model adaptation, rebuildable representation cache, call accounting | Snapshot/question → `EvidenceRecord`; accepted evidence/permit → raw answer draft | Does not write the human review ledger, does not make release rulings, gives the model no file/tool permissions |
+| C `src/papertrace/review/` | Display source-text/summary differences, comparison, accept/exclude, appending `ReviewDecision` | Evidence + explicit human action → current review projection | Does not allow a model, summary, or imported file to prefill "accepted" |
+| D `src/papertrace/answer/` | Selecting the accepted set, context budget, answer state, citation and freshness checks | Snapshot + review projection + question → `AnswerDraft` / `ReleaseDecision` | Does not import `paperqa` directly; does not add retrieval after an abstention; does not change human review |
+| E `src/papertrace/reports/` | Immutable research records, historical views, export within licensed scope | D's decisions and evidence bundle → local report | Does not package draft/stale as released, does not overwrite old reports |
+| Shared `contracts.py` | The single frozen data definition; no business logic and no outbound calls | Five standard objects | Does not create a second module-private contract of the same name |
+| Thin UI such as `app.py` | Sequential calls, form validation, state display, and single-writer lock coordination | User action → module command | `session_state` is not a persistent authorization ledger; does not cache a PQASession reusable across rounds |
 
-以上是**目标路径与责任**，不是宣称目录已含实现。模块导入方向：UI → A/B/C/D/E；模块 → contracts；D → B 的公开受控接口；B → paperqa。E 只消费标准数据，不调用模型。跨模块读取由接口提供，禁止相互直接写对方文件。结构测试应验证只有 B 出现 `paperqa` 导入，且纯契约导入不会初始化上游或模型。
+The above are **target paths and responsibilities**, not a claim that the directories already contain implementations. Module import direction: UI → A/B/C/D/E; modules → contracts; D → B's public controlled interface; B → paperqa. E consumes only standard data and calls no model. Cross-module reads are provided by interfaces; modules are forbidden to write each other's files directly. Structural tests should verify that `paperqa` imports appear only in B, and that a pure contract import initializes neither upstream nor any model.
 
-## 4. 固定源码如何接入，哪些能力已存在
+## 4. How the pinned source is wired in, and which capabilities already exist
 
-以下行号均对应固定提交，不套用审计旧稿或 Release 行号。审计包是分析来源，不是运行回执。[12]
+The line numbers below all correspond to the pinned commit and do not reuse line numbers from the old audit draft or a Release. The audit package is an analysis source, not a runtime receipt. [12]
 
-| 基线事实 | 确切来源 | PaperTrace 的增量与限制 |
+| Baseline fact | Exact source | PaperTrace's delta and limits |
 |---|---|---|
-| `Docs.aadd` 会算 MD5；缺 citation 可调模型，doc details 可调模型和元数据服务 | `src/paperqa/docs.py:171–206,224–311`[3] | A 用 SHA256 做团队版本；B 必填人工/文件清单 citation，关闭 doc details、媒体与 enrichment；A 不能直接调用默认 quickstart |
-| `aadd_texts` / `retrieve_texts` 可触发 embedding，延迟不等于免外呼 | `docs.py:340–386,437–489`[3] | 入库与检索 embedding 各自须经过同一批准和计量，不能只包回答 |
-| `aget_evidence` 可返回摘要、score 和原 Text，并有局部重试 | `docs.py:492–585`；`core.py:233–269,305–378,383–400`[3][6] | B 保留原文及 locator；摘要/分数是建议，不是审核决定；内部重试也须受预算 |
-| `Context.id` 默认依赖问题与摘要前 500 字符，不含来源版本 | `types.py:238–316`[4] | 团队 evidence ID 另由不可变来源派生；模型 extras 不能决定身份或授权 |
-| `aquery` 先构造模型；空 contexts 默认可自动补证，pre/post 可再外呼 | `docs.py:602–639,694–711`[3] | D 在调用 B 前先检查空获准集；B 显式注入受控对象，`get_evidence_if_no_contexts=false`、`pre=None`、`post=None` |
-| 默认 serializer 先 top-N/cutoff，再拼摘要；不执行 token 硬 cap | `settings.py:1179–1250`[5] | D/B 使用自定义确定性装配器，记录实际 sent，不把会话全集当发送全集 |
-| 原始 `raw_answer` 的未知引文可能在格式化时被清除 | `types.py:474–526`[4] | D 必须先核 raw 输出；不能“删掉坏引用后通过”，不以 `used_contexts` 子串判定代替结构解析 |
-| 当前向量删除有 tombstone 缓解，旧会话证据不自动核快照 | `docs.py:403–435,476–490,609–647`[3] | 用新快照、新 session、新鲜度发布门；不借 MVP 宣称修复所有向量生命周期 |
-| `SearchIndex` 文档与 `files.zip` mapping 都有 pickle loader | `agents/search.py:86–93,242–257`[7] | MVP 不接收第三方索引，不走其高层目录索引导入；选 JSON 文档格式也不能消除 mapping 风险 |
-| 高层 Agent 先建库，超时外仍可触发回答；reset 可清 Docs | `agents/main.py:121–124,155–183`；`agents/env.py:243–272`[8][13] | 禁用高层自主 Agent 和 fake-agent 入口；固定顺序的底层异步 API 更可控 |
+| `Docs.aadd` computes MD5; a missing citation can call a model, and doc details can call models and a metadata service | `src/paperqa/docs.py:171–206,224–311`[3] | A uses SHA256 as the team version; B requires a human/file-manifest citation and disables doc details, media, and enrichment; A must not call the default quickstart directly |
+| `aadd_texts` / `retrieve_texts` can trigger embedding, and laziness does not equal no outbound call | `docs.py:340–386,437–489`[3] | Ingestion and retrieval embeddings must each pass through the same approval and metering; wrapping only the answer is not enough |
+| `aget_evidence` can return summaries, scores, and the original Text, and has partial retries | `docs.py:492–585`; `core.py:233–269,305–378,383–400`[3][6] | B keeps the source text and locator; summary/score are suggestions, not review decisions; internal retries are also subject to budget |
+| `Context.id` depends by default on the question and the first 500 characters of the summary, and excludes the source version | `types.py:238–316`[4] | The team evidence ID is derived separately from the immutable source; model extras cannot determine identity or authorization |
+| `aquery` builds the model first; empty contexts may by default fetch evidence automatically, and pre/post can make further outbound calls | `docs.py:602–639,694–711`[3] | D checks for an empty accepted set before calling B; B explicitly injects controlled objects, `get_evidence_if_no_contexts=false`, `pre=None`, `post=None` |
+| The default serializer applies top-N/cutoff first, then concatenates summaries; it enforces no hard token cap | `settings.py:1179–1250`[5] | D/B use a custom deterministic assembler that records the actual sent set, and do not treat the whole session set as the sent set |
+| Unknown citations in the original `raw_answer` may be removed during formatting | `types.py:474–526`[4] | D must check the raw output first; it may not "delete the bad citations and then pass", and it does not substitute a `used_contexts` substring test for structural parsing |
+| Current vector deletion is mitigated by tombstones, and old-session evidence is not automatically checked against the snapshot | `docs.py:403–435,476–490,609–647`[3] | Use a new snapshot, a new session, and the freshness release gate; do not use the MVP to claim all vector lifecycles are fixed |
+| The `SearchIndex` documents and the `files.zip` mapping both have pickle loaders | `agents/search.py:86–93,242–257`[7] | The MVP accepts no third-party index and does not use its high-level directory index import; choosing the JSON document format also cannot remove the mapping risk |
+| The high-level Agent builds the index first, and answering can still be triggered beyond the timeout; reset can clear Docs | `agents/main.py:121–124,155–183`; `agents/env.py:243–272`[8][13] | Disable the high-level autonomous Agent and the fake-agent entry point; a low-level async API with a fixed order is more controllable |
 
-上游已具检索、摘要、引用、部分空证据拒答、重试和 token 统计。团队创新是人工授权、来源身份、受控出站和发布/历史契约，不能把已有能力重新命名后声称原创。
+Upstream already provides retrieval, summarization, citation, partial abstention on empty evidence, retries, and token counting. The team's innovation is human authorization, source identity, controlled outbound calls, and the release/history contracts; existing capabilities must not be renamed and then claimed as original.
 
-## 5. 五种共享契约与身份规则
+## 5. The five shared contracts and identity rules
 
-权威的字段名、枚举、JSON schema 由 `src/papertrace/contracts.py` 给出；下表规定语义，不能代替该实现或为缺字段擅自加宽模型。所有对象 **frozen**，集合使用不可变表示；嵌套对象也不可在原地改写。改状态应创建新对象或追加事件。
+The authoritative field names, enums, and JSON schema are given by `src/papertrace/contracts.py`; the table below specifies semantics and cannot replace that implementation or be used to widen the model for missing fields on your own. All objects are **frozen** and collections use immutable representations; nested objects may not be rewritten in place either. Changing state should create a new object or append an event.
 
-| 契约 | 必须承担的语义 |
+| Contract | Semantics it must carry |
 |---|---|
-| `CorpusSnapshot` | 文献清单的不可变值；`snapshot_id` 是规范化、排序后清单的 hash，不是时间戳或随机会话 ID。文献 logical ID 表示“哪篇”，SHA256 version 表示“哪版字节” |
-| `EvidenceRecord` | snapshot、doc、version、locator、原文的组合；ID 由这些输入 hash 派生；摘要/score 单列为建议；**无独立 accepted 字段** |
-| `ReviewDecision` | 只能由明确人工操作创建；追加到 C 的 ledger；同一快照/evidence 的最新有效决定形成投影；无决定即 `pending`，不是默认接受 |
-| `AnswerDraft` | 绑定问题、本轮 snapshot、review revision/digest、approved/sent/cited 三集及原始草稿/状态；只表示草稿，不授发布权 |
-| `ReleaseDecision` | D 的确定性裁决；可拒答、阻断、标陈旧或准许发布；不是模型输出的 `approved: true`，也不是科学事实认证 |
+| `CorpusSnapshot` | The immutable value of the paper manifest; `snapshot_id` is the hash of the normalized, sorted manifest, not a timestamp or random session ID. A paper's logical ID means "which paper" and the SHA256 version means "which bytes" |
+| `EvidenceRecord` | The combination of snapshot, doc, version, locator, and source text; the ID is derived from a hash of these inputs; summary/score are listed separately as suggestions; **no standalone accepted field** |
+| `ReviewDecision` | Can be created only by an explicit human action; appended to C's ledger; the latest valid decision for the same snapshot/evidence forms the projection; with no decision it is `pending`, not accepted by default |
+| `AnswerDraft` | Binds the question, this round's snapshot, the review revision/digest, the approved/sent/cited three sets, and the raw draft/status; it denotes a draft only and grants no release authority |
+| `ReleaseDecision` | D's deterministic ruling; it may abstain, block, mark stale, or permit release; it is not a model-emitted `approved: true`, nor a certification of scientific fact |
 
-现行 AnswerDraft 的状态为 draft/abstained/failed，ReleaseDecision 仅为 released/blocked；本文“stale”是 blocked 决定的原因/界面语义，不向合同塞入新枚举。
+The current AnswerDraft statuses are draft/abstained/failed, and ReleaseDecision is only released/blocked; "stale" in this document is the reason/UI semantics of a blocked decision, and no new enum is pushed into the contract.
 
-身份计算须使用 contracts 定义的规范序列化（编码、字段排序、集合排序、schema/domain 版本），不拼接歧义字符串。doc version 是源文件字节的 SHA256；解析器/分块器/embedding/prompt 的版本另记表示指纹，不能混入并替代来源字节身份。locator 表达可实际验证的页或行范围及块号；只能核到页范围时就显示页范围，不捏造字符 offset 或精确 bbox。PDF chunk 已有页范围，见 `readers.py:92–143`。[9]
+Identity computation must use the canonical serialization defined by contracts (encoding, field ordering, set ordering, schema/domain version) and must not concatenate ambiguous strings. The doc version is the SHA256 of the source file bytes; parser/chunker/embedding/prompt versions are recorded separately as a representation fingerprint and cannot be mixed in to replace the source-byte identity. A locator expresses a page or line range plus chunk number that can actually be verified; when only the page range can be verified, show the page range and do not invent character offsets or precise bboxes. PDF chunks already have a page range, see `readers.py:92–143`. [9]
 
-现行 SourceLocator 只接受完整的页或行范围及 chunk/parser 标识；字符 offset/bbox 属未来合同扩展，不宣称已经支持。ReviewDecision 按 `(snapshot_id, question_id, evidence_id)` 投影，不能跨问题复用接受状态。
+The current SourceLocator accepts only complete page or line ranges plus chunk/parser identifiers; character offset/bbox are a future contract extension and are not claimed as already supported. ReviewDecision projects by `(snapshot_id, question_id, evidence_id)`, and acceptance state cannot be reused across questions.
 
-对同一份原文：摘要变化不改变来源身份；原文字节版本、locator 或 snapshot 改变则必须重新派生对应 evidence ID。摘要里声称的 ID、上游 `Context.id`、模型给的 accepted、历史缓存中“已获准”的标签，全部无权改变 C 的 ledger。
+For the same source text: a change of summary does not change source identity; a change of the source-byte version, locator, or snapshot requires re-deriving the corresponding evidence ID. IDs claimed in a summary, upstream `Context.id`, a model-supplied accepted, and "already accepted" labels in a historical cache all have no authority to change C's ledger.
 
-## 6. 正常时序与三个硬门
+## 6. Normal sequence and the three hard gates
 
-1. **A 入库门**：路径/类型/大小/许可核查 → 复制至项目托管区 → SHA256 校验 → 解析成功/失败状态明确 → 创建新快照并原子切换当前指针。不把部分失败批次标成完整；外部原件不改。
-2. **B 候选检索**：锁定 snapshot 与表示指纹，只有获准调用许可才可 embedding/摘要；把原文、可回查 locator 和建议摘要返回 C。没有模型许可时可显示“模型尚未授权”，不能伪造检索结果。
-3. **C 人审门**：UI 展示固定原文、来源版本、摘要警告。明确接受/排除才追加决定，每次有效变化增加 `review_revision`，重算 `review_digest`；刷新界面不重放批准。
-4. **D 生成前门**：读取当前 snapshot + C 投影；无 current accepted 证据 → 直接 `abstain`，**模型工厂初始化、SDK 调用与 HTTP 尝试均为零**。此分支不调用 B 的生成入口，不让 PaperQA2 再补检索。
-5. 有获准证据才装配上下文、记录 approved；预算裁剪后生成 sent，保证 `sent ⊆ approved`。只把已发送的获准原文/其明确标注摘要放入**全新** `PQASession.contexts`；不携旧 session、不放 pending/rejected。短上游别名由 B 建每轮一对一映射，D 校验完整 evidence ID；别名不授授权。
-6. B 显式关闭自动补证、pre/post、metadata/enrichment、高层 Agent；受控工厂在批准和预算后才初始化。回答前记录最终实际 payload token 数、sent IDs、request ID、调用许可与 deadline，出站后记录每一尝试。
-7. **D 发布门**：检查 raw 输出格式与引用 → `cited ⊆ sent ⊆ approved`；查原文 locator/版本 → 再读当前 snapshot、review revision/digest；任一变化均 `stale`，不发布。非拒答的成功回答还须有可追溯引用；语义是否支持另属人工/评测责任。
-8. E 仅将决策与证据包持久化为对应状态。发布检查与 E 写入须在同一单写者临界区内；写入前再核 freshness，防止“检查后变化、落盘前绕过”。生成期间不持锁等模型：允许 A/C 完成操作，但旧生成结果一律失效。
-9. 已发布历史永远显示“当时 snapshot/审核版本”；当前快照变更可追加 superseded 注记/投影视图，不改写或删除旧报告。历史导出不等于新发布；要成为当前新报告必须重新过 D。
+1. **A ingestion gate**: check path/type/size/license → copy into the project-managed area → verify SHA256 → make the parse success/failure state explicit → create a new snapshot and atomically switch the current pointer. A partially failed batch is not marked complete; external source documents are not changed.
+2. **B candidate retrieval**: lock the snapshot and representation fingerprint; embedding/summarization are allowed only with an approved call permit; return the source text, a re-checkable locator, and the suggested summary to C. With no model permit, "model not yet authorized" may be displayed; retrieval results must not be fabricated.
+3. **C human review gate**: the UI shows the pinned source text, the source version, and a summary warning. Only an explicit accept/exclude appends a decision; each effective change increments `review_revision` and recomputes `review_digest`; refreshing the UI does not replay approvals.
+4. **D pre-generation gate**: read the current snapshot + C projection; with no currently accepted evidence → `abstain` directly, with **zero model factory initialization, zero SDK calls, and zero HTTP attempts**. This branch does not call B's generation entry point and does not let PaperQA2 add retrieval.
+5. Only with accepted evidence is context assembled and approved recorded; after budget trimming the sent set is produced, guaranteeing `sent ⊆ approved`. Only the sent accepted source text / its explicitly labeled summary is placed into the **fresh** `PQASession.contexts`; no old session is carried over and no pending/rejected item is placed. Short upstream aliases are mapped one-to-one per round by B, and D validates the full evidence ID; an alias grants no authorization.
+6. B explicitly disables automatic evidence fetching, pre/post, metadata/enrichment, and the high-level Agent; the controlled factory is initialized only after approval and budget. Before answering, record the final actual payload token count, sent IDs, request ID, call permit, and deadline; after the outbound call, record every attempt.
+7. **D release gate**: check the raw output format and citations → `cited ⊆ sent ⊆ approved`; check the source locator/version → re-read the current snapshot and the review revision/digest; any change means `stale` and no release. A successful non-abstaining answer must also carry traceable citations; whether the semantics actually support it is a separate human/evaluation responsibility.
+8. E persists only the decision and evidence bundle as the corresponding state. The release check and the E write must be inside the same single-writer critical section; re-check freshness before writing, to prevent "changed after the check, bypassed before landing on disk". Do not hold the lock while waiting for the model during generation: A/C are allowed to complete operations, but any older generation result is invalidated.
+9. Published history always shows "the snapshot/review version at that time"; a change to the current snapshot may append a superseded note/projection view but must not rewrite or delete old reports. Exporting history is not a new release; to become a current new report it must pass D again.
 
-`approved` 是生成开始时从 C 推导的 current accepted 全集；`sent` 是最终 payload 真正出现的子集；`cited` 是 raw 输出结构化引用解析的集合。生成中撤回再接受，即使集合碰巧一样，revision 已变化仍必须阻断旧结果。任何授权集合都不从摘要、模型自报或 UI 缓存恢复。
+`approved` is the full set of current accepted items derived from C when generation starts; `sent` is the subset that actually appears in the final payload; `cited` is the set parsed from the structured citations of the raw output. If evidence is withdrawn and re-accepted during generation, the old result must still be blocked even if the sets happen to be the same, because the revision has changed. No authorization set is ever restored from a summary, a model self-report, or the UI cache.
 
-## 7. 上下文与调用预算
+## 7. Context and call budget
 
-详细算法见 [memory-design.md](docs/architecture/memory-design.md)。拟议工程默认（**待学生审批，不是测量结果**）：输入硬 cap **12,000 tokens**，**9,000** 开始压缩/裁剪，输出最多 **2,000**。每次调用都要计入其实际 system/user/模板/工具封装，且输入加输出预留须适配获批模型窗口。分数/条数不是 token 预算。
+The detailed algorithm is in [memory-design.md](docs/architecture/memory-design.md). Proposed engineering defaults (**pending student approval, not measured results**): input hard cap **12,000 tokens**, compression/trimming starts at **9,000**, output at most **2,000**. Every call must count its actual system/user/template/tool envelope, and the input plus output reserve must fit the approved model window. Scores/counts are not a token budget.
 
-层次依次为：身份 → 站立约束 → 授权摘要 → 资料 → 历史 → 恢复状态 → 当前问题。授权摘要由可信代码从 ledger 产生，不是 LLM 总结；固定身份/限制/授权 ID 不可压缩成新身份或新决定。去重 → 优先级 → 计数 → 确定性压缩 → 重注入关键约束 → 装配 → 最终计数；仍不适合则拒绝而非静默超限。
+The layers are, in order: identity → standing constraints → authorization summary → materials → history → restoration state → current question. The authorization summary is produced from the ledger by trusted code, not by an LLM summary; fixed identity/limits/authorization IDs cannot be compressed into a new identity or a new decision. Deduplicate → prioritize → count → deterministic compression → re-inject key constraints → assemble → final count; if it still does not fit, refuse rather than silently exceed the limit.
 
-默认关闭 citation inference、metadata HTTP、media enrichment、pre/post 和自主 Agent；embedding、候选摘要、回答及每次 retry 只有明确批准 provider/model、数据范围、金额与次数后才可能开启。工厂初始化、SDK attempt、HTTP attempt、成功响应、usage/金额分别记账；缺 usage 标 unknown，不记 0。上游 `PQASession.add_tokens:414–433` 是事后统计，不能独自提供这项合同。[4]
+Citation inference, metadata HTTP, media enrichment, pre/post, and the autonomous Agent are disabled by default; embedding, candidate summaries, answering, and every retry can be enabled only after explicit approval of provider/model, data scope, amount, and count. Factory initialization, SDK attempt, HTTP attempt, successful response, and usage/amount are accounted separately; a missing usage is marked unknown, not 0. Upstream `PQASession.add_tokens:414–433` is after-the-fact counting and cannot alone provide this contract. [4]
 
-## 8. 状态、权限、监控与具体失败动作
+## 8. State, permissions, monitoring, and specific failure actions
 
-状态的唯一真相为 A 快照、C 人审追加账本和 E 报告，不是 Streamlit session_state 或 pickle。项目私有运行目录须 Git 排除，原件、证据、日志、导出分区；路径、隐私、保留和恢复见状态文档。
+The sole truth about state is A snapshots, C's append-only human review ledger, and E reports, not Streamlit session_state or pickle. The project-private runtime directory must be Git-excluded, with separate areas for source documents, evidence, logs, and exports; paths, privacy, retention, and recovery are in the state document.
 
-权限采用 default deny：未显式白名单的代码、数据、网络和工具一概不可读写。开发 AI 角色与产品内用户的授权是两套边界：给 coding agent 可写某模块，不等于允许它造 `ReviewDecision`、读取真实论文或运行模型；详见权限表。
+Permissions use default deny: code, data, network, and tools not explicitly allowlisted can be neither read nor written. The authorizations of a development AI role and of an in-product user are two separate boundaries: letting a coding agent write a module does not permit it to create `ReviewDecision`s, read real papers, or run models; see the permission table.
 
-监控用白名单事件，至少有 `request_id`、snapshot、review revision/digest、policy/prompt/model/representation 标识、approved/sent/cited 数与必要 IDs、decision、reason、token 与 attempt 计数。正常日志不存密钥、完整路径、原文、完整问题或模型私有推理；原文仅在受控证据库保留。发生授权/来源异常暂停本轮发布，保存隔离记录；空获准集拒答；预算/超时停止新增外呼；存储损坏只读隔离而非自动“修复成通过”。每项不变量有独立 fallback，见 register。
+Monitoring uses allowlisted events that carry at least `request_id`, snapshot, review revision/digest, policy/prompt/model/representation identifiers, the approved/sent/cited counts and necessary IDs, decision, reason, and token and attempt counts. Normal logs store no secrets, full paths, source text, full questions, or model-private reasoning; source text is kept only in the controlled evidence store. On an authorization/source anomaly, pause release for this round and keep an isolation record; an empty accepted set leads to abstention; budget/timeout stops new outbound calls; storage corruption is isolated read-only rather than automatically "repaired into passing". Each invariant has its own fallback, see the register.
 
-上述事件与运行监控为**待模块实现的设计合同**，不是本轮已部署监控或零外连的运行证明。
+The events and runtime monitoring above are a **design contract awaiting module implementation**, not proof that monitoring is already deployed this round or that there are zero outbound connections.
 
-## 9. 验证与课程门禁
+## 9. Verification and course gates
 
-- **结构层**：合同 frozen/往返/非法输入；唯一 B 导入上游；无业务模块提前实现；来源基线不变；路径默认拒绝；模型调用点全入矩阵；本蓝图唯一正文。
-- **回归层**：保留上游 `tests/`；团队 `test/offline/` 与 `test/live/` 分离。每轮运行所有已登记 prior suites，明确 skipped/xfail/未具备依赖，不把离线子集的绿灯叫作全部回归。
-- **行为层**：固定案例验证拒答、引用、陈旧与重注入；假模型只验证确定性门；真实检索/答案质量须用获批 provider/model 和固定 evaluation set，保留真实回执，不能拿 stub 或旧 cassette 冒充新模型评测。
-- 每个 feature 至少一条负测，每个 INV 需有故意破坏后会失败的测试。矩阵里的计划测试 ID 不代表文件已实现或已通过。课程项目第 6 页要求三层验证，第 10 页要求六类阻断门与安全路径 ADR+人审。[1]
+- **Structural layer**: contracts frozen/round-trip/invalid input; only B imports upstream; no business module implemented ahead of time; the source baseline unchanged; paths denied by default; all model call sites in the matrix; this blueprint is the single body of text.
+- **Regression layer**: keep upstream `tests/`; the team's `test/offline/` and `test/live/` are separate. Every round runs all registered prior suites and states explicitly what is skipped/xfail/missing dependencies; a green light on an offline subset is not called a full regression.
+- **Behavioral layer**: fixed cases verify abstention, citation, staleness, and re-injection; a fake model verifies only the deterministic gates; real retrieval/answer quality requires an approved provider/model and a fixed evaluation set, with real receipts retained, and a stub or an old cassette cannot be passed off as a new model evaluation.
+- Every feature has at least one negative test, and every INV needs a test that fails when the invariant is deliberately broken. A planned test ID in the matrix does not mean the file is implemented or passing. Page 6 of the course project requires three-layer verification, and page 10 requires six categories of blocking gate plus a security-path ADR + human review. [1]
 
-| 六类门 | 架构要求 | 初始化不能冒称完成的部分 |
+| Six gate categories | Architecture requirement | What initialization cannot claim as done |
 |---|---|---|
-| 测试事前批准 | 绑定需求、测试内容 hash、实现前版本和可信人审记录 | Agent 自写 approved 不算批准 |
-| 静态/依赖/安全/权限 | 每 commit lint/type/dependency；安全 PR 追加合同/安全/API/权限检查 | 本地文档或一个 CI 文件不等于远端强制 |
-| Schema | registry 通过 schema，ID/fit criterion/追踪齐全 | schema 通过不代表产品已符合需求 |
-| 语义 | prompt/model 变化触发固定真实评测及阈值 | 未授权/未运行即 blocked，不 skip-as-pass |
-| 回归 | 完整 prior suite 清单与真实结果 | 不因 live 贵而自行省略课程要求 |
-| AI-use log | 每次代码/prompt 变更关联真实工具贡献与人工干预 | 不伪造会话、审批或成员贡献 |
+| Test pre-approval | Binds the requirement, test content hash, pre-implementation version, and a trusted human review record | An Agent-written approved is not an approval |
+| Static/dependency/security/permissions | Lint/type/dependency per commit; a security PR additionally runs contract/safety/API/permission checks | A local document or a single CI file is not remote enforcement |
+| Schema | The registry passes the schema, with IDs/fit criteria/traces complete | Passing the schema does not mean the product already meets the requirements |
+| Semantic | A prompt/model change triggers the fixed real evaluation and thresholds | Not authorized/not run means blocked, with no skip-as-pass |
+| Regression | The full prior suite list and real results | Course requirements are not omitted on your own because live runs are expensive |
+| AI-use log | Every code/prompt change is tied to the real tool contribution and human intervention | Sessions, approvals, or member contributions are not fabricated |
 
-所有 required checks、管理员 bypass 与分支保护须在团队私有仓库实际配置并回读、用失败 PR 验证后才可称已生效。本架构稿不提供这类远端验收结论。
+All required checks, administrator bypass, and branch protection can be called in effect only after they are actually configured in the team's private repository, read back, and validated with a failing PR. This architecture draft provides no such remote acceptance conclusion.
 
-## 10. 工作流与变更政策
+## 10. Workflow and change policy
 
-需求分类 → 候选比较/ADR → 接口与负测设计 → **学生批准测试和执行计划** → OpenCode 构建 → 结构/回归/行为验证 → 独立 PR 审查 → 人工合并。发现失败先保全回执、更新 bug/debt 与需求/架构/测试，不准通过降阈值、改 fixtures 答案或删除拒绝路径求绿。
+Requirement classification → candidate comparison/ADR → interface and negative-test design → **student approves the tests and the execution plan** → OpenCode build → structural/regression/behavioral verification → independent PR review → human merge. On discovering a failure, first preserve the receipt and update the bug/debt plus the requirements/architecture/tests; it is not allowed to pursue green by lowering thresholds, changing fixture answers, or deleting a refusal path.
 
-安全相关变更（审核权威、来源身份、发布门、预算、权限、pickle、历史状态）须新 ADR/修订 ADR、影响清单、负测、学生本人批准；普通细节也不得越模块写。需求变更后治理规则须在一 sprint 内同步（课程项目第 6 页）；需求、合同、架构、prompt、tests、trace、AI-use log 必须协同更新。[1]
+Security-related changes (review authority, source identity, release gate, budget, permissions, pickle, historical state) require a new or revised ADR, an impact list, negative tests, and approval by the student themself; ordinary details must not be written across module boundaries either. After a requirement change, the governance rules must be synchronized within one sprint (page 6 of the course project); requirements, contracts, architecture, prompt, tests, trace, and AI-use log must be updated together. [1]
 
-功能 ownership A–E 长期稳定；计划主持、测试设计审查、验证监督、PR reviewer、集成主持等**过程角色可轮换**。这同时保留一次功能认领和课程项目第 4 页的角色轮换要求，不将任意成员设为永久管理岗，不在文档中填个人身份。[1]
+Functional ownership A–E is stable in the long term; **process roles such as plan facilitation, test design review, verification supervision, PR reviewer, and integration facilitation may rotate**. This preserves both the single feature claim and the role-rotation requirement on page 4 of the course project, without making any member a permanent management position and without putting personal identities in the documents. [1]
 
-## 11. 必须由学生确认的事项
+## 11. Items that must be confirmed by the student
 
-- ADR 与 12,000/9,000/2,000 工程默认、测试计划、执行计划尚未批准；不得代签。
-- 教学介绍第 5、20 页要求以 **OpenCode** 为 coding agent，且第 20 页强调真实人类监督。当前初始化不是 OpenCode 正式 D5 开发记录，不得改名冒充。其第 6 页评估模型说明不自动授权当前任何模型调用。[2]
-- 项目原文第 2 页“五份 annotated transcripts”与第 6 页 D5 “one full, raw transcript / from scratch”有表述差异；连同复用 PaperQA2 的边界，需教师确认，不能自行选方便口径。[1]
-- 教学介绍第 7 页只有 **Week 13 Project Due**，没有确切年月日和时区截止；需核最新课程通知。第 23 页另要求 10 分钟 demo，ZIP 不含视频、不含 API key。[2]
-- 本轮匿名团队材料不写姓名、学号或账号；最终 D6 原文第 6–7 页却要求真实学生身份、相对贡献与个人反思，并有最多 10,000 词、12pt 单倍行距超过 15 页等格式要求。由学生在正式提交件补真实信息并向教师确认排版口径，不把匿名初始化当作 D6 合规成品。[1]
-- 文献与可选 parser 的许可逐项审查。主包声明 Apache；PyMuPDF 子包声明 AGPL，不能把根许可证覆盖到所有依赖或论文。[10][11]
+- The ADRs, the 12,000/9,000/2,000 engineering defaults, the test plan, and the execution plan are not yet approved; no one may sign on the student's behalf.
+- Pages 5 and 20 of the teaching introduction require **OpenCode** as the coding agent, and page 20 emphasizes real human supervision. The current initialization is not a formal OpenCode D5 development record and must not be renamed to pass as one. Its page 6 evaluation-model description does not automatically authorize any current model call. [2]
+- Page 2 of the project text ("five annotated transcripts") and page 6 D5 ("one full, raw transcript / from scratch") differ in wording; together with the boundary for reusing PaperQA2, this needs instructor confirmation, and the convenient reading may not be chosen unilaterally. [1]
+- Page 7 of the teaching introduction gives only **Week 13 Project Due**, with no exact year-month-day or time-zone deadline; the latest course notice must be checked. Page 23 additionally requires a 10-minute demo, and the ZIP contains neither video nor API key. [2]
+- This round's anonymous team material carries no names, student IDs, or accounts; pages 6–7 of the final D6 text do, however, require real student identity, relative contribution, and personal reflection, with formatting requirements such as at most 10,000 words and more than 15 pages at 12pt single spacing. The student adds the real information in the formal submission and confirms the typesetting basis with the instructor, and the anonymous initialization is not treated as a D6-compliant finished product. [1]
+- Review the licenses of papers and optional parsers item by item. The main package declares Apache; the PyMuPDF subpackage declares AGPL, and the root license cannot be extended to cover all dependencies or papers. [10][11]
 
 ## Sources
 
-[1] urn:sha256:6af742d3cbc0973b056a084ba54ff413a5885b1bb4d6a97b0b08b93f64f2ef7e — CS5351-2026-2027-project.pdf（本地原文提取，10页）
-[2] urn:sha256:16d399f7ca14e0c49dea382cec3893bbee8f589edcaee5131f10fad257d3acb5 — cs5351-2026-2027-introduction.pdf（本地原文提取，27页）
-[3] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/docs.py — 固定基线 src/paperqa/docs.py
-[4] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/types.py — 固定基线 src/paperqa/types.py
-[5] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/settings.py — 固定基线 src/paperqa/settings.py
-[6] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/core.py — 固定基线 src/paperqa/core.py
-[7] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/agents/search.py — 固定基线 src/paperqa/agents/search.py
-[8] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/agents/main.py — 固定基线 src/paperqa/agents/main.py
-[9] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/readers.py — 固定基线 src/paperqa/readers.py
-[10] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/pyproject.toml — 固定基线 pyproject.toml
-[11] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/packages/paper-qa-pymupdf/pyproject.toml — 固定基线 PyMuPDF 子包许可声明
-[12] urn:sha256:21f1c516a57e975a284d1d278926fedd9755a6d0036314279663c4074063942a — PaperQA2 审计交接ZIP（仅读解出的Markdown）
-[13] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/agents/env.py — 固定基线 src/paperqa/agents/env.py
+[1] urn:sha256:6af742d3cbc0973b056a084ba54ff413a5885b1bb4d6a97b0b08b93f64f2ef7e — CS5351-2026-2027-project.pdf (local original-text extraction, 10 pages)
+[2] urn:sha256:16d399f7ca14e0c49dea382cec3893bbee8f589edcaee5131f10fad257d3acb5 — cs5351-2026-2027-introduction.pdf (local original-text extraction, 27 pages)
+[3] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/docs.py — pinned baseline src/paperqa/docs.py
+[4] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/types.py — pinned baseline src/paperqa/types.py
+[5] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/settings.py — pinned baseline src/paperqa/settings.py
+[6] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/core.py — pinned baseline src/paperqa/core.py
+[7] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/agents/search.py — pinned baseline src/paperqa/agents/search.py
+[8] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/agents/main.py — pinned baseline src/paperqa/agents/main.py
+[9] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/readers.py — pinned baseline src/paperqa/readers.py
+[10] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/pyproject.toml — pinned baseline pyproject.toml
+[11] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/packages/paper-qa-pymupdf/pyproject.toml — pinned baseline PyMuPDF subpackage license declaration
+[12] urn:sha256:21f1c516a57e975a284d1d278926fedd9755a6d0036314279663c4074063942a — PaperQA2 audit handover ZIP (only the extracted Markdown was read)
+[13] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/agents/env.py — pinned baseline src/paperqa/agents/env.py

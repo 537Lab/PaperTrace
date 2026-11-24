@@ -31,13 +31,13 @@ def test_document_version_json_round_trip():
         schema_version=1,
         document_id="doc-synthetic-a",
         version_sha256="a" * 64,
-        title="合成文献 α（非真实论文）",
+        title="Synthetic literature α (not a real paper)",
         source_name="synthetic-α.pdf",
         status="ready",
     )
     assert model.model_validate_json(document.model_dump_json()) == document
     assert document.document_id != document.version_sha256
-    assert "合成文献" in document.model_dump_json()
+    assert "Synthetic literature α" in document.model_dump_json()
 
 
 def document_payload(**changes):
@@ -46,7 +46,7 @@ def document_payload(**changes):
         "schema_version": 1,
         "document_id": "doc-synthetic-a",
         "version_sha256": "a" * 64,
-        "title": "合成文献 α（非真实论文）",
+        "title": "Synthetic literature α (not a real paper)",
         "source_name": "synthetic-α.pdf",
         "status": "ready",
     }
@@ -203,9 +203,9 @@ def evidence_payload(**changes):
         "document_id": "doc-synthetic-a",
         "version_sha256": "a" * 64,
         "locator": locator_payload(),
-        "excerpt": "合成原文摘录 α；不构成科学结论。",
+        "excerpt": "Synthetic source excerpt α; not a scientific conclusion.",
         "retrieved_at": "2026-01-01T00:00:00Z",
-        "advisory_summary": "synthetic 摘要（无授权）",
+        "advisory_summary": "synthetic summary (no authority)",
         "upstream_context_id": "synthetic-upstream-context",
     } | changes
 
@@ -240,7 +240,7 @@ def test_evidence_identity_excludes_advisory_summary_and_upstream_id():
     assert evidence.evidence_id == expected
     advisory_change = model(
         **evidence_payload(
-            advisory_summary="另一个 synthetic 摘要",
+            advisory_summary="another synthetic summary",
             upstream_context_id="other",
             retrieved_at="2026-02-01T00:00:00Z",
         )
@@ -282,7 +282,7 @@ def review_payload(**changes):
         "actor_kind": "human",
         "reviewer_ref": "reviewer-A",
         "revision": 1,
-        "reason": "synthetic：用于契约测试，不是真实审批。",
+        "reason": "synthetic: used for contract tests, not a real approval.",
         "decided_at": "2026-01-01T08:00:00+08:00",
     } | changes
 
@@ -333,7 +333,7 @@ def answer_payload(**changes):
         "sent_evidence_ids": ["ev-" + "a" * 64],
         "citation_evidence_ids": ["ev-" + "a" * 64],
         "status": "draft",
-        "body": "synthetic：仅用于序列化测试的非科学占位正文。",
+        "body": "synthetic: non-scientific placeholder body for serialization tests only.",
         "refusal_reason": None,
         "generated_at": "2026-01-01T00:00:00Z",
     } | changes
@@ -406,7 +406,7 @@ def test_answer_no_approved_evidence_is_empty_refusal(status):
         **answer_payload(
             status=status,
             body="",
-            refusal_reason="synthetic：没有获准证据。",
+            refusal_reason="synthetic: no accepted evidence.",
             approved_evidence_ids=[],
             sent_evidence_ids=[],
             citation_evidence_ids=[],
@@ -640,7 +640,7 @@ def test_refusal_cannot_keep_a_body_when_all_evidence_is_empty(status):
         contract("AnswerDraft")(
             **answer_payload(
                 status=status,
-                body="synthetic：不可作为科学回答输出。",
+                body="synthetic: cannot be emitted as a scientific answer.",
                 refusal_reason="synthetic refusal",
                 approved_evidence_ids=[],
                 sent_evidence_ids=[],
@@ -665,7 +665,7 @@ def test_release_check_results_have_no_implicit_defaults(field):
         {"document_id": "doc-synthetic-b"},
         {"version_sha256": "b" * 64},
         {"locator": locator_payload(page_end=3)},
-        {"excerpt": "不同的 synthetic 摘录"},
+        {"excerpt": "different synthetic excerpt"},
     ],
 )
 def test_old_evidence_hash_cannot_authorize_changed_source(changes):

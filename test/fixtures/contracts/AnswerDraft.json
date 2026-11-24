@@ -5,21 +5,21 @@
   "data": {
     "schema_version": 1,
     "answer_id": "ans-synthetic-a",
-    "snapshot_id": "snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5",
+    "snapshot_id": "snap-6f0d5ad0d5ce052433ff1169e741735fee5c3ecce63bd08aa8ebdf7eb51076da",
     "question_id": "q-synthetic-a",
     "review_revision": 1,
-    "review_digest": "98acd79c4446be3675733a105a003591d427487fc56102258750c1b1ed2adffd",
+    "review_digest": "b55eabf4c9ca888cebff795dfc014dde85f4e81bbfeb45c7f6e7eb19cb6aa142",
     "approved_evidence_ids": [
-      "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a"
+      "ev-8017efe76fea1d9d93c149488f7c8fc0cc66f9f769f8969da8776ea48bc97b9e"
     ],
     "sent_evidence_ids": [
-      "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a"
+      "ev-8017efe76fea1d9d93c149488f7c8fc0cc66f9f769f8969da8776ea48bc97b9e"
     ],
     "citation_evidence_ids": [
-      "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a"
+      "ev-8017efe76fea1d9d93c149488f7c8fc0cc66f9f769f8969da8776ea48bc97b9e"
     ],
     "status": "draft",
-    "body": "SYNTHETIC：仅为可序列化草稿示例，没有真实研究答案或模型生成。",
+    "body": "SYNTHETIC: a serializable draft example only; no real research answer or model generation.",
     "refusal_reason": null,
     "generated_at": "2026-01-01T00:03:00Z"
   }

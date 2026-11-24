@@ -1,52 +1,52 @@
-# PaperTrace 开发就绪状态（2026-11-14 工程解阻）
+# PaperTrace Development Readiness Status (2026-11-14 engineering unblock)
 
-**结论：有条件开工。** A–E 可独立推进需求/Plan/测试准备/fake 模块；业务实现前必须有真实非实现者测试批准。完整上游回归、真实模型质量、学生采纳和远端保护没有被伪造完成。正式业务/完整 Streamlit 应用尚未实现。
+**Conclusion: work may start with conditions.** A–E can progress requirements/Plan/test preparation/fake modules independently; real non-implementer test approval is required before any business implementation. The full upstream regression, real model quality, student adoption, and remote protection have not been faked as complete. The production business/full Streamlit application is not yet implemented.
 
-本轮从 `e6ab25299a9b962099bd22edeba2dd745428b39d` 建 `fix/development-unblock`，保留上游 `c692d0dfeac4a0296599f7fe21a253a58b7ac12a` 与原历史，核心/包/原测试/pyproject/uv.lock/LICENSE 的受跟踪字节无差异。修复分支/PR 的最新 hash 以 GitHub 为准，不在文件中伪造循环 SHA。
+This round created `fix/development-unblock` from `e6ab25299a9b962099bd22edeba2dd745428b39d`, retaining upstream `c692d0dfeac4a0296599f7fe21a253a58b7ac12a` and the original history, with no difference in the tracked bytes of the core/packages/original tests/pyproject/uv.lock/LICENSE. The latest hash of the fix branch/PR is authoritative on GitHub; no circular SHA is fabricated in the file.
 
-## 实际验证与边界
+## Actual verification and boundaries
 
-| 范围 | 实际结果 | 不能据此宣称 |
+| Scope | Actual result | Not to be claimed from it |
 |---|---|---|
-| 全部团队离线测试 | **332 passed，0 skip**；保留上一轮299项，本轮新增33项PR/main事件及审批回放检查 | 不是完整上游/API/真实模型通过 |
-| OpenCode v2.0.12 | 真实 loopback fake + 工具循环2用例通过：Plan写拒绝、仅测试准备RED、模拟审查后自有源码写成功、跨模块写拒绝、Verify GREEN | 模拟审查不是学生批准、D5贡献或真实模型质量 |
-| 静态/Schema/披露 | 本轮真实static、schema、ai-log均PASS；见 artifacts/verification/final-ci-events.json，原closeout/unblock证据保留 | 静态分析不是供应链安全认证 |
-| PaperQA2 | 83包隔离runtime；真实 aadd→aget_evidence→aquery，三来源同索引仅获准1项送新会话；排除/pending未重入prompt；零获准且仍有文献时零检索/模型调用；1 integration passed | embedding/summary/answer均为明确fake，不是正式B/D模块或真实模型评估 |
-| 完整上游 | 原uv.lock实际安装261包，另用独立hash锁补pytest-socket；base/current均收集 **377** 节点，9个live待授权，无prior节点丢失；默认禁网执行有真实失败且限时停止 | **完整回归 FAIL/未通过**，不降成初始化、不删未标记项、不隐去失败 |
+| All team offline tests | **332 passed, 0 skipped**; the previous round's 299 items are retained, and this round adds 33 PR/main event and approval-replay checks | Not a full upstream/API/real-model pass |
+| OpenCode v2.0.12 | The real loopback fake + tool-loop 2 cases pass: Plan write denied, test-preparation-only RED, own source write succeeds after a simulated review, cross-module write denied, Verify GREEN | A simulated review is not student approval, D5 contribution, or real model quality |
+| Static/schema/disclosure | This round's real static, schema, and ai-log checks all PASS; see artifacts/verification/final-ci-events.json, the original closeout/unblock evidence is retained | Static analysis is not a supply-chain security certification |
+| PaperQA2 | 83-package isolated runtime; real aadd→aget_evidence→aquery, with three sources in the same index and only 1 accepted item sent to a new session; excluded/pending items do not re-enter the prompt; with zero accepted items and documents still present, zero retrieval/model calls; 1 integration passed | embedding/summary/answer are all explicit fakes, not the formal B/D modules or a real model evaluation |
+| Full upstream | The original uv.lock actually installs 261 packages, plus a separate hash lock adding pytest-socket; both base/current collect **377** nodes, 9 live items await authorization, and no prior node is lost; the default no-network run has real failures and stops at the time limit | **Full regression FAIL/not passed**; it is not downgraded to initialization, unmarked items are not deleted, and the failures are not hidden |
 
-完整回归原始汇总见 `artifacts/verification/unblock-full-regression.json`。首个故障 `tests/test_agents.py::test_get_directory_index` 实测尝试OpenAI调用，被socket guard拒绝；即使未标记live也没有漏掉或放行。真实API/付费/私密数据未获准，本轮不解除边界、不读私人模型密钥、不重试收费调用。全部失败不应归因为唯一这一原因；完整API结果仍缺。
+The raw summary of the full regression is in `artifacts/verification/unblock-full-regression.json`. The first fault, `tests/test_agents.py::test_get_directory_index`, was measured attempting an OpenAI call, which the socket guard rejected; even though it is not marked live, it was neither missed nor let through. Real API/paid/private data are not approved; this round does not lift the boundary, does not read private model keys, and does not retry paid calls. Not all failures should be attributed to this single cause; the complete API results are still missing.
 
-### 本轮收尾范围（续接931cea6，不重初始化）
+### This round's wrap-up scope (continuing from 931cea6, no re-initialization)
 
-仅修复独立复审的三项语义门禁问题：请求必须对应固定问题/获准证据正文/发送ID及版本化system prompt；v3报告绑定runtime锁、配置输入及同一evaluator解释器实际Python/安装版本；Gate4按配置内容与生产依赖闭包触发，不再对Ruff/pytest等无关改动要求付费评估。B/D界面和上游模型源码仍受触发及摘要绑定保护。实际83包runtime核对通过；固定数据/阈值、六门禁、A–E功能职责不变。
+Only the three semantic gate issues found in independent re-review are fixed: a request must correspond to the fixed question/accepted evidence body/sent IDs and a versioned system prompt; the v3 report binds the runtime lock, the configuration inputs, and the actual Python/installed versions of the same evaluator interpreter; Gate4 triggers on the configuration content and the production dependency closure, and no longer demands paid evaluation for unrelated changes such as Ruff/pytest. The B/D interface and the upstream model source remain protected by the trigger and the summary binding. The actual 83-package runtime check passes; the fixed data/thresholds, the six gates, and the A–E functional responsibilities are unchanged.
 
-这次增量只修验证器/测试/合同，局部Gate4为NOT_REQUIRED；不等于整个修复分支、未来B/D业务或真实质量评估获批。新报告仍须真实Actions artifact、预算和独立人审；无有效真实证据时不放行。
+This increment fixes only the verifier/tests/contract, and the local Gate4 is NOT_REQUIRED; it does not mean the whole fix branch, future B/D business, or real quality evaluation is approved. A new report still requires real Actions artifacts, budget, and independent human review; nothing is released without valid real evidence.
 
-## 六类门禁真实状态
+## True status of the six gate categories
 
-1. **test-approval：验证器已实现，当前 BLOCKED**，没有真实学生事前批准；synthetic API正负例不是批准。
-2. **static：本地 PASS**，含实际OpenCode配置与精确锁/固定字节检查；只豁免Git ignored的标准SCM/egg-info构建元数据，任意新增上游源码仍FAIL。
-3. **schema：本地执行校验**，27条registry不重定义、不冒称业务实现。
-4. **semantic：验证器已实现；适用改动无真实artifact/批准/评分则 BLOCKED**。固定4安全+6质量×3=18真实质量调用及原阈值不变；报告绑定真实GitHub run/artifact/digest/current head/review，普通文档/编码助手规则不做虚假评估。业务evaluator由B/D在接口实现后单独受审落入base，本轮不提前代写。
-5. **regression：实际full FAIL**（上游禁网失败/限时，且live待授权）；团队332+runtime1通过不能代替full。
-6. **ai-log：按真实新增披露验证**；Hermes工程修复与学生正式OpenCode过程分开。
+1. **test-approval: the verifier is implemented, currently BLOCKED**, with no real student pre-approval; synthetic API positive/negative cases are not approval.
+2. **static: local PASS**, including the actual OpenCode configuration and the exact lock/pinned-byte checks; it exempts only Git-ignored standard SCM/egg-info build metadata, and any newly added upstream source still FAILs.
+3. **schema: validation runs locally**, the 27 registry entries are not redefined and no business implementation is implied.
+4. **semantic: the verifier is implemented; applicable changes are BLOCKED without a real artifact/approval/score**. The fixed 4 safety + 6 quality × 3 = 18 real quality calls and the original thresholds are unchanged; the report binds the real GitHub run/artifact/digest/current head/review, and ordinary documentation/coding-assistant rules are not given a fake evaluation. The business evaluator is reviewed separately by B/D after the interface is implemented and then lands in base; this round does not write it ahead of time.
+5. **regression: actually full FAIL** (upstream no-network failures/time limit, and live awaiting authorization); the team's 332 + runtime 1 passing cannot replace full.
+6. **ai-log: verified against the real newly added disclosure**; the Hermes engineering fixes and the student's formal OpenCode process are kept separate.
 
-### 最终事件验收（续接552d918）
+### Final event acceptance (continuing from 552d918)
 
-已通过最小真实代码路径复现旧push无PR编号的问题。PR仍用base验证open PR；main push核对唯一原生merged PR、before/base/merge SHA/相同tree后回放测试批准与适用语义证据，其他质量检查直接检查新main。撤销批准、未批准测试、错来源/事件、无PR直接push均拒绝；同一问题不改成无条件skip。测试提案只可在实现合并后关闭而不破坏合法追溯。真实bash选择器与CLI线路也有离线正负验证。当前332离线、Ruff/mypy和PaperQA2 smoke1均通过；不是已在真实main完成合并后CI验证（本轮不合并）。
+The old problem of a push having no PR number has been reproduced through a minimal real code path. PRs still use base to verify an open PR; a main push checks the single native merged PR, the before/base/merge SHA/same tree, and then replays the test approval and applicable semantic evidence, while the other quality checks inspect the new main directly. Withdrawn approval, unapproved tests, a wrong source/event, and a direct push with no PR are all rejected; the same question is not turned into an unconditional skip. A test proposal may be closed only after the implementation merges, without breaking legitimate traceability. The real bash selector and CLI path also have offline positive/negative verification. The current 332 offline tests, Ruff/mypy, and PaperQA2 smoke 1 all pass; this is not CI verification after a merge on the real main (this round does not merge).
 
-首次采纳是[有限且一次的人审动作](docs/ci/minimal-gates.md#pr-1-的一次性首次采纳bootstrap)，没有新增批准服务/开关。当前PR #1仍待真人，不把候选自证或AI复核冒充人审；若课程不允许共享工程/已知失败基线，就不擅自合并。邀请成员后可认领/Plan/准备测试，正式业务实现仍按真实批准顺序；不再继续完善初始化设施。
+The first adoption is a [limited, one-time human review action](docs/ci/minimal-gates.md#one-time-first-adoption-of-pr-1-bootstrap), and no new approval service/switch is added. PR #1 still awaits a real person, and candidate self-certification or an AI re-check is not passed off as human review; if the course does not allow a shared engineering project/known failing baseline, do not merge on your own. After members are invited they can claim/Plan/prepare tests, and formal business implementation still follows the real approval order; initialization infrastructure is not expanded further.
 
-## 远端与首次采纳
+## Remote side and first adoption
 
-私有仓库保护 API 403；可见CI不是强制required checks。保持私有，不升级套餐、不公开、不改main历史。PR在target取候选、精确base取控制程序；main push使用已合入的控制程序且追溯实际merged PR，token仅元数据步骤；首次修复base仍是旧验证器时明确 `BASE_VERIFIER_UPGRADE_REQUIRED`，由真人审查采纳，不倒签事前批准。macOS原生工具回归消耗已有Actions配额，不开新付费套餐。远端实际运行须按PR checks读回，不能用历史首跑充当本轮结果。
+Private repository protection API 403; the visible CI is not enforced required checks. Keep it private, do not upgrade the plan, do not make it public, and do not change main's history. A PR takes the candidate from the target and the control program from the exact base; a main push uses the already-merged control program and traces the actual merged PR, with the token used only in metadata steps; when the first fix base still has the old verifier, `BASE_VERIFIER_UPGRADE_REQUIRED` is explicit, a real person reviews and adopts it, and no prior approval is back-dated. The macOS native-tool regression consumes the existing Actions quota; no new paid plan is opened. The actual remote run must be read back from PR checks; a historical first run cannot stand in for this round's result.
 
-## 学生本人仍必须完成
+## What the student themself must still complete
 
-- 五名成员认领功能、批准并理解架构/共享合同/本轮提案；计划由监督学生批准，非实现者在实现前批准具体测试版本。
-- 自己监督OpenCode、保留真实完整会话及干预，不把本轮fake会话或Hermes初始化冒充D5/个人贡献。
-- 真实模型/provider/数据/预算授权、固定集评估与独立评分；完整prior/API回归的真实结果。
-- GitHub账号/邀请、资格与保护回读/对照PR；D5五份annotated与一份raw/from-scratch口径、基线复用、确切DDL向教师确认。
-- D1–D9正式交付、D6身份/相对贡献平均1.0/真实反思、10分钟demo与ZIP分开。均没有代填或标完成。
+- The five members claim features and approve and understand the architecture/shared contracts/this round's proposal; plans are approved by the supervising student, and a non-implementer approves the specific test version before implementation.
+- Supervise OpenCode yourself and keep the real complete sessions and interventions; do not pass this round's fake session or the Hermes initialization off as D5/individual contribution.
+- Real model/provider/data/budget authorization, fixed-set evaluation, and independent scoring; the real results of the full prior/API regression.
+- GitHub accounts/invitations, eligibility and protection read-back/control PRs; confirm with the instructor the D5 five-annotated vs. one raw/from-scratch interpretation, the baseline reuse, and the exact DDL.
+- The formal D1–D9 deliverables, D6 identity/relative contribution averaging 1.0/genuine reflection, and the 10-minute demo separate from the ZIP. None of these is filled in or marked complete on the student's behalf.
 
-从 [TEAM_START_HERE.md](TEAM_START_HERE.md) 进入；唯一命令参考在 [startup](docs/team/startup.md)。不存在“先等五个模块全实现才能开发”的要求；但本轮不是无条件可合并、可发布或最终课程提交。
+Enter from [TEAM_START_HERE.md](TEAM_START_HERE.md); the only command reference is [startup](docs/team/startup.md). There is no requirement to "wait until all five modules are implemented before developing"; but this round is not unconditionally mergeable, releasable, or the final course submission.

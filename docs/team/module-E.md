@@ -1,49 +1,49 @@
-# 模块 E｜研究历史、来源追溯与导出
+# Module E | Research history, source traceability and export
 
-> **Owner E：**端到端负责 reports/history/export 用户功能、自己的 view、需求/设计、监督 OpenCode、测试与 PR；不是只写课程材料。此任务书不是业务实现或授权记录。
+> **Owner E:** end-to-end responsibility for the reports/history/export user features, their own view, requirements/design, supervision of OpenCode, tests and PRs; the role is not merely writing course materials. This task book is not a business implementation or an authorization record.
 >
-> 统一从[团队启动入口](../../TEAM_START_HERE.md)进入；合同细节见 [`integration-contract.md`](integration-contract.md) 与真实 `src/papertrace/contracts.py`。
+> Always start from the [team start entry](../../TEAM_START_HERE.md); contract details are in [`integration-contract.md`](integration-contract.md) and the real `src/papertrace/contracts.py`.
 
-## 用户结果与责任
+## User outcome and responsibilities
 
-研究者可保存一次成功、被阻断、拒答或失败的研究过程；关闭重开后仍能定位当时的 snapshot、来源、审核与发布状态；导出 JSON 和 Markdown。文献后来换版时，旧研究保留原内容并标记 superseded，而不是用当前库回填。
+The researcher can save a research run that succeeded, was blocked, abstained or failed; after closing and reopening, the snapshot, sources, review and release status of that time can still be located; JSON and Markdown can be exported. When the literature later changes version, the old research run keeps its original content and is marked superseded, rather than being backfilled from the current library.
 
-E 负责版本化研究记录封装、不可变历史、回读和导出。共享的五种模型保持唯一字段/枚举事实源；E 不重生答案、不改 C ledger、不依据外来 bool/按钮把 blocked 升级为 released。缺原件要显示缺失，不用同名文件替换。
+E owns the versioned research record envelope, immutable history, read-back and export. The five shared models remain the single source of truth for fields/enums; E does not regenerate answers, does not modify C's ledger and does not upgrade blocked to released on the strength of an external bool/button. A missing original must be shown as missing, not replaced by a same-named file.
 
-## Must 与可验收结果
+## Must and reviewable outcomes
 
-| 需求/不变量 | 必须行为与验收 |
+| Requirement/invariant | Required behaviour and acceptance |
 |---|---|
-| `FR-E-01`, `INV-02/04` | 保存/跨会话回读问题、snapshot、证据/定位、人审记录与 token、approved/sent/cited、AnswerDraft 和 ReleaseDecision；JSON 能重新解析；Markdown 与 JSON 表达同一来源和状态。 |
-| `FR-E-02`, `INV-05/08` | 历史只追加；换版只显示 superseded，不改旧记录。默认导出不含凭据、本机绝对路径、未经许可全文或模型私有推理；路径越界/符号链接逃逸/写失败不损坏历史。 |
-| `QA-01`, `SEC-01` | 使用真实模型字段和枚举；schema 版本/未知字段策略明确；合成敏感 sentinel 可测脱敏，不扫描私人目录。 |
+| `FR-E-01`, `INV-02/04` | Save and read back across sessions the question, snapshot, evidence/locators, human review records and tokens, approved/sent/cited, AnswerDraft and ReleaseDecision; the JSON re-parses; Markdown expresses the same sources and states as JSON. |
+| `FR-E-02`, `INV-05/08` | History is append-only; a version change only shows superseded and does not modify old records. The default export contains no credentials, local absolute paths, unlicensed full text or private model reasoning; out-of-bounds paths/symlink escapes/write failures do not damage history. |
+| `QA-01`, `SEC-01` | Use the real model fields and enums; the schema version/unknown-field policy is explicit; synthetic sensitive sentinels can test redaction without scanning private directories. |
 
-历史包是后续版本化封装，须在 Plan 和相关生产者/消费者共同审核后确定，不往 frozen 模型加私有字段。当前 AnswerDraft 仅有 `draft/abstained/failed`，ReleaseDecision 仅有 `released/blocked`；`stale/superseded/incomplete` 是封装/展示语义，不擅改传输枚举。缺 usage/费用记 unknown，不补零。
+The history envelope is a later versioned wrapper that must be settled at Plan with the relevant producers/consumers co-reviewing it; no private fields are added to the frozen models. AnswerDraft currently has only `draft/abstained/failed` and ReleaseDecision only `released/blocked`; `stale/superseded/incomplete` are envelope/display semantics, and the transport enums must not be changed at will. Missing usage/cost is recorded as unknown, not filled in with zero.
 
-## 边界与拟议改动范围
+## Boundaries and proposed change scope
 
-- 接 A/B/C/D 的原版本对象与审核 ledger；最终一致性提交由获批应用编排/D/E 共同设计，E 负责存储/读回/导出，不另造发布门。
-- **常规模块范围（在 Plan 一次确认；范围内日常编辑/新增文件不逐次批准）：**`src/papertrace/reports/`（存储、读取、exporter 与 view）、`test/offline/test_reports.py`、`test/fixtures/reports/`。record envelope 对外接口、共享模型、A/C/D 端口、入口/锁/编排、依赖/CI 和治理日志另批。
-- 不写 A 文库/C ledger/D 发布门，不读取 `.env`、密钥、真实私人论文/历史，不擅自联网或引入大型数据库/云服务。
+- Consumes the original version objects and review ledger from A/B/C/D; the final consistency commit is designed jointly by the approved app orchestration/D/E, with E owning storage/read-back/export and not building another release gate.
+- **Routine module scope (confirmed once at Plan; routine edits/new files inside the scope are not approved one by one):** `src/papertrace/reports/` (storage, reading, exporter and view), `test/offline/test_reports.py`, `test/fixtures/reports/`. The record envelope's external interface, shared models, A/C/D ports, entry/lock/orchestration, dependencies/CI and governance logs are approved separately.
+- Does not write A's library/C's ledger/D's release gate, does not read `.env`, credentials or real private papers/history, and does not go online or introduce a large database/cloud service without approval.
 
-## 不等 A–D 的 fake 开发与验收
+## Fake-first development and acceptance without waiting for A–D
 
-用规范五模型和自写 synthetic 完整 released、blocked、abstained、failed 记录；fixture 明示 synthetic，不假装真实人审、OpenCode 会话或模型输出。假数据只在测试临时输出目录内读写。
+Use the canonical five models and hand-written synthetic complete released, blocked, abstained and failed records; the fixtures state explicitly that they are synthetic and do not pretend to be real human review, OpenCode sessions or model output. Fake data is read and written only inside the test's temporary output directory.
 
-至少验证：保存/关闭重开/JSON roundtrip；JSON/Markdown 必要字段与 evidence/locator 无错配；换版后旧内容 hash 不变；blocked/abstained/failed 保持未发布；缺对象/错关联/坏 digest/未知 schema 不补齐成成功；路径穿越、symlink、冲突、写中断/磁盘失败无范围外写、无破坏旧包；合成敏感值、绝对路径、未许可全文标记不进入导出。外部读取/导出许可要分开验证，不因 Apache-2.0 根许可证而假设论文可分享。
+Minimum verification: save/close-reopen/JSON roundtrip; the required JSON/Markdown fields and evidence/locator match with no mismatch; old content hashes are unchanged after a version change; blocked/abstained/failed stay unreleased; missing objects/wrong associations/bad digests/unknown schema are not patched into success; path traversal, symlink, conflict, interrupted write/disk failure cause no writes outside the scope and do not damage old bundles; synthetic sensitive values, absolute paths and unlicensed full-text markers do not enter the export. External reading/export permission must be verified separately; the Apache-2.0 root licence is no reason to assume papers may be shared.
 
-## D1–D9：E 应留下的模块证据
+## D1–D9: module evidence E should leave behind
 
-| 项 | 本模块证据 |
+| Item | Evidence for this module |
 |---|---|
-| D1 | `FR-E-01/02`、`INV-02/04/05/08` 的导出/历史 fit、测试与 trace。 |
-| D2 | 版本化封装、不可变存储/恢复、许可字段白名单、与 D 的最终提交边界及必要 ADR。 |
-| D3 | reports 与导出目标精确路径/工具授权、路径保护与冻结基线/例外证据。 |
-| D4 | 事前批准、跨会话/脱敏/路径/中断负测、团队回归和独立 review memo。 |
-| D5 | 学生监督 OpenCode 的真实完整原始会话与历史/许可干预；Hermes 初始化不算成员开发。Transcript 口径待核实。 |
-| D6 | E 的真实业务/协作贡献和反思素材；正式身份/贡献由本人填写，不能以课程文档替代功能。 |
-| D7 | 本地 diff、真实 PR/CI/独立审查及分支保护读回；之前保护 403 未生效，须重查。 |
-| D8 | history/export 服务/view、合成研究包、正负/回读测试和复现步骤。 |
-| D9 | 根 `Prompt.md` 的 Plan 停点、事前测试/计划/路径批准及监督 Verify 记录。 |
+| D1 | Export/history fit, tests and trace for `FR-E-01/02`, `INV-02/04/05/08`. |
+| D2 | Versioned envelope, immutable storage/restore, licence field allow-list, the final commit boundary with D and necessary ADRs. |
+| D3 | Exact paths/tool authorization for reports and export targets, path protection and frozen-baseline/exception evidence. |
+| D4 | Prior approval, cross-session/redaction/path/interruption negative tests, team regression and independent review memo. |
+| D5 | The genuine complete original session of the student supervising OpenCode plus the history/licence interventions; Hermes initialization does not count as member development. The transcript basis is pending verification. |
+| D6 | E's real business/collaboration contribution and reflection material; the formal identity/contribution is filled in by the person, and course documents cannot replace the feature. |
+| D7 | Local diff, real PR/CI/independent review and branch-protection read-back; the earlier protection 403 did not take effect and must be re-checked. |
+| D8 | History/export service/view, synthetic research bundles, positive/negative/read-back tests and reproduction steps. |
+| D9 | The Plan stop point in the root `Prompt.md`, prior test/plan/path approvals and supervised Verify records. |
 
-验收从最终导出件读回核字段/状态；不能只检查“导出成功”提示或生成几份 Markdown 示例。
+Acceptance reads the fields/status back from the final export artefact; checking only an "export succeeded" message or generating a few Markdown samples is not enough.

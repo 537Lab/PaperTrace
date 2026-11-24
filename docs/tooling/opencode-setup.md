@@ -1,62 +1,62 @@
-# OpenCode v2.0.12：受限开发流程
+# OpenCode v2.0.12: restricted development workflow
 
-本指南对应仓库内 `$schema` 所指定的 OpenCode native v2 配置。权限键是 `permissions: [{action, resource, effect}]` 与 agent 局部同结构列表；不要套用 v1 `permission`/`instructions` 配置。校验清单 `.opencode/permissions.jsonc` 只是被静态检查的 manifest，不会被 OpenCode 自动加载；引擎实际读取 `opencode.jsonc`，项目指令以 OpenCode 对根 `AGENTS.md` 的发现机制为准。
+This guide corresponds to the OpenCode native v2 configuration indicated by the `$schema` in the repository. The permission key is `permissions: [{action, resource, effect}]` together with agent-local lists of the same shape; do not apply the v1 `permission`/`instructions` configuration. The checklist `.opencode/permissions.jsonc` is only a manifest read by the static checks and is not loaded automatically by OpenCode; the engine actually reads `opencode.jsonc`, and project instructions follow OpenCode's discovery mechanism for the root `AGENTS.md`.
 
-## 模型与凭据由学生单独决定
+## Model and credentials are decided by the student separately
 
-`opencode.jsonc` 有意不设置 `model`、`provider` 或 `provider.use` deny 策略：此配置不阻断学生另行配置的获准 coding model，也不擅自选择或调用模型。学生应自己在 OpenCode 中完成授权，并确认模型、数据发送、费用、次数和重试。不要把 API key、`.env`、私有 auth 数据写入项目、测试输出或本指南。
+`opencode.jsonc` deliberately sets no `model`, `provider` or `provider.use` deny policy: this configuration neither blocks an approved coding model that the student configures separately nor chooses or calls a model on its own. Students should complete the authorization in OpenCode themselves and confirm the model, the data sent, the cost, the number of calls and retries. Do not write API keys, `.env` files or private auth data into the project, test output or this guide.
 
-开发助手 coding model 与 PaperTrace 产品运行时对论文/文档调用的 LLM 是两条不同路径。开发助手的 provider 配置不授予产品调用权限，也不改变产品的人工审批/引用/预算治理。离线验证只用本地 fake OpenAI-compatible endpoint 和显式合成 token；没有触碰真实 provider 或付费模型。
+The development assistant's coding model and the LLM that the PaperTrace product runtime calls for papers/documents are two different paths. The development assistant's provider configuration grants no product-call permission and does not change the product's human approval/citation/budget governance. Offline verification uses only a local fake OpenAI-compatible endpoint and an explicitly synthetic token; no real provider or paid model was touched.
 
 ## Plan → test preparation → GitHub test approval → source Build → Verify
 
-1. 在 PaperTrace 根目录检查 `.opencode/rules.md`、`AGENTS.md`、`.agent/rules.md` 和 `Prompt.md`。直接运行 `opencode` 默认使用 `papertrace-plan`；Plan 只读，输出单模块精确计划并停止。
-2. 学生本人先审查并批准精确计划。之后由同一模块 `papertrace-build-A`…`papertrace-build-E` 角色只生成该模块独立 tests/、fixtures/和本模块设计记录；严禁写任何 `src/`，即使 native 工具权限此时允许源码路径。运行获准离线测试时可看到 RED。
-3. 测试提案 PR 可以保持 open 且 RED，不需要为审批而合并。另一位未参与测试实现的学生必须在 GitHub 对绑定具体测试 commit 的 PR 真实 Approve。真实批准前，Build 不得行为上写任何本模块 src。
-4. 获批后实现 PR 从测试 head 分支创建，描述包含精确字段 `Test approval PR: #N`；同一模块 Build 角色才继续源码实现，再由 Verify 独立核对。拒绝、沉默、假 review 或仅有角色/permission 都不授权。
-5. 学生一次确认模块范围和精确常用离线命令后，范围内日常编辑不必逐文件重复授权；GitHub 对具体测试 commit 的独立审批仍是必需步骤。共享契约、跨模块、依赖、收费/费用、安全路径或预算越界仍立即停止。
+1. In the PaperTrace root, check `.opencode/rules.md`, `AGENTS.md`, `.agent/rules.md` and `Prompt.md`. Running `opencode` directly defaults to `papertrace-plan`; Plan is read-only, outputs a precise plan for a single module and stops.
+2. The student reviews and approves the precise plan first. After that, the same module's `papertrace-build-A`…`papertrace-build-E` role generates only that module's standalone tests/, fixtures/ and module design record; writing anything under `src/` is strictly forbidden, even though the native tool permissions allow source paths at that point. Running the approved offline tests shows RED.
+3. The test proposal PR may stay open and RED; merging it for approval is not required. Another student who did not take part in the test implementation must genuinely Approve on GitHub, on the PR bound to the specific test commit. Before the real approval, Build must not behaviorally write any of this module's src.
+4. After approval, the implementation PR is created from the test head and its description contains the exact field `Test approval PR: #N`; only then does the same module's Build role continue with the source implementation, after which Verify checks it independently. Refusal, silence, a fake review, or merely holding a role/permission grants no authorization.
+5. Once the student has confirmed the module scope and the exact common offline commands one time, routine edits within that scope do not need repeated per-file authorization; the independent GitHub approval of the specific test commit is still a required step. Shared contracts, cross-module work, dependencies, paid/cost-incurring calls, safety paths or budget overruns still stop immediately.
 
-角色权限只界定工具可触及的角色/路径范围，不证明真人身份或审批。测试准备阶段不写 src 是行为规则，不是新增角色、机器阶段门禁、OS sandbox 或身份服务。OpenCode 的路径匹配是 lexical；preflight 可拒绝当时存在的 symlink，但不能阻止后来替换或声称永久隔离。
+Role permissions only define the role/path range a tool can reach; they do not prove a real person's identity or an approval. Not writing src during test preparation is a behavioral rule, not a new role, a machine stage gate, an OS sandbox or an identity service. OpenCode path matching is lexical; preflight can reject symlinks that exist at that moment but cannot prevent later replacement or be claimed as permanent isolation.
 
-命令行 one-shot 示例（把 `已获准的provider/model-id` 替换成学生自己已批准、已配置的 coding model 标识；不提供凭据）：
+Command-line one-shot examples (replace `<approved-provider/model-id>` with the coding model identifier the student has already approved and configured; no credentials are provided):
 
 ```sh
-opencode run --agent papertrace-plan --model 已获准的provider/model-id \
-  "读取 Prompt.md 与 AGENTS.md；仅为我指定的一个模块列出计划，停止等待人工审查。"
+opencode run --agent papertrace-plan --model <approved-provider/model-id> \
+  "Read Prompt.md and AGENTS.md; list a plan for only the one module I specify, then stop and wait for human review."
 
-# 计划批准后，仅进入测试准备；具体测试commit经另一位学生GitHub批准后，才进行源码Build。
-opencode run --agent papertrace-build-A --model 已获准的provider/model-id \
-  "附上已批准计划；只生成A的测试/fixtures/设计记录，禁止写src。"
+# After the plan is approved, proceed only to test preparation; the source Build happens only after the specific test commit is approved on GitHub by another student.
+opencode run --agent papertrace-build-A --model <approved-provider/model-id> \
+  "Attach the approved plan; generate only A's tests/fixtures/design record, and do not write src."
 
-opencode run --agent papertrace-verify --model 已获准的provider/model-id \
-  "只读检查diff与验证结果；指出负例、未验证项和限制，不做批准。"
+opencode run --agent papertrace-verify --model <approved-provider/model-id> \
+  "Read-only check of the diff and the verification results; point out negative cases, unverified items and limits, and do not approve."
 ```
 
-这些命令不会自动检查真人身份或审批；`papertrace-build-A` 等角色也不是绕过 Human Review 的授权。请勿在命令行历史中粘贴密钥/私有审批材料。确需把审批材料传给 agent 时，仅附无秘密的版本号/范围/状态引用。
+These commands do not automatically check a real person's identity or an approval; roles such as `papertrace-build-A` are not an authorization to bypass Human Review either. Do not paste keys or private approval material into shell history. When approval material really must be given to an agent, attach only secret-free references to version numbers/scope/status.
 
-## 静态 preflight 与真实引擎探针
+## Static preflight and real engine probes
 
 ```sh
-# 默认：可移植、只读的静态检查；不启动 OpenCode、模型或网络请求。
+# Default: portable, read-only static checks; starts no OpenCode, model or network request.
 .venv/bin/python scripts/opencode_support.py
 
-# CI 应由可信 base 脚本调用，并显式检查目标 checkout，而不是脚本所在目录。
+# CI should call this from a trusted base script and explicitly check the target checkout, not the directory the script lives in.
 .venv/bin/python scripts/opencode_support.py --root "$TARGET_CHECKOUT"
 
-# macOS 可选：读回 OpenCode v2 配置并查询权限引擎；仍不启动模型或工具。
+# macOS optional: read back the OpenCode v2 configuration and query the permission engine; still starts no model or tool.
 .venv/bin/python scripts/opencode_support.py --verify-runtime \
   --binary "$HOME/.opencode/bin/opencode" --root "$PWD"
 ```
 
-`--root PATH` 在指定 checkout 内核验 `opencode.jsonc`、`.opencode/permissions.jsonc`、`.opencode/rules.md`、`AGENTS.md` 的治理标记/同步，以及 agent/manifest 角色、读写候选、protected/sensitive 路径、命令 allowlist 和 symlink/traversal。它只读配置/规则、不读取环境凭据，不启动模型；失败时 stdout 返回 JSON `status: FAIL` 并以非零退出。CI 可把可信脚本放在 checkout 之外，例如：
+`--root PATH` verifies, inside the given checkout, the governance markers/synchronization of `opencode.jsonc`, `.opencode/permissions.jsonc`, `.opencode/rules.md` and `AGENTS.md`, as well as the agent/manifest roles, read/write candidates, protected/sensitive paths, the command allowlist and symlink/traversal. It reads only configuration/rules, does not read environment credentials and starts no model; on failure it prints JSON `status: FAIL` on stdout and exits non-zero. CI can keep the trusted script outside the checkout, for example:
 
 ```sh
 python "$CI_CONTROL/scripts/opencode_support.py" --root "$TARGET_CHECKOUT"
 ```
 
-不要从不可信目标 checkout 执行 gate 脚本本身。`--verify-runtime` 是不同层级：它运行实际已安装 OpenCode 的 `/api/config` 与 `/api/session/.../permission` 探针，不调用模型或文件工具；不能冒充工具 E2E。
+Do not execute the gate script itself from the untrusted target checkout. `--verify-runtime` is a different level: it runs the `/api/config` and `/api/session/.../permission` probes of the actually installed OpenCode and calls no model or file tool; it cannot pass as a tool E2E.
 
-## 可复现离线测试
+## Reproducible offline tests
 
 ```sh
 .venv/bin/python -m pytest -c papertrace.pytest.ini -q \
@@ -71,4 +71,4 @@ python "$CI_CONTROL/scripts/opencode_support.py" --root "$TARGET_CHECKOUT"
 .venv/bin/python scripts/gates.py --gate schema
 ```
 
-`test_opencode_workflow.py` 启动 loopback-only 确定性 fake，在 disposable checkout 通过 OpenCode v2.0.12 实际调用 Plan、同一 Build 角色的 test-only preparation、模拟测试审核后的源码 Build 和 Verify；fake 工具先只改测试并观察 RED，断言源码未变，再模拟审核，随后验证本模块源码写成功、跨模块写被拒和测试 GREEN。测试审核对象是模拟 fixture，不是真实学生/GitHub approval，也不证明模型服从性、身份或源码阶段的机器门禁。Native path permissions 仍允许该模块 src；禁止提前写 src 是行为规则。路径匹配是 lexical，symlink preflight 只是时点检查；macOS `sandbox-exec` 仅限制这次验证进程。公开 JSON 把个人绝对路径改为 `<repo>`/`$HOME`；准确 argv 仅保留于 `.local/unblock/opencode/workflow-commands.json`，不写进程环境/key。无 OpenCode/macOS 时 E2E 会 skip；skip 不等于通过。
+`test_opencode_workflow.py` starts a loopback-only deterministic fake and, in a disposable checkout, actually drives Plan, the same Build role's test-only preparation, the source Build after a simulated test approval, and Verify through OpenCode v2.0.12; the fake tool first changes only tests and observes RED, asserts the source is unchanged, then simulates the approval, and finally verifies that this module's source write succeeds, a cross-module write is rejected, and the tests are GREEN. The test approval target is a simulated fixture, not a real student/GitHub approval, and it does not prove model compliance, identity or a machine gate at the source stage. Native path permissions still allow this module's src; the prohibition on writing src early is a behavioral rule. Path matching is lexical, and the symlink preflight is only a point-in-time check; macOS `sandbox-exec` confines only this verification process. The public JSON replaces personal absolute paths with `<repo>`/`$HOME`; the exact argv is kept only in `.local/unblock/opencode/workflow-commands.json`, and no process environment/keys are written. Without OpenCode/macOS the E2E is skipped; a skip does not equal a pass.

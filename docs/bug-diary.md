@@ -1,36 +1,36 @@
-# Bug日记（D4）
+# Bug diary (D4)
 
-当前没有可声称已复现并修复的PaperTrace业务bug，因为五模块尚未开发。契约RED/GREEN的真实输出保存在`artifacts/verification/`，它们不是生产事故。
+There is currently no PaperTrace business bug that can be claimed as reproduced and fixed, because the five modules are not yet developed. The genuine output of the contract RED/GREEN runs is stored in `artifacts/verification/`; those are not production incidents.
 
-## ENV-001：课程PDF的通用抽取器失败
-- 症状：read_file报告0页/无文本；并非课程材料不存在。
-- 复现：对两份指定原件调用通用抽取器失败；pypdf实际读取分别10/27页。
-- 分类/根因：环境兼容性，PDF含xref和重复字典项警告；不能据单一抽取工具推断原件无内容。
-- 处理：用已有pypdf只读提取；保留原字节和SHA256，不改原件。
-- 不变量缺口：来源核验不能等同于某一种抽取器成功；与产品INV执行无关。
-- 状态：本轮材料读取已恢复；未声称PDF格式修复。
+## ENV-001: the generic extractor fails on the course PDFs
+- Symptom: read_file reports 0 pages/no text; it is not that the course material does not exist.
+- Reproduction: the generic extractor fails on the two specified original files; pypdf actually reads 10/27 pages respectively.
+- Category/root cause: environment compatibility; the PDFs have xref and duplicate-dictionary-entry warnings; the absence of content in the original cannot be inferred from a single extraction tool.
+- Handling: use the existing pypdf for read-only extraction; keep the original bytes and SHA256, and do not modify the originals.
+- Invariant gap: source verification cannot be equated with one particular extractor succeeding; this is unrelated to execution of the product INV.
+- Status: material reading for this round is restored; no claim is made that the PDF format was fixed.
 
-## CONTRACT-001：初始空审核状态无法序列化
-- 症状/复现：真实账本尚无人工事件时revision=0，最初AnswerDraft/ReleaseDecision仅接受>=1，合法拒答/阻断也被拒绝。
-- 分类/根因：共享数据边界遗漏初始状态；不是模型故障或已发生业务发布事故。
-- 修复：共享ReviewRevision允许严格整数>=0；draft/released仍要求非零。ReviewDecision事件revision仍从1开始。
-- 暴露不变量：INV-01/03不能为了序列化虚构人工审核事件。新增独立负测及合法对照，真实RED与GREEN保存在artifacts/verification；同步两份Schema及C/D任务书。
-- 状态：170项离线测试通过；账本和发布运行时业务尚未开发。
+## CONTRACT-001: the initial empty review state cannot be serialized
+- Symptom/reproduction: when the real ledger has no human event yet, revision=0; initially AnswerDraft/ReleaseDecision accepted only >=1, so a legitimate abstention/blocking was rejected too.
+- Category/root cause: the shared data boundary missed the initial state; it is not a model failure or a business release incident that occurred.
+- Fix: shared ReviewRevision allows a strict integer >=0; draft/released still require non-zero. ReviewDecision event revision still starts at 1.
+- Invariants exposed: INV-01/03 must not fabricate human review events in order to serialize. Independent negative tests and legitimate controls were added, and the genuine RED and GREEN are stored in artifacts/verification; both Schemas and the C/D charters were synchronized.
+- Status: 170 offline tests pass; the ledger and the release-time business code are not yet developed.
 
-## UNBLOCK-001：开发/门禁死结（工程问题，不是学生业务）
-实测修复全provider拒绝、测试未批不能生成测试、永久BLOCKED入口及full漏项/超时/标记绕过；每类负例先RED后GREEN。真实OpenCode测试准备曾写到非自有测试路径被正确拒绝，改为test_library；嵌套fixture显式pytest.ini防继承上游配置。SCM/egg-info真实构建元数据仅窄豁免，新增上游源码仍FAIL。
+## UNBLOCK-001: development/gate deadlock (an engineering problem, not student business)
+Measured and fixed the all-provider denial, the "tests cannot be generated before tests are approved" deadlock, the permanently BLOCKED entry, and full-run omissions/timeouts/marker bypass; each category was RED before GREEN. A genuine OpenCode test-preparation run once wrote to a non-owned test path, was correctly refused, and switched to test_library; the nested fixture uses an explicit pytest.ini to avoid inheriting the upstream configuration. Real build metadata from SCM/egg-info receives only a narrow exemption, and adding upstream source still FAILs.
 
-## UNBLOCK-002：上游完整回归仍未通过
-实际安装固定uv.lock；377个base/current节点一致，首个索引测试在默认禁网下尝试API被socket拒绝，完整执行有真实失败/限时，9个live待授权。保留FAIL、原测试和清单，不解封网络、不用私人key或假结果。250团队离线和1runtime通过不代表full。
+## UNBLOCK-002: the full upstream regression still does not pass
+The fixed uv.lock was actually installed; 377 base/current nodes match, the first index test attempted an API call under the default network ban and was refused by the socket, full execution has genuine failures/timeouts, and 9 live items await authorization. Keep the FAIL, the original tests and the manifest; do not unlock the network, use a private key, or use fake results. The 250 team offline tests and 1 runtime test passing do not mean full.
 
-## CLOSEOUT-001：语义报告误放行与无关配置误阻断
-- 复现：重算请求/报告哈希可掩盖固定问题/获准正文/发送ID不一致；runtime改锁并刷新head记录仍可能使用旧环境；纯Ruff/pytest修改被要求真实模型评估。均由实际离线负测先观察失败。
-- 根因/修复：自报哈希不验证材料来源，配置摘要漏runtime输入，触发只看文件名。改为精确请求合同、v3运行锁及实际解释器版本核对、生产依赖闭包内容判定；保留未知/畸形配置的保守触发和B/D/上游模型代码覆盖。
-- 回归：全部299项团队离线、0 skip；PaperQA2离线集成1项；Ruff/mypy/static/schema通过。不是正式业务实现、真人事前批准或真实模型质量证据；原full失败不变。本轮证据见artifacts/verification/closeout-semantic.json。
+## CLOSEOUT-001: a semantic report wrongly passed and an unrelated configuration wrongly blocked
+- Reproduction: recomputed request/report hashes could mask a fixed problem, or a mismatch between the approved body text and the sent ID; changing the runtime lock and refreshing the head record could still use the old environment; pure Ruff/pytest changes were required to go through real model evaluation. All were first observed failing by actual offline negative tests.
+- Root cause/fix: self-reported hashes do not verify material provenance, the configuration summary missed runtime inputs, and triggering looked only at file names. Changed to an exact request contract, the v3 runtime lock and actual interpreter version verification, and production dependency closure content determination; kept conservative triggering for unknown/malformed configuration and coverage of B/D/upstream model code.
+- Regression: all 299 team offline tests, 0 skip; 1 PaperQA2 offline integration item; Ruff/mypy/static/schema pass. This is not a formal business implementation, genuine human pre-approval, or evidence of real model quality; the original full failures are unchanged. Evidence for this round is in artifacts/verification/closeout-semantic.json.
 
-## FINAL-CI-001：push错误复用open-PR审批入口
-- 复现：原workflow同时监听push/PR，但push传空PR号，适用代码变更真实返回missing-pr-number；即使补号，原实现只接受open PR，不能回查已合并证据。
-- 修复：明确事件合同；PR仍用base，main来源逐项绑定原生merged PR与同tree，再回放原测试/语义证据，质量检查实际新main。撤销/错SHA/未批准测试/无PR push拒绝；原生list/detail字段差异和合并后关闭RED提案也加正负测试。
-- 验收：保留299项并新增33项事件检查，共332离线、0 skip；原PaperQA2 smoke1、Ruff/mypy通过，独立限范围92项复跑通过且文件SHA一致。真实main未合并，不能将模拟事件说成线上main验证完成。首次采纳仍需要真实人审与课程接受边界；原full失败保留。
+## FINAL-CI-001: push incorrectly reuses the open-PR approval entry
+- Reproduction: the original workflow listened to both push and PR, but push passes an empty PR number, so an applicable code change genuinely returned missing-pr-number; even with a number added, the original implementation accepted only open PRs and could not look back at merged evidence.
+- Fix: an explicit event contract; PRs still use base, while main-origin items are bound one by one to the native merged PR and the same tree, then the original test/semantic evidence is replayed, and the quality check acts on the actual new main. Reverts/wrong SHAs/unapproved tests/pushes without a PR are refused; positive and negative tests were also added for native list/detail field differences and for closing a RED proposal after merge.
+- Acceptance: kept the 299 items and added 33 event checks, 332 offline in total, 0 skip; the original PaperQA2 smoke of 1 and Ruff/mypy pass, and an independent scope-limited re-run of 92 items passed with matching file SHAs. The real main is not merged, so simulated events must not be described as completed verification on the live main. First adoption still requires genuine human review and the course acceptance boundary; the original full failures are retained.
 
-后续显著bug必须留症状、最小复现、根因证据、修复diff和防回归测试，禁止把假设写成复现。
+Subsequent significant bugs must record the symptom, minimal reproduction, root-cause evidence, fix diff and regression test; assumptions must not be written as reproductions.

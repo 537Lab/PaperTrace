@@ -22,12 +22,12 @@
     "papertrace-plan": {
       "read_additions": [],
       "write_candidates": [],
-      "description": "默认只读计划；无测试或计划批准时不得Build"
+      "description": "Read-only planning by default; Build is not allowed without test or plan approval"
     },
     "papertrace-verify": {
       "read_additions": [],
       "write_candidates": [],
-      "description": "只读验证；不得改实现或测试"
+      "description": "Read-only verification; may not modify implementation or tests"
     },
     "papertrace-build-A": {
       "read_additions": [
@@ -38,7 +38,7 @@
         "src/papertrace/library/*", "test/offline/test_library.py", "test/live/test_library.py",
         "test/fixtures/library/*", "docs/team/designs/module-A/*"
       ],
-      "description": "A只可改library源码、自有测试/fixtures及设计记录"
+      "description": "A may only modify library source, its own tests/fixtures, and design records"
     },
     "papertrace-build-B": {
       "read_additions": [
@@ -52,7 +52,7 @@
         "src/papertrace/retrieval/*", "test/offline/test_retrieval.py", "test/live/test_retrieval.py",
         "test/fixtures/retrieval/*", "docs/team/designs/module-B/*"
       ],
-      "description": "B自有区可改；列明PaperQA2只读来源；依赖包源仍逐项ask"
+      "description": "B's own area is writable; PaperQA2 read-only sources are listed; dependency package sources still require per-item ask"
     },
     "papertrace-build-C": {
       "read_additions": [
@@ -63,7 +63,7 @@
         "src/papertrace/review/*", "test/offline/test_review.py", "test/live/test_review.py",
         "test/fixtures/review/*", "docs/team/designs/module-C/*"
       ],
-      "description": "C只可改review源码、自有测试/fixtures及设计记录"
+      "description": "C may only modify review source, its own tests/fixtures, and design records"
     },
     "papertrace-build-D": {
       "read_additions": [
@@ -75,7 +75,7 @@
         "src/papertrace/answer/*", "test/offline/test_answer.py", "test/live/test_answer.py",
         "test/fixtures/answer/*", "docs/team/designs/module-D/*"
       ],
-      "description": "D只可改answer源码、自有测试/fixtures及设计记录；跨模块读取需人工ask"
+      "description": "D may only modify answer source, its own tests/fixtures, and design records; cross-module reads require a human ask"
     },
     "papertrace-build-E": {
       "read_additions": [
@@ -86,7 +86,7 @@
         "src/papertrace/reports/*", "test/offline/test_reports.py", "test/live/test_reports.py",
         "test/fixtures/reports/*", "docs/team/designs/module-E/*"
       ],
-      "description": "E只可改reports源码、自有测试/fixtures及设计记录"
+      "description": "E may only modify reports source, its own tests/fixtures, and design records"
     }
   },
   "protected_paths": [

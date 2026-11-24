@@ -191,7 +191,7 @@ def preflight(root: Path | str = ROOT) -> dict:
         _preflight_error(report, "human governance proposal status must remain pending")
     if set(config.get("agents", {})) != EXPECTED_ROLES or set(manifest.get("roles", {})) != EXPECTED_ROLES:
         _preflight_error(report, "native agents and permission manifest roles differ from the approved A-E workflow")
-    governance_markers = ("学生", "非实现者", "凭据", "批准")
+    governance_markers = ("student", "non-implementer", "credentials", "approval")
     if not rules.strip():
         _preflight_error(report, "human-only proposal rules are empty")
     for marker in governance_markers:

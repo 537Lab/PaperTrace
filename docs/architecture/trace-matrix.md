@@ -1,73 +1,73 @@
-# 需求 → 执行组件 → 测试/证据 → 运行监控
+# Requirement → execution component → test/evidence → runtime monitoring
 
-> 状态：proposed-awaiting-human。需求唯一定义是 [`docs/req/requirements.yaml`](../req/requirements.yaml)，本表只做追踪，不另改阈值。**“已定义测试”不是“已通过”；“合同能表示”不是“运行时已执行”。** A–E 均待成员开发；所有 runtime monitor 同样待开发。
+> Status: proposed-awaiting-human. The single definition of requirements is [`docs/req/requirements.yaml`](../req/requirements.yaml); this table only traces and does not change the thresholds. **“Test defined” is not “test passed”; “the contract can express it” is not “it has run at runtime”.** A–E all await member development; every runtime monitor likewise awaits development.
 
-课程项目第 5 页要求覆盖每项需求的 component/test/monitor；第 6 页规定结构、回归、行为三级验证和每项 fit criterion 的测试；第 10 页规定真正阻断门。[1] 上位设计：[根蓝图](../../architecture-blueprint.md)、[ADR-001](adr/001-architecture.md)、[不变量](invariants.md)。
+Page 5 of the course project requires coverage of each requirement's component/test/monitor; page 6 specifies the three-tier verification of structure, regression and behavior plus a test for each fit criterion; page 10 specifies truly blocking gates. [1] Parent design: [root blueprint](../../architecture-blueprint.md), [ADR-001](adr/001-architecture.md), [invariants](invariants.md).
 
-## 1. 状态口径
+## 1. Status notation
 
-- **C（contract）**：现有 `test/offline/test_contracts.py` 中已定义对应静态契约测试；本架构子任务未运行，真实结果以主控保存的执行回执为准。
-- **G（governance）**：现有 `test/offline/test_gates.py` 有部分本地故障注入测试；不能外推为远端权限/分支保护或全部课程 gate 已通过。
-- **P（planned）**：设计了测试意图与标识，业务或集成用例待开发，**没有测试结果**。所有 T-A/B/C/D/E、T-INV、T-COST/SEC/PERF 编号在此为计划 ID，不是假造已有 pytest node。
-- 运行监控为上线后的观测合同；治理需求的 runtime 指 CI/工具会话/PR事件，不硬塞进产品模型日志。
+- **C (contract)**: a corresponding static contract test is already defined in the existing `test/offline/test_contracts.py`; this architecture subtask did not run it, and the real result follows the execution receipt kept by the controller.
+- **G (governance)**: the existing `test/offline/test_gates.py` contains some local fault-injection tests; this must not be extrapolated to remote permissions/branch protection or to all course gates having passed.
+- **P (planned)**: test intent and identifiers are designed, and the business or integration cases await development, with **no test results**. All T-A/B/C/D/E, T-INV and T-COST/SEC/PERF numbers here are planned IDs, not fabricated existing pytest nodes.
+- Runtime monitoring is the observation contract after go-live; for governance requirements, runtime means CI/tool sessions/PR events, and is not forced into product model logs.
 
-## 2. 完整需求覆盖
+## 2. Full requirement coverage
 
-| Requirement ID | 核心 fit criterion（沿 registry） | Enforcer / 权威执行者 | Test / 证据及状态 | Runtime monitor（待实现或待接线） |
+| Requirement ID | Core fit criterion (along the registry) | Enforcer / authority | Test / evidence and status | Runtime monitor (to implement or to wire up) |
 |---|---|---|---|---|
-| FR-A-01 | 合法/非法导入用例通过率=1；每文件状态与SHA版本分离 | A 导入协调/路径门；B 受控解析 | P T-A-01：合法TXT/PDF、坏/空/越界/重复/失败原因；C `test_document_identity_and_safe_ready_metadata` 仅字段部分 | `import_total/ready/failed`、`import_denied`、每批 `complete` |
-| FR-A-02 | 被改写历史快照数=0 | A 快照提交与current指针；E 历史读取 | P T-A-02：同路径换内容/移除/元数据变更、hash不变的旧快照；C `test_snapshot_identity_is_canonical_and_round_trips` | `snapshot_changed`、`historical_write_denied`、manifest hash mismatch |
-| FR-B-01 | 具合法来源的候选比例=1 | B 唯一 PaperQA2 适配；contracts ID/locator | P T-B-01：真实上游离线适配、原文定位；C `test_evidence_identity_excludes_advisory_summary_and_upstream_id`、`test_source_locator_rejects_missing_or_invalid_ranges` 仅合同 | `candidate_valid/invalid`、`locator_unresolvable`、representation fingerprint |
-| FR-B-02 | 未报告的检索失败数=0 | B 异常分类/有界尝试 | P T-B-02：超时、空结果、429、摘要JSON错误、禁止静默切模型；不能拿固定stub当真实检索质量 | `retrieval_empty/failed`、error kind、attempt count、model switch denied |
-| FR-C-01 | 未授权accepted决定=0；变更推进revision/digest | C human命令入口/追加ledger | P T-C-01：交互真实性、重放/伪造/排除/重置；C `test_review_rejects_nonhuman_or_unaccountable_decisions` 仅字段 | `review_command_rejected`、revision/digest、idempotency outcome |
-| FR-C-02 | 两条证据比较所需字段比例=1 | C 比较视图；只读 B 来源数据 | P T-C-02：至少两条反向论点，来源/版本/locator/原文/摘要/理由可见；比较不改ledger | comparison fields missing、`comparison_viewed`、unexpected ledger writes |
-| FR-D-01 | 空获准集生成尝试=0 | D 前门 + B 受控入口复核 | P T-D-01/T-INV-01：工厂/SDK/HTTP spies均0；C `test_answer_no_approved_evidence_is_empty_refusal` 仅拒答对象 | `empty_approved_abstention` + factory/SDK/HTTP attempts |
-| FR-D-02 | 未授权或陈旧发布=0 | D raw引用门/freshness门 + D→E 临界区 | P T-D-02/T-INV-04：未知/未发送/排除/跨域引用，生成中与落盘前变化；C `test_answer_rejects_duplicate_or_noncurrent_scope`、`test_release_rejects_inappropriate_release_or_false_check_claims` 仅声明一致性 | released/blocked、`release_stale`、cited/sent/approved IDs、当前/捕获revision |
-| FR-D-03 | 非受控外呼尝试=0 | D 调用计划；B factory/serializer/SDK/transport | P T-D-03：真 adapter+spy，自动补证/pre/post/metadata/Agent均被禁，raw映射不丢；静态导入检查只是部分 | unexpected outbound attempt、operation/model、context payload hash、attempt lineage |
-| FR-E-01 | JSON/Markdown导出必需字段往返比例=1 | E 证据包manifest/格式化/加载 | P T-E-01：问题/快照/审核/approved/sent/cited/答案/发布结果/locator完整；跨会话/版本/中断；C 合同往返仅对象部分 | `export_completed/failed`、bundle missing fields、record integrity |
-| FR-E-02 | 敏感或未许可导出字段=0 | E 白名单导出、历史注记；A 许可元数据 | P T-E-02：合成秘密/绝对路径/全文脱敏、旧报告hash不变；C portable source_name 仅字段 | `export_policy_denied`、`historical_write_denied`、superseded annotation |
-| INV-01 | 空获准集生成尝试=0 | D 生成前门；B 工厂前门 | P T-INV-01：移除guard必须触发spy失败；C refusal测试不证明0请求 | empty-approved request → factory/SDK/HTTP counts=0 |
-| INV-02 | 来源身份/版本不匹配=0 | A 源字节/快照；B locator；D 来源复核；contracts | P T-INV-02：原件损坏/同路径改版/定位失配；C snapshot/evidence identity与frozen测试部分 | source/evidence hash mismatch、locator failure、snapshot identity |
-| INV-03 | AI授予审核权限=0 | C ledger唯一写入口；D只消费投影 | P T-INV-03：模型自称human/accepted、比较/恢复/刷新都不授权；C human-only/forbidden-field测试部分 | accepted事件来源、review revision/digest、command rejected |
-| INV-04 | 已发布非法引用=0 | D 三集合/freshness，B sent日志与别名映射，E最终提交 | P T-INV-04：裁剪后旧key、同集不同revision、生成/提交竞态；C subset/ReleaseDecision显式checks部分 | subset violation、`release_stale`、publish conflict、完整scope IDs |
-| INV-05 | 被覆盖历史记录=0 | A/C/E 不可变/追加存储 | P T-INV-05：写相同ID不同字节、崩溃、superseded不改旧正文；C frozen只验证对象非磁盘 | history hash mismatch、write denied、state commit failure |
-| INV-06 | 越权工具效果=0 | 实际OpenCode工具/权限层、路径门、CI + 人审 | P T-INV-06：各角色路径/终端/网络正负探针；G `test_architecture_and_frozen_tree_faults` 仅Git/导入约束 | tool permission denied、out-of-scope diff、role/policy version |
-| INV-07 | 上下文预算或重注入违反=0 | D budget/assembler；B最后出站跳 | P T-INV-07：8999/9000/12000/12001、约束被压缩、未知usage、耗尽重试；不是字数近似 | final tokens/caps/tokenizer、constraint hash、attempt/cost/deadline |
-| INV-08 | 不可信索引加载=0 | A格式门；B不开放SearchIndex导入；E数据导出 | P T-INV-08：无害pkl/zip/可执行配置拒绝且loader spy=0；禁止恶意PoC | `index_import_denied`、unsafe format/schema/provenance |
-| QA-01 | 合同JSON往返及非法输入通过率=1 | 五种共享模型 + 嵌套DocumentVersion/SourceLocator；contracts | C `test_all_main_models_share_closed_frozen_versioned_schema`、`test_published_json_schemas_match_models`、`test_handwritten_synthetic_fixtures_round_trip`、`test_json_schema_is_valid_and_accepts_synthetic_record`；执行回执由主控提供 | schema version、validation failures、contract drift；产品接线待开发 |
-| PERF-01 | 合成小样例100次合同往返总耗时≤2秒 | 仅契约基准执行器，不是PaperQA运行性能 | P T-PERF-01：独立计时，记录硬件/Python/Pydantic/样例/循环/环境；需真实回执，不从测试文件推断达标 | benchmark wall time/environment/fixture version；不作为在线SLA |
-| COST-01 | 产品初始化验证/离线测试的模型请求=0；不含编码/审查助手；live需独立批准 | 无外呼契约导入；测试网络门；B未来调用许可 | P T-COST-01：无凭据环境、出站spy/deny、默认模型禁用；批准记录必须真实；不把session cost当证明 | factory/SDK/HTTP counts、reserved/actual/unknown usage、permission scope |
-| SEC-01 | 交付中真实秘密/成员身份字段=0 | 受控路径内容扫描 + 人工审阅；E未来导出门 | G `test_contract_surface_and_scoped_secret_faults` 的合成sentinel部分；C safe_source_name部分；P T-SEC-01：受控交付白名单/匿名检查 | secret/identity scan findings（不回显秘密）、export denied |
-| GOV-01 | 未事前批准实现合并=0 | 可信人审时序/测试内容hash；CI approval gate；OpenCode先计划 | G `test_approval_and_semantic_reports_cannot_self_authorize` 证明本地自批无效；P 真实批准先于实现的远端PR正负验证 | trusted approval absent/stale、implementation-before-approval、merge blocked |
-| GOV-02 | 未验prompt/model生产合并=0；三级验证 | 结构/回归/语义gate + required checks + reviewer | G `test_real_lint_type_dependency_and_timeout_faults`、`test_regression_executes_every_team_offline_test_and_rejects_fail_skip_empty`；P 全prior/真实live语义/远端保护；缺授权即blocked | suite IDs/result/skip/xfail、eval identity/threshold、required-check blocking |
-| GOV-03 | code/prompt PR缺新AI日志=0 | diff驱动AI-use-log gate；PR memo/bug/debt/transcript人审 | G `test_ai_log_requires_new_semantic_entry_for_code_or_prompt_change`；P 逐PR真实memo与五人OpenCode原始会话核对 | changed-code/prompt with log-update、memo verdict、transcript provenance |
-| GOV-04 | 未批安全变更/过时规则=0 | 安全路径检查、ADR + 学生review、规则版本/需求关联 | G frozen/architecture负例仅部分；P ADR缺失/旧规则/伪approval的真实PR阻断与一sprint更新检查 | safety diff without approved ADR、rules age/sprint、requirement-policy mismatch |
+| FR-A-01 | Valid/invalid import case pass rate=1; per-file status kept separate from the SHA version | A import coordination/path gate; B controlled parsing | P T-A-01: valid TXT/PDF, bad/empty/out-of-range/duplicate/failure reason; C `test_document_identity_and_safe_ready_metadata` covers the fields only | `import_total/ready/failed`, `import_denied`, per-batch `complete` |
+| FR-A-02 | Number of rewritten historical snapshots=0 | A snapshot commit and current pointer; E history read | P T-A-02: same path with changed content/removal/metadata change, old snapshot whose hash is unchanged; C `test_snapshot_identity_is_canonical_and_round_trips` | `snapshot_changed`, `historical_write_denied`, manifest hash mismatch |
+| FR-B-01 | Proportion of candidates with a legitimate source=1 | B the only PaperQA2 adapter; contracts ID/locator | P T-B-01: offline adaptation of the real upstream, original-text location; C `test_evidence_identity_excludes_advisory_summary_and_upstream_id`, `test_source_locator_rejects_missing_or_invalid_ranges` cover the contract only | `candidate_valid/invalid`, `locator_unresolvable`, representation fingerprint |
+| FR-B-02 | Number of unreported retrieval failures=0 | B exception classification/bounded attempts | P T-B-02: timeout, empty result, 429, summary JSON error, no silent model switching; a fixed stub must not stand in for real retrieval quality | `retrieval_empty/failed`, error kind, attempt count, model switch denied |
+| FR-C-01 | Unauthorized accepted decisions=0; a change advances revision/digest | C human command entry/append-only ledger | P T-C-01: interaction authenticity, replay/forgery/exclusion/reset; C `test_review_rejects_nonhuman_or_unaccountable_decisions` covers the fields only | `review_command_rejected`, revision/digest, idempotency outcome |
+| FR-C-02 | Proportion of fields needed to compare two evidence items=1 | C comparison view; reads B source data read-only | P T-C-02: at least two opposing arguments, with source/version/locator/original text/summary/rationale visible; comparison does not change the ledger | comparison fields missing, `comparison_viewed`, unexpected ledger writes |
+| FR-D-01 | Generation attempts on an empty approved set=0 | D front gate + B controlled entry re-check | P T-D-01/T-INV-01: factory/SDK/HTTP spies all 0; C `test_answer_no_approved_evidence_is_empty_refusal` covers only the refusal object | `empty_approved_abstention` + factory/SDK/HTTP attempts |
+| FR-D-02 | Unauthorized or stale releases=0 | D raw citation gate/freshness gate + D→E critical section | P T-D-02/T-INV-04: unknown/unsent/excluded/cross-domain citations, changes during generation and before the disk write; C `test_answer_rejects_duplicate_or_noncurrent_scope`, `test_release_rejects_inappropriate_release_or_false_check_claims` cover declaration consistency only | released/blocked, `release_stale`, cited/sent/approved IDs, current/captured revision |
+| FR-D-03 | Non-controlled outbound attempts=0 | D call plan; B factory/serializer/SDK/transport | P T-D-03: real adapter + spy, automatic evidence backfill/pre/post/metadata/Agent all disabled, raw mapping loses nothing; the static import check is only partial | unexpected outbound attempt, operation/model, context payload hash, attempt lineage |
+| FR-E-01 | Round-trip proportion of required fields in JSON/Markdown export=1 | E evidence bundle manifest/formatting/loading | P T-E-01: question/snapshot/review/approved/sent/cited/answer/release outcome/locator complete; cross-session/version/interruption; the C contract round trip covers the object part only | `export_completed/failed`, bundle missing fields, record integrity |
+| FR-E-02 | Sensitive or unlicensed export fields=0 | E allowlist export, history annotations; A license metadata | P T-E-02: synthetic secrets/absolute paths/full-text redaction, old report hash unchanged; C portable source_name covers the field only | `export_policy_denied`, `historical_write_denied`, superseded annotation |
+| INV-01 | Generation attempts on an empty approved set=0 | D pre-generation gate; B pre-factory gate | P T-INV-01: removing the guard must make the spy fail; the C refusal test does not prove 0 requests | empty-approved request → factory/SDK/HTTP counts=0 |
+| INV-02 | Source identity/version mismatches=0 | A source bytes/snapshot; B locator; D source re-check; contracts | P T-INV-02: corrupted original/same-path revision/locator mismatch; C snapshot/evidence identity and frozen tests cover part | source/evidence hash mismatch, locator failure, snapshot identity |
+| INV-03 | Review authority granted by AI=0 | C the only ledger write entry; D only consumes projections | P T-INV-03: the model claiming to be human/accepted, and comparison/recovery/refresh, never authorize; C human-only/forbidden-field tests cover part | accepted event source, review revision/digest, command rejected |
+| INV-04 | Illegal citations released=0 | D three sets/freshness, B sent log and alias mapping, E final commit | P T-INV-04: old key after trimming, same set with a different revision, generation/commit race; C subset/ReleaseDecision explicit checks cover part | subset violation, `release_stale`, publish conflict, full scope IDs |
+| INV-05 | Overwritten history records=0 | A/C/E immutable/append-only storage | P T-INV-05: writing different bytes under the same ID, crash, superseded does not change the old body; C frozen verifies objects only, not the disk | history hash mismatch, write denied, state commit failure |
+| INV-06 | Effects of out-of-scope tools=0 | The actual OpenCode tool/permission layer, path gate, CI + human review | P T-INV-06: positive and negative probes of each role's paths/terminal/network; G `test_architecture_and_frozen_tree_faults` covers Git/import constraints only | tool permission denied, out-of-scope diff, role/policy version |
+| INV-07 | Context budget or reinjection violations=0 | D budget/assembler; B last outbound hop | P T-INV-07: 8999/9000/12000/12001, constraints compressed, unknown usage, retries on exhaustion; not a character-count approximation | final tokens/caps/tokenizer, constraint hash, attempt/cost/deadline |
+| INV-08 | Untrusted index loads=0 | A format gate; B does not open SearchIndex import; E data export | P T-INV-08: harmless pkl/zip/executable config rejected and loader spy=0; no malicious PoC | `index_import_denied`, unsafe format/schema/provenance |
+| QA-01 | Contract JSON round trip and invalid-input pass rate=1 | The five shared models + nested DocumentVersion/SourceLocator; contracts | C `test_all_main_models_share_closed_frozen_versioned_schema`, `test_published_json_schemas_match_models`, `test_handwritten_synthetic_fixtures_round_trip`, `test_json_schema_is_valid_and_accepts_synthetic_record`; the execution receipt is provided by the controller | schema version, validation failures, contract drift; product wiring awaits development |
+| PERF-01 | Total wall time of 100 contract round trips on a small synthetic sample ≤2 seconds | Contract benchmark runner only, not PaperQA runtime performance | P T-PERF-01: independent timing, recording hardware/Python/Pydantic/sample/loop/environment; a real receipt is required, and meeting the target is not inferred from the test file | benchmark wall time/environment/fixture version; not an online SLA |
+| COST-01 | Model requests for product initialization validation/offline tests=0; excludes coding/review assistants; live needs separate approval | Outbound-free contract import; test network gate; B future call permit | P T-COST-01: credential-free environment, outbound spy/deny, default models disabled; the approval record must be real; session cost is not treated as proof | factory/SDK/HTTP counts, reserved/actual/unknown usage, permission scope |
+| SEC-01 | Real secrets/member identity fields in deliverables=0 | Controlled-path content scan + human review; E future export gate | G the synthetic sentinel part of `test_contract_surface_and_scoped_secret_faults`; C the safe_source_name part; P T-SEC-01: controlled deliverable allowlist/anonymity check | secret/identity scan findings (secrets not echoed), export denied |
+| GOV-01 | Merges of implementations without prior approval=0 | Trusted human review ordering/test content hash; CI approval gate; OpenCode plans first | G `test_approval_and_semantic_reports_cannot_self_authorize` proves local self-approval is invalid; P remote PR positive and negative verification that real approval precedes implementation | trusted approval absent/stale, implementation-before-approval, merge blocked |
+| GOV-02 | Production merges of unverified prompt/model changes=0; three-tier verification | Structure/regression/semantic gate + required checks + reviewer | G `test_real_lint_type_dependency_and_timeout_faults`, `test_regression_executes_every_team_offline_test_and_rejects_fail_skip_empty`; P all prior suites/real live semantics/remote protection; blocked while authorization is missing | suite IDs/result/skip/xfail, eval identity/threshold, required-check blocking |
+| GOV-03 | Code/prompt PRs missing a new AI log=0 | diff-driven AI-use-log gate; PR memo/bug/debt/transcript human review | G `test_ai_log_requires_new_semantic_entry_for_code_or_prompt_change`; P per-PR real memo checked against the five members' original OpenCode sessions | changed-code/prompt with log-update, memo verdict, transcript provenance |
+| GOV-04 | Unapproved safety changes/stale rules=0 | Safety path check, ADR + student review, rule version/requirement linkage | G frozen/architecture negative cases are partial only; P real PR blocking for a missing ADR/old rule/fake approval, plus the one-sprint update check | safety diff without approved ADR, rules age/sprint, requirement-policy mismatch |
 
-## 3. 计划测试如何落盘
+## 3. Where the planned tests land
 
-| 计划 ID | 目标测试文件（批准计划后才建） | 正向与负向最少要求 |
+| Planned ID | Target test file (created only after the plan is approved) | Minimum positive and negative requirements |
 |---|---|---|
-| T-A-01/02 | `test/offline/test_library.py` | 合法导入/新快照；坏文件、越界、同路径改版、重复/删除、历史不变 |
-| T-B-01/02 | `test/offline/test_retrieval.py` | 固定上游离线适配+source locator；空/异常/JSON/无许可与未知ID |
-| T-C-01/02 | `test/offline/test_review.py` | 明确人工命令与比较；伪human/重放/恢复/旧scope不获准 |
-| T-D-01/02/03 | `test/offline/test_answer.py` | 合法获准→受控草稿→发布；空集、bad引用、出站旁路、stale竞态 |
-| T-E-01/02 | `test/offline/test_reports.py` | 合法新报告/往返；覆写、损坏、半写、导出秘密/未许可内容 |
-| T-INV-01…08 | 上述模块tests + 经批准的新集成测试精确路径 | 每个INV有合法对照、破坏后会失败的负例；不能仅断言文字包含某词 |
-| T-PERF/COST/SEC | 依获批验证计划添加独立脚本/测试 | 真计时、无外连证据、仅合成敏感sentinel；不读取私人目录 |
-| 真实语义评测 | `test/live/` 与固定evaluation数据/报告合同 | 批准provider/model/数据/费用后真跑；保存真实标识、usage、结果与阈值，不mock替代 |
+| T-A-01/02 | `test/offline/test_library.py` | Valid import/new snapshot; bad file, out of range, same-path revision, duplicate/delete, history unchanged |
+| T-B-01/02 | `test/offline/test_retrieval.py` | Offline adaptation of the fixed upstream + source locator; empty/exception/JSON/no license and unknown ID |
+| T-C-01/02 | `test/offline/test_review.py` | Explicit human commands and comparison; fake human/replay/recovery/old scope not approved |
+| T-D-01/02/03 | `test/offline/test_answer.py` | Valid approval → controlled draft → release; empty set, bad citation, outbound bypass, stale race |
+| T-E-01/02 | `test/offline/test_reports.py` | Valid new report/round trip; overwrite, corruption, half write, exporting secrets/unlicensed content |
+| T-INV-01…08 | The module tests above + the exact paths of the approved new integration tests | Every INV has a legitimate control and a negative case that would fail once the guard is broken; asserting that some text contains a word is not enough |
+| T-PERF/COST/SEC | Standalone scripts/tests added per the approved verification plan | Real timing, evidence of no external connection, synthetic sensitive sentinels only; no reading of private directories |
+| Real semantic evaluation | `test/live/` and the fixed evaluation data/report contract | Actually run after provider/model/data/cost are approved; keep real identifiers, usage, results and thresholds; no mock substitution |
 
-上述是目标落点，不隐含对实现或路径写权限的审批；精确文件白名单按权限文档另审。
+The above are target locations and do not imply approval of implementation or of path write permissions; the exact file allowlist is reviewed separately under the permission document.
 
-## 4. 不能互相替代的证据
+## 4. Evidence that cannot substitute for each other
 
-1. Pydantic 拒绝 `actor_kind="model"` 不能证明一条 `human` 记录真的来自人；C 的交互/账本测试仍必须做。
-2. `AnswerDraft` 的 subset 验证不能证明 approved 来自当前 ledger，也不能证明 sent 真在 HTTP payload；D/B 集成测试必须观察真正边界。
-3. frozen 对象不等于磁盘历史不覆写；manifest/字节hash与故障注入仍必须做。
-4. 假模型可以证明确定性守卫，不能证明科学质量；上游已有引用/摘要能力也不自动成为团队新增贡献。
-5. 本地 schema/lint/log 测试通过不等于完整回归、真实语义评测或 GitHub 保护已启用。六类 gate 分别报告真实状态，缺一项不可统称全部完成。
+1. Pydantic rejecting `actor_kind="model"` does not prove that a `human` record really came from a human; C's interaction/ledger tests are still required.
+2. The subset validation of `AnswerDraft` cannot prove that approved came from the current ledger, nor that sent is really in the HTTP payload; the D/B integration test must observe the real boundary.
+3. A frozen object is not the same as disk history not being overwritten; manifest/byte hash and fault injection are still required.
+4. A fake model can prove deterministic guards but not scientific quality; the upstream's existing citation/summary capability does not automatically become a new team contribution.
+5. Local schema/lint/log tests passing is not the same as full regression, real semantic evaluation or GitHub protection being enabled. The six gate categories report their real status separately; if one is missing, the whole cannot be called complete.
 
-需求变更时，先更 registry，再同步本矩阵/ADR/不变量/权限/状态/政策和测试；规则须在一 sprint 内跟随人审需求更新。测试输出需保留真实 commit/版本与执行范围，不把这里的 P 编号改成 PASS 代替开发。
+When a requirement changes, update the registry first, then sync this matrix/ADR/invariants/permissions/state/policy and tests; rules must follow human-reviewed requirement updates within one sprint. Test output must keep the real commit/version and execution scope; the P numbers here must not be changed to PASS in place of development.
 
 ## Sources
 
-[1] urn:sha256:6af742d3cbc0973b056a084ba54ff413a5885b1bb4d6a97b0b08b93f64f2ef7e — CS5351-2026-2027-project.pdf（本地原文提取，10页）
+[1] urn:sha256:6af742d3cbc0973b056a084ba54ff413a5885b1bb4d6a97b0b08b93f64f2ef7e — CS5351-2026-2027-project.pdf (local text extraction, 10 pages)

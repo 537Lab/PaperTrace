@@ -1,10 +1,10 @@
-# 初始化验证证据说明
+# Initialization verification evidence notes
 
-- `final-offline.xml`：真实最终pytest JUnit，170项，0失败/0错误/0跳过；不是PaperQA2完整上游回归。
-- `offline-tests.txt`：实际离线通过输出；时间可能来自更早的同版本复跑，以final-offline.xml和最终提交绑定回执为最新记录。
-- `contracts-tdd.txt`、`gates-tdd.txt`：真实RED/GREEN过程；`*-red*.txt`故意保留失败实验，不是当前失败状态。
-- `opencode-runtime.json`：实际项目配置回读和13个真实许可引擎探针；不执行模型或read/edit/shell工具，不等同工具端到端。
-- `*-gate.json`、`all-gates-initialization.json`：初始化局部门禁与完整课程缺口。all为exit2/BLOCKED，不把未执行部分标PASS。
-- `delivery-audit.json`：必需文件/链接/追踪/源码冻结/匿名和小样例计时的程序检查；不是人工APPROVE。
+- `final-offline.xml`: the real final pytest JUnit run, 170 items, 0 failed / 0 errors / 0 skipped; it is not the full upstream PaperQA2 regression.
+- `offline-tests.txt`: actual offline pass output; the timestamp may come from an earlier re-run of the same version, so treat `final-offline.xml` and the final-submission-bound receipt as the latest record.
+- `contracts-tdd.txt`, `gates-tdd.txt`: real RED/GREEN process; `*-red*.txt` intentionally keeps failed experiments, not the current failure state.
+- `opencode-runtime.json`: actual project configuration readback and 13 real permission-engine probes; it does not execute the model or the read/edit/shell tools and is not end-to-end tool equivalence.
+- `*-gate.json`, `all-gates-initialization.json`: local initialization gates and the full course gap. `all` is exit 2 / BLOCKED; unexecuted parts are not marked PASS.
+- `delivery-audit.json`: programmatic checks of required files, links, traceability, source freeze, anonymity and small-sample timing; it is not a human APPROVE.
 
-为共享隐私，部分真实日志只把本机home路径替换为`<HOME>`，不改变断言、错误、通过数或时间；原日志保留在本机忽略目录`.local/raw-evidence/`，不随材料包分发。错误实验、修复后通过、未执行范围分别记录，不能把本目录的存在当作全部课程要求完成。
+For shared privacy, some real logs replace only the local home path with `<HOME>`, without changing assertions, errors, pass counts or timings; the original logs stay in the locally ignored directory `.local/raw-evidence/` and are not distributed with the material package. Failed experiments, post-fix passes and unexecuted scope are recorded separately; the existence of this directory is not proof that all course requirements are complete.

@@ -1,20 +1,20 @@
-# 许可证与再分发审查
+# License and redistribution review
 
-核对日期2026-11-13；这是已读取许可证/元数据及明确限制的工程清单，不是法律意见或全供应链认证。
+Checked 2026-11-13; this is an engineering inventory of the licenses/metadata that were read and of the explicit restrictions, not legal advice or a whole-supply-chain certification.
 
-| 组件 | 本轮证据/许可 | 决策 |
+| Component | Evidence/license this round | Decision |
 |---|---|---|
-| 原paper-qa核心 | 固定提交根LICENSE为Apache-2.0 | 保留完整原文、版权/归因与Git历史；新增团队代码不冒充上游作者 |
-| paper-qa-pypdf | 子包LICENSE/pyproject，Apache-2.0；其PyPDF依赖另有自身许可 | 后续文本PDF首选，显式固定parser；本轮未安装/运行该解析链 |
-| paper-qa-pymupdf / PyMuPDF | 子包声明AGPLv3，PyMuPDF有自身AGPL/商业条件 | 不纳入初始化环境；分发/提供网络服务前另审，不由根Apache许可推出可无条件闭源再分发 |
-| Docling / Nemotron | 子包LICENSE及pyproject；底层模型/服务/依赖另审 | 不装可选extra、不下载权重、不启用服务；子包许可不覆盖模型/数据/服务条款 |
-| 初始化venv | `initialization-environment-licenses.json`为真实安装元数据扫描 | Pydantic/pytest/ruff/mypy等以MIT为主；pathspec是MPL-2.0，packaging可Apache-2.0或BSD-2-Clause，typing_extensions是PSF-2.0；不把它们统称Apache |
-| Streamlit | 仅架构选型，本轮未安装；最终精确版本需核官方LICENSE及传递依赖 | 成员接入UI前锁版本/归因/审查 |
-| 模型/API | 未批准任何供应商/模型，未读密钥、未调用 | 后续核provider服务条款/权重许可、文献传输授权、计价/预算，不能据开源代码许可推导可使用模型 |
-| 上游tests里的论文PDF/图表/Office/录制 | 位于原基线本地Git；主项目LICENSE不自动证明每件再分发许可 | 本轮不将这些放入团队材料包，不上传不明权利数据；公开/私有GitHub上传完整历史前先审。仅私有也不是免除版权义务 |
-| 课程原PDF/审计handover | 本地原件hash保全，审计报告含私人绝对路径/环境信息 | `.local/materials/`忽略，不放Git或可分享包；团队文档仅记录必要来源/页码/摘要 |
-| 团队合成fixtures | 初始化自写，无真实论文或成员数据 | 明示synthetic、仅测试逻辑，不能当真实模型或科研评估证据 |
+| original paper-qa core | the root LICENSE at the pinned commit is Apache-2.0 | keep the full original text, copyright/attribution and Git history; new team code does not impersonate the upstream authors |
+| paper-qa-pypdf | subpackage LICENSE/pyproject, Apache-2.0; its PyPDF dependency carries its own license | preferred for later text PDFs, with the parser pinned explicitly; this round did not install/run that parsing chain |
+| paper-qa-pymupdf / PyMuPDF | the subpackage declares AGPLv3, and PyMuPDF has its own AGPL/commercial terms | not included in the initialization environment; review separately before distributing/providing a network service, and the root Apache license does not imply unconditional closed-source redistribution |
+| Docling / Nemotron | subpackage LICENSE and pyproject; the underlying models/services/dependencies need separate review | no optional extra installed, no weights downloaded, no service enabled; the subpackage license does not cover model/data/service terms |
+| initialization venv | `initialization-environment-licenses.json` is a scan of real install metadata | Pydantic/pytest/ruff/mypy etc. are mostly MIT; pathspec is MPL-2.0, packaging is Apache-2.0 or BSD-2-Clause, typing_extensions is PSF-2.0; they are not all lumped together as Apache |
+| Streamlit | architecture choice only, not installed this round; the final exact version needs the official LICENSE and transitive dependencies checked | lock the version/attribution/review before members wire in the UI |
+| model/API | no provider/model approved, no keys read, no calls made | later verify provider service terms/weight licenses, authorization for paper transmission, and pricing/budget; an open-source code license cannot be used to infer that a model is usable |
+| paper PDFs/figures/Office/recordings inside the upstream tests | located in the original baseline's local Git; the main project LICENSE does not automatically prove a redistribution license for each item | this round does not put them into the team materials package and does not upload data of unclear rights; review before uploading the full history to public/private GitHub. Being merely private does not waive copyright obligations |
+| course original PDFs/audit handover | local originals preserved by hash; the audit report contains private absolute paths/environment information | `.local/materials/` is ignored and kept out of Git or shareable packages; team documents record only the necessary source/page/summary |
+| team synthetic fixtures | written during initialization, with no real papers or member data | marked synthetic, test logic only; they cannot serve as evidence of a real model or research evaluation |
 
-本轮依赖锁不做全环境软件分发：不打包venv、wheel或模型。将来需要再分发依赖时，按精确版本收集并保留许可证/NOTICE；扫描器声明的license字符串不是全部义务。根上游完整Git历史含旧资料，不能在未审查时直接公开推送；保留原历史与清理受限数据如果冲突，须学生决定受限来源隔离/可追溯引用方案，并保证不丢原始基线证据。
+This round's dependency lock does not distribute the whole environment: no venv, wheel or model is packaged. If dependencies need to be redistributed later, collect them by exact version and keep the licenses/NOTICE; the license strings reported by a scanner are not the whole obligation. The root upstream's full Git history contains legacy material and must not be pushed publicly without review; if preserving the original history conflicts with cleaning restricted data, students must decide on a restricted-source isolation/traceable-reference plan and must ensure no original baseline evidence is lost.
 
-漏洞检查与许可证检查不同。本轮只核版本锁、元数据/已知限制；未访问完整漏洞库，不能宣称供应链没有漏洞。LiteLLM上游声明排除的版本限制保留在原pyproject，不为初始化擅自升级/替换。
+A vulnerability check is different from a license check. This round checked only version locks and metadata/known restrictions; no complete vulnerability database was consulted, so it cannot be claimed that the supply chain has no vulnerabilities. The version restriction excluded by LiteLLM's upstream declaration is kept in the original pyproject and is not upgraded/replaced on our own initiative for the initialization.

@@ -4,14 +4,14 @@
   "contract": "ReviewDecision",
   "data": {
     "schema_version": 1,
-    "snapshot_id": "snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5",
-    "evidence_id": "ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a",
+    "evidence_id": "ev-8017efe76fea1d9d93c149488f7c8fc0cc66f9f769f8969da8776ea48bc97b9e",
+    "snapshot_id": "snap-6f0d5ad0d5ce052433ff1169e741735fee5c3ecce63bd08aa8ebdf7eb51076da",
     "question_id": "q-synthetic-a",
     "status": "accepted",
     "actor_kind": "human",
     "reviewer_ref": "reviewer-A",
     "revision": 1,
-    "reason": "synthetic：模拟结构，不表示真实人工批准。",
+    "reason": "synthetic: a simulated structure; it does not represent real human approval.",
     "decided_at": "2026-01-01T00:02:00Z"
   }
 }

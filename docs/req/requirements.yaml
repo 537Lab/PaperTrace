@@ -6,42 +6,42 @@ requirements:
 - id: FR-A-01
   type: functional
   owner: A
-  statement: 导入本地PDF/TXT，显示每个文件的成功、失败与原因，逻辑文献ID与内容SHA256版本分离。
+  statement: Import local PDF/TXT files, show the success, failure and cause for each file, and keep the logical literature ID separate from the content SHA256 version.
   fit_criterion:
     metric: import_case_pass_ratio
     operator: '>='
     threshold: 1.0
-    verification: A正负导入测试；本轮仅契约测试，业务未开发
+    verification: A positive/negative import tests; this round is contract tests only, the business logic is not developed
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: FR-A-02
   type: functional
   owner: A
-  statement: 文献变更创建新不可变快照，旧快照与历史记录不得被覆写。
+  statement: Literature changes create a new immutable snapshot, and old snapshots and history records must not be overwritten.
   fit_criterion:
     metric: mutated_historical_snapshots
     operator: ==
     threshold: 0
-    verification: 同路径换内容/删除/重复文献/失败导入用例
+    verification: Same path with changed content/deletion/duplicate literature/failed import cases
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: FR-B-01
   type: functional
   owner: B
-  statement: 通过固定PaperQA2异步接口检索候选证据，输出可定位原文、版本及团队派生身份；摘要和相关度仅供参考。
+  statement: Retrieve candidate evidence through the fixed PaperQA2 async interface, and output locatable source text, version and the team-derived identity; the summary and relevance score are advisory only.
   fit_criterion:
     metric: candidate_records_with_valid_source_ratio
     operator: ==
     threshold: 1.0
-    verification: 合成Context适配及真实上游离线集成测试
+    verification: Synthetic Context adaptation and real-upstream offline integration tests
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - paperqa:src/paperqa/docs.py:156-169,492-500
   - paperqa:src/paperqa/types.py:238-316
@@ -49,56 +49,56 @@ requirements:
 - id: FR-B-02
   type: functional
   owner: B
-  statement: 检索失败、超时、空结果及模型解析错误显示明确状态，禁止伪造证据或静默换模型。
+  statement: Retrieval failures, timeouts, empty results and model parse errors show an explicit status; fabricating evidence or silently switching models is forbidden.
   fit_criterion:
     metric: unreported_retrieval_failures
     operator: ==
     threshold: 0
-    verification: 异常注入与有界重试/无网络负测
+    verification: Exception injection and bounded-retry/no-network negative tests
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: FR-C-01
   type: functional
   owner: C
-  statement: 只有真实人工操作能接受/排除/重置证据；追加审核决定并推进审核revision及digest。
+  statement: Only a genuine human action can accept/exclude/reset evidence; review decisions are appended and advance the review revision and digest.
   fit_criterion:
     metric: unauthorized_accepted_decisions
     operator: ==
     threshold: 0
-    verification: 模型建议不授予权限/伪造actor/撤销与重置测试
+    verification: Model suggestion grants no permission/forged actor/revert and reset tests
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: FR-C-02
   type: functional
   owner: C
-  statement: 比较至少两条证据时展示文献、版本、原文定位、摘要与审核理由；不得自动把相似视为同一证据。
+  statement: When comparing at least two pieces of evidence, show the literature, version, source locator, summary and review rationale; similarity must not be automatically treated as the same evidence.
   fit_criterion:
     metric: required_comparison_fields_present_ratio
     operator: ==
     threshold: 1.0
-    verification: 两来源相反论点的展示和不修改ledger测试
+    verification: Display of opposing claims from two sources and tests that the ledger is unchanged
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: FR-D-01
   type: functional
   owner: D
-  statement: 当没有人工获准证据时返回拒答状态，不进入任何生成调用。
+  statement: When there is no human-approved evidence, return the abstained status and enter no generation call.
   fit_criterion:
     metric: generation_attempts_with_empty_approved_set
     operator: ==
     threshold: 0
-    verification: 模型出站spy断言；真实业务未开发
+    verification: Model outbound spy assertions; the real business logic is not developed
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p3,5
   - audit:GAP-05
@@ -106,238 +106,238 @@ requirements:
 - id: FR-D-02
   type: functional
   owner: D
-  statement: 回答引用必须属于本轮实际发送且仍有效的获准证据；发布前重新核对快照与审核revision/digest，变更即阻断。
+  statement: Answer citations must belong to evidence that was actually sent this round and is still validly approved; re-check the snapshot and the review revision/digest before release, and block on any change.
   fit_criterion:
     metric: unauthorized_or_stale_releases
     operator: ==
     threshold: 0
-    verification: 未发送/已排除/未知引用与生成中语料或审核变化负测
+    verification: Negative tests for unsent/excluded/unknown citations and for corpus or review changes during generation
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: FR-D-03
   type: functional
   owner: D
-  statement: 仅通过受控适配路径生成答案，禁止aquery自动补证以及pre/post和自主Agent绕过；保留引用原始映射。
+  statement: Generate answers only through the controlled adapter path; automatic evidence addition by aquery, pre/post and autonomous Agent bypasses are forbidden; keep the raw citation mapping.
   fit_criterion:
     metric: uncontrolled_outbound_attempts
     operator: ==
     threshold: 0
-    verification: 实际adapter集成出站spy与生成后发布门测试
+    verification: Real adapter integration outbound spy and post-generation release gate tests
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - paperqa:src/paperqa/docs.py:588-721
   implementation_status: planned
 - id: FR-E-01
   type: functional
   owner: E
-  statement: 导出JSON与Markdown研究报告，包含问题、快照、获准及实际发送证据、审核决定、答案、发布结果和来源定位。
+  statement: Export the JSON and Markdown research report, containing the question, snapshot, approved and actually sent evidence, review decisions, answer, release result and source locators.
   fit_criterion:
     metric: export_roundtrip_required_fields_ratio
     operator: ==
     threshold: 1.0
-    verification: 跨会话加载/导出结构/版本兼容/来源定位用例
+    verification: Cross-session loading/export structure/version compatibility/source locator cases
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: FR-E-02
   type: functional
   owner: E
-  statement: 历史报告只读；新版本标记旧快照已被替代，默认导出不包含凭据、本机绝对路径或未经授权论文全文。
+  statement: History reports are read-only; a new version marks the old snapshot as superseded, and the default export contains no credentials, local absolute paths or unauthorized full text of papers.
   fit_criterion:
     metric: sensitive_or_unlicensed_export_fields
     operator: ==
     threshold: 0
-    verification: 自写脱敏fixture与历史不变hash测试
+    verification: Hand-written redaction fixtures and history-unchanged hash tests
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: INV-01
   type: invariant
   owner: D
-  statement: 零获准证据意味着零生成调用，不把模型自称有证据视为授权。
+  statement: Zero approved evidence means zero generation calls; a model claiming to have evidence is not authorization.
   fit_criterion:
     metric: generation_attempts_with_empty_approved_set
     operator: ==
     threshold: 0
-    verification: 不变量破坏负例必须导致测试失败；具体运行测试见架构追踪矩阵
+    verification: An invariant-breaking negative case must make the test fail; the concrete running tests are in the architecture trace matrix
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: INV-02
   type: invariant
   owner: A
-  statement: 文献内容版本、快照、证据身份不可变且来源可定位。
+  statement: Literature content versions, snapshots and evidence identities are immutable and their sources are locatable.
   fit_criterion:
     metric: identity_or_version_mismatches
     operator: ==
     threshold: 0
-    verification: 不变量破坏负例必须导致测试失败；具体运行测试见架构追踪矩阵
+    verification: An invariant-breaking negative case must make the test fail; the concrete running tests are in the architecture trace matrix
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: INV-03
   type: invariant
   owner: C
-  statement: 人审决定是授权唯一来源；模型不能编造或升级accepted状态。
+  statement: Human review decisions are the only source of authorization; a model cannot fabricate or upgrade an accepted state.
   fit_criterion:
     metric: ai_granted_review_permissions
     operator: ==
     threshold: 0
-    verification: 不变量破坏负例必须导致测试失败；具体运行测试见架构追踪矩阵
+    verification: An invariant-breaking negative case must make the test fail; the concrete running tests are in the architecture trace matrix
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: INV-04
   type: invariant
   owner: D
-  statement: 引用集合⊆本轮sent集合⊆当前人工accepted集合；发布前核对审核和语料新鲜度。
+  statement: Cited set ⊆ this round's sent set ⊆ the current human accepted set; verify review and corpus freshness before release.
   fit_criterion:
     metric: invalid_released_citations
     operator: ==
     threshold: 0
-    verification: 不变量破坏负例必须导致测试失败；具体运行测试见架构追踪矩阵
+    verification: An invariant-breaking negative case must make the test fail; the concrete running tests are in the architecture trace matrix
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: INV-05
   type: invariant
   owner: E
-  statement: 历史研究记录追加而不覆盖，旧记录保留原文版本与决定。
+  statement: History research records are appended, never overwritten; old records keep the original text version and decisions.
   fit_criterion:
     metric: overwritten_history_records
     operator: ==
     threshold: 0
-    verification: 不变量破坏负例必须导致测试失败；具体运行测试见架构追踪矩阵
+    verification: An invariant-breaking negative case must make the test fail; the concrete running tests are in the architecture trace matrix
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: INV-06
   type: invariant
   owner: governance
-  statement: 编码代理默认无读写；按角色显式白名单、保护凭据/冻结源码/人工规则与推送。
+  statement: Coding agents have no read/write by default; access is an explicit per-role allow-list that protects credentials/frozen source/human rules and pushing.
   fit_criterion:
     metric: unauthorized_tool_effects
     operator: ==
     threshold: 0
-    verification: 不变量破坏负例必须导致测试失败；具体运行测试见架构追踪矩阵
+    verification: An invariant-breaking negative case must make the test fail; the concrete running tests are in the architecture trace matrix
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: INV-07
   type: invariant
   owner: D
-  statement: 每次AI输入最多12000tokens、9000触发压缩、输出最多2000；压缩后关键约束与授权身份重新注入。
+  statement: Each AI input is at most 12000 tokens, 9000 triggers compaction and output is at most 2000; after compaction the key constraints and the authorization identity are re-injected.
   fit_criterion:
     metric: context_budget_or_reinjection_violations
     operator: ==
     threshold: 0
-    verification: 不变量破坏负例必须导致测试失败；具体运行测试见架构追踪矩阵
+    verification: An invariant-breaking negative case must make the test fail; the concrete running tests are in the architecture trace matrix
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: INV-08
   type: invariant
   owner: B
-  statement: 不导入不可信第三方pickle索引，不将原始论文许可等同于主项目代码许可。
+  statement: Do not import untrusted third-party pickle indexes, and do not equate a source paper's licence with the main project's code licence.
   fit_criterion:
     metric: untrusted_index_loads
     operator: ==
     threshold: 0
-    verification: 不变量破坏负例必须导致测试失败；具体运行测试见架构追踪矩阵
+    verification: An invariant-breaking negative case must make the test fail; the concrete running tests are in the architecture trace matrix
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: QA-01
   type: quality
   owner: all
-  statement: 共享契约对规范JSON序列化再解析保持相等，未知字段与非法状态必须拒绝。
+  statement: Shared contracts stay equal after canonical JSON serialization and re-parsing, and unknown fields and illegal states must be rejected.
   fit_criterion:
     metric: contract_roundtrip_and_negative_test_pass_ratio
     operator: ==
     threshold: 1.0
     verification: test/offline/test_contracts.py
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: PERF-01
   type: performance
   owner: all
-  statement: 在记录硬件及版本的离线环境中，100个小型契约JSON往返的总耗时不超过2秒；不推断PaperQA性能提升。
+  statement: In an offline environment with the hardware and versions recorded, 100 small contract JSON round-trips take at most 2 seconds in total; this does not imply any PaperQA performance improvement.
   fit_criterion:
     metric: contract_100_roundtrip_wall_seconds
     operator: <=
     threshold: 2.0
-    verification: 独立计时基准，保留实测结果；本轮适用于小型合成样例
+    verification: Independent timing benchmark, keeping the measured results; this round applies to small synthetic samples
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: COST-01
   type: cost
   owner: all
-  statement: PaperTrace产品的初始化验证和默认离线测试不调用产品LLM；编码/审查助手推理另计入AI-use log，不宣称零额度；真实产品评估必须另批provider/model、数据和金额/次数上限。
+  statement: PaperTrace product initialization verification and the default offline tests make no product LLM calls; coding/review assistant inference is accounted separately in the AI-use log and no zero-quota claim is made; a real product evaluation must separately approve provider/model, data and cost/attempt caps.
   fit_criterion:
     metric: initialization_model_requests
     operator: ==
     threshold: 0
-    verification: 网络禁用测试；运行前无凭据白名单环境；真实评估授权记录
+    verification: Network-disabled test; credential-free allow-listed environment before running; real evaluation authorization records
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: SEC-01
   type: security
   owner: all
-  statement: 仓库与交付包不得含真实凭据或成员个人信息；仅用自写合成数据做团队默认测试。
+  statement: The repository and deliverable packages must contain no real credentials or member personal information; team default tests use only hand-written synthetic data.
   fit_criterion:
     metric: detected_secrets_or_member_identity_fields
     operator: ==
     threshold: 0
-    verification: 受控路径与内容扫描及人工审查；不扫描用户私有目录
+    verification: Controlled path and content scan plus human review; user private directories are not scanned
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p5-6
   implementation_status: planned
 - id: GOV-01
   type: governance
   owner: all
-  statement: 测试和执行计划必须由非实现者在实现开始前真实批准；未批准则不能进入正式业务开发/合并。
+  statement: Tests and the execution plan must be genuinely approved by a non-implementer before implementation starts; without that approval no formal business development/merge may proceed.
   fit_criterion:
     metric: unapproved_implementation_merges
     operator: ==
     threshold: 0
-    verification: 可信GitHub审核/时序证据；本轮待授权，不能用PR自写approved自证
+    verification: Trustworthy GitHub review/ordering evidence; this round awaits authorization and a self-written PR approved cannot prove itself
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p10:gate1
   - course-project:p7:D9
@@ -345,14 +345,14 @@ requirements:
 - id: GOV-02
   type: governance
   owner: all
-  statement: 每轮执行结构、完整既往回归、行为三级验证；prompt/model变化必须通过真实固定语义评估后才可生产。
+  statement: Each round runs structural, full prior-regression and behavioural three-tier verification; prompt/model changes must pass a real fixed semantic evaluation before production.
   fit_criterion:
     metric: unverified_prompt_or_model_production_merges
     operator: ==
     threshold: 0
-    verification: 六类门禁；无真实评估时fail-closed而非skip-as-pass
+    verification: The six gates; without a real evaluation, fail-closed rather than skip-as-pass
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p6:D4
   - course-project:p10:gates2-5
@@ -360,14 +360,14 @@ requirements:
 - id: GOV-03
   type: governance
   owner: all
-  statement: 每次代码或prompt PR更新真实AI使用日志、逐PR审查memo、显著bug与债务；保留五人的真实原始OpenCode会话。
+  statement: Every code or prompt PR updates the real AI-use log, a per-PR review memo, and significant bugs and debt; the genuine raw OpenCode sessions of all five members are preserved.
   fit_criterion:
     metric: code_or_prompt_pr_without_log_update
     operator: ==
     threshold: 0
-    verification: git差异驱动log gate；transcript审核不得伪造
+    verification: A git-diff-driven log gate; transcript review must not be fabricated
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p2,6:D4-D5
   - course-project:p10:gate6
@@ -375,14 +375,14 @@ requirements:
 - id: GOV-04
   type: governance
   owner: all
-  statement: 安全路径变化须ADR+人工审核；规则在人类审核后的需求变更一个sprint内同步。
+  statement: Safety-path changes require an ADR plus human review; rule changes following a human-reviewed requirements change are synchronized within one sprint.
   fit_criterion:
     metric: unapproved_safety_or_stale_rule_changes
     operator: ==
     threshold: 0
-    verification: 安全路径diff检查、ADR审查、规则版本/需求版本一致性
+    verification: Safety-path diff check, ADR review, consistency of the rule version/requirements version
   priority: Must
-  tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
+  tradeoff: Keep safety and acceptance; trim unnecessary automation/multi-user/multimodal first, never trade skipped verification for schedule.
   sources:
   - course-project:p6:D3
   - course-project:p10:branch-protection

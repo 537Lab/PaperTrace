@@ -239,7 +239,7 @@
         "FR-E-01"
       ],
       "input": {
-        "question": "请用中文区分结果与局限。",
+        "question": "Distinguish the results from the limitations.",
         "approved_evidence": [
           {
             "id": "ev-a",
@@ -249,9 +249,9 @@
       },
       "rubric": {
         "must_include": [
-          "三次合成模拟",
-          "硬件未说明",
-          "不可推断真实工作负载"
+          "three synthetic simulations",
+          "hardware unspecified",
+          "no real workload can be inferred"
         ],
         "citation_ids": [
           "ev-a"

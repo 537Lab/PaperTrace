@@ -1,7 +1,7 @@
-# Live tests：待功能开发与另行授权
+# Live tests: pending feature development and separate authorization
 
-此目录不是已通过的测试套件；目前没有业务adapter、真实模型测试或提供商凭据注入配置，不能运行空目录并报告PASS。默认初始化不调用模型、不读取API key，`test/offline`与live严格分离。
+This directory is not a passing test suite; there is currently no business adapter, real model test or provider credential injection configuration, so an empty directory must not be run and reported as PASS. The default initialization calls no model and reads no API key, and `test/offline` is strictly separated from live.
 
-成员完成A–E业务后，为真实adapter添加可定位到需求ID的正负live用例，取得独立学生审核、计划及事前测试批准。调用前批准provider/model/version、合成数据范围、次数、单次timeout、最大金额及中止策略，密钥从受控服务注入但不存仓库/转录/报告。使用`test/evaluation/README.md`约定保存输入/prompt/source/test哈希、真实content/usage/finish_reason及费用。初始化门禁不接受仓库内自行声明的批准。
+After members complete the A–E business logic, they add positive and negative live cases that can be traced to requirement IDs for the real adapter, and obtain independent student review, a plan and prior test approval. Before calling, approve the provider/model/version, synthetic data scope, call count, per-call timeout, maximum cost and abort strategy; keys are injected from a controlled service but are not stored in the repository/transcripts/reports. Follow the convention in `test/evaluation/README.md` to save the input/prompt/source/test hashes, the real content/usage/finish_reason and the cost. The initialization gate does not accept approvals self-declared inside the repository.
 
-完整既往回归必须覆盖上游`tests/`、`packages/*/tests`及所有团队历史套件，见`docs/ci/full-regression.md`。只有离线契约通过不代表PaperQA2集成、live或语义质量通过。
+Full prior regression must cover upstream `tests/`, `packages/*/tests` and all team historical suites; see `docs/ci/full-regression.md`. Offline contracts passing does not mean PaperQA2 integration, live or semantic quality passes.
