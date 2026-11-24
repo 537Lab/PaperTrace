@@ -2298,9 +2298,15 @@ def _ingest_receipt(request):
     return receipt
 
 
-def test_txt_ingest_receipt_binds_utf8_bytes_to_the_document_version():
+@pytest.mark.parametrize(
+    ("source_name", "metadata"),
+    (("合成文献.txt", {"label": "synthetic"}), ("合成文献.TXT", {})),
+    ids=("lowercase", "uppercase-empty-metadata"),
+)
+def test_txt_ingest_receipt_binds_utf8_bytes_to_the_document_version(source_name, metadata):
     """FR-A-01 / INV-02 / COST-01: validate controlled UTF-8 bytes locally."""
-    request = _ingest_txt_request("合成文献.txt", "合成证据。\n第二行。\n".encode())
+    request = _ingest_txt_request(source_name, "合成证据。\n第二行。\n".encode())
+    request["metadata"] = metadata
     expected_reference = f"txt-validated:{request['document_id']}:{request['version_sha256']}"
 
     assert _ingest_receipt(request) == {
@@ -2322,26 +2328,41 @@ def test_txt_ingest_reference_is_stable_and_changes_when_bytes_change():
     assert first_reference != _ingest_receipt(second)["representation_ref"]
 
 
+_SYNTHETIC_PRIVATE_PATH = "/synthetic-private/unpublished/source.txt"
+_SYNTHETIC_SOURCE_EXCERPT = "SYNTHETIC_UNPUBLISHED_EXCERPT"
+
+
 @pytest.mark.parametrize(
     ("source_name", "source_bytes", "bad_digest", "reason"),
     (
-        ("synthetic.pdf", b"Synthetic input", False, "UNSUPPORTED_FORMAT"),
-        ("synthetic.txt", b"\xff\xfe", False, "INVALID_UTF8"),
+        ("synthetic.pdf", _SYNTHETIC_SOURCE_EXCERPT.encode(), False, "UNSUPPORTED_FORMAT"),
+        ("synthetic.txt", b"\xff\xfe" + _SYNTHETIC_SOURCE_EXCERPT.encode(), False, "INVALID_UTF8"),
         ("synthetic.txt", b"", False, "EMPTY_TEXT"),
         ("synthetic.txt", b"  \t\r\n", False, "EMPTY_TEXT"),
-        ("synthetic.txt", b"Synthetic source marker", True, "HASH_MISMATCH"),
+        ("synthetic.txt", _SYNTHETIC_SOURCE_EXCERPT.encode(), True, "HASH_MISMATCH"),
     ),
     ids=("format", "utf8", "empty", "whitespace", "hash"),
 )
 def test_txt_ingest_returns_bounded_failed_receipt(
-    source_name, source_bytes, bad_digest, reason
+    source_name, source_bytes, bad_digest, reason, capsys, caplog
 ):
-    """FR-A-01 / INV-02 / SEC-01: reject invalid input without echoing bytes."""
+    """FR-A-01 / INV-02 / SEC-01: reject invalid input without leaking diagnostics."""
     request = _ingest_txt_request(source_name, source_bytes)
+    request["metadata"] = {
+        "synthetic_source_path": _SYNTHETIC_PRIVATE_PATH,
+        "synthetic_preview": _SYNTHETIC_SOURCE_EXCERPT,
+    }
     if bad_digest:
         request["version_sha256"] = "0" * 64
 
-    assert _ingest_receipt(request) == {
+    with caplog.at_level("DEBUG"):
+        receipt = _ingest_receipt(request)
+    captured = capsys.readouterr()
+    for channel in (repr(receipt), captured.out, captured.err, caplog.text):
+        assert _SYNTHETIC_PRIVATE_PATH not in channel
+        assert _SYNTHETIC_SOURCE_EXCERPT not in channel
+
+    assert receipt == {
         "document_id": request["document_id"],
         "version_sha256": request["version_sha256"],
         "status": "failed",

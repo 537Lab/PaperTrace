@@ -505,3 +505,22 @@ entries:
   limitations:
   - Codex 起草测试和计划，本次未发起 OpenCode 或产品模型请求。
   - 这批结果只证明测试收集和入口缺失，新增行为断言尚未执行。
+
+- entry_id: B-TEST-20261124-TXT-INGEST-REVIEW
+  timestamp: '2026-11-24T10:30:42+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model identifier not independently attested
+  purpose: 补齐 PR 47 独立复审要求的空 metadata、大写 TXT 和失败诊断脱敏测试
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/a-b-txt-ingest-receipt-plan.md
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 537Lab 在 PR 47 的 review 6032581502 对 0c1e8475 提出修改要求。
+  verification:
+  - 锁定环境 70 项既有 B 用例通过，8 项新增用例均在 Gateway.ingest 缺失处预期失败。
+  - 临时测试替身通过 8 项新用例，向回执、标准输出、标准错误和日志逐一注入合成路径时，均触发脱敏断言。
+  - Ruff、Schema、AI 使用披露和差异检查通过。
+  limitations:
+  - 临时替身不属于提交，生产摄取端口尚未实现。本轮未调用 OpenCode 或产品模型。
