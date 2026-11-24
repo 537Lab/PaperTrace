@@ -531,3 +531,96 @@ entries:
   - 'Local schema, ai-log, ruff, mypy, and test_library_view.py executed cleanly prior to PR publication.'
   limitations:
   - Re-publication preserves original OpenCode implementation verbatim; requires fresh non-author GitHub approval and remote Gate 1 verification before squash merge.
+- entry_id: SHARED-APP-TEST-20261123-01
+  timestamp: '2026-11-23T12:38:00+00:00'
+  tool: Antigravity (local verified test/plan drafting with user-authorized GitHub publication)
+  model: Gemini 4
+  purpose: Propose the single shared public application entrypoint plan and 12 offline RED tests for Issue #37 connecting A library view and E reports panel while explicitly blocking absent B/C/D ports
+  scope:
+  - docs/team/designs/shared-app/entrypoint-plan-v1.md
+  - test/offline/test_app_entrypoint.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - Verified Ruff check passes on test/offline/test_app_entrypoint.py with papertrace.ruff.toml
+  - Verified pytest collection collects all 12 offline test nodes with zero collection errors and fails cleanly at IMPLEMENTATION_MISSING before implementation
+  - Verified schema, ai-use-log and semantic gates pass locally against origin/main
+  limitations:
+  - This is a tests-only RED proposal authored with AI assistance under 537Lab authorization, not an independent non-author human Approve and not a student-supervised OpenCode D5 implementation transcript
+  - No src/papertrace/app.py implementation, no new dependencies, no PaperQA2/provider/network calls, and no edits to other modules
+- entry_id: SHARED-APP-TEST-REVIEW-FIX-20261123-01
+  timestamp: '2026-11-23T12:51:00+00:00'
+  tool: Antigravity (local verified review-fix drafting with user-authorized GitHub push)
+  model: Gemini 4
+  purpose: Address independent reviewer ziqilin669 CHANGES_REQUESTED on PR #39 head c0fd8ce4 by adding pending_record/upstream-error forwarding controls, positive UI visibility assertions, and real-E UI facade signature alignment
+  scope:
+  - docs/team/designs/shared-app/entrypoint-plan-v1.md
+  - test/offline/test_app_entrypoint.py
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - Preserved all original 12 test nodes and added 2 focused controls (14 total collected, zero collection errors, 14 explicit IMPLEMENTATION_MISSING RED failures)
+  - Verified Ruff passes cleanly on test/offline/test_app_entrypoint.py with papertrace.ruff.toml
+  - Verified local schema, ai-use-log and semantic gates pass against origin/main
+  limitations:
+  - Still a tests-only RED proposal awaiting independent non-author Approve on the new exact HEAD; no src/papertrace/app.py implementation exists yet
+  - Offline stubs validate unit/wiring contracts only and do not substitute for real A/E component integration or live Streamlit click acceptance
+- entry_id: SHARED-APP-TEST-LOOPBACK-FIX-20261123-01
+  timestamp: '2026-11-23T13:53:00+00:00'
+  tool: Antigravity + Codex adversarial pre-review (user-authorized test proposal update)
+  model: Gemini 4 + Codex
+  purpose: Add strict fail-closed loopback server.address negative/positive controls (unset None, empty/whitespace, config read error, non-string, non-loopback, explicit loopback, missing Streamlit) to PR #39 before re-implementing src/papertrace/app.py
+  scope:
+  - docs/team/designs/shared-app/entrypoint-plan-v1.md
+  - test/offline/test_app_entrypoint.py
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - Preserved all 14 prior tests and added 18 startup test nodes (13 parameterized negative, 4 parameterized positive, 1 fresh-import missing-Streamlit node; 32 total collected with 0 collection errors via pytest -c papertrace.pytest.ini --collect-only test/offline/test_app_entrypoint.py exit code 0, and 32 explicit IMPLEMENTATION_MISSING RED failures via pytest -c papertrace.pytest.ini test/offline/test_app_entrypoint.py exit code 1)
+  - Verified targeted Ruff passes cleanly via ruff check --config papertrace.ruff.toml test/offline/test_app_entrypoint.py (exit code 0)
+  - Ran two-round independent adversarial pre-review via Codex (session 01a208af-5c8b-7d02-8465-8ff6e143789c) reaching PASS with zero P0/P1 findings, then also resolved both remaining P2 polish notes (restoring papertrace.app attribute + rejecting raw ModuleNotFoundError text, and recording exact verification commands)
+  - Verified local scripts/gates.py --gate schema, --gate ai-log, and --gate semantic each pass (exit code 0) against origin/main on the published commit
+  limitations:
+  - Tests-only RED proposal awaiting independent non-author Approve on the new exact HEAD; no src/papertrace/app.py exists in this PR
+  - A fresh implementation PR must be opened after this new test HEAD is approved so test-approval timestamp ordering stays valid
+- entry_id: SHARED-APP-SRC-CODEX-20261123-01
+  timestamp: '2026-11-23T14:23:00+00:00'
+  tool: Codex delegate (session 01a208bb-8e5d-7740-a891-1073e364577c) + Antigravity independent pre-review and local .venv verification under 537Lab authorization
+  model: Codex + Gemini 4
+  purpose: Implement strict fail-closed src/papertrace/app.py from independently approved PR #39 head eb93b7f90cabe3d3c0a7ce433b6cd0b80875882a, superseding draft PR #40
+  scope:
+  - src/papertrace/app.py
+  - docs/ai-use-log.yaml
+  status: implementation-verified-awaiting-independent-human-review
+  approvals:
+  - PR #39 exact head eb93b7f90cabe3d3c0a7ce433b6cd0b80875882a independently APPROVED by Y15BeTa at 2026-11-23T14:10:05Z (review PRR_kwDOVtJ17M8AAAABZwFWAg)
+  - Project/Module A owner 537Lab documented the protected-config alternative implementation confirmation in Issue #37 comment 7103536564 because protected opencode.jsonc grants no edit permission for shared src/papertrace/app.py and must not be widened in a feature PR
+  verification:
+  - Verified all 32 approved test nodes pass in clean project .venv with pytest-socket via pytest -c papertrace.pytest.ini test/offline/test_app_entrypoint.py -vv (32 passed in 0.08s, exit code 0)
+  - Verified targeted Ruff passes via ruff check --config papertrace.ruff.toml src/papertrace/app.py test/offline/test_app_entrypoint.py (exit code 0)
+  - Verified strict mypy passes in clean no-Streamlit .venv via mypy --config-file mypy.ini src/papertrace (Success: no issues found in 6 source files, exit code 0)
+  - Verified local scripts/gates.py schema, ai-log, semantic, and static sub-checks (types/dependencies/frozen-baseline/architecture/contract-api/secrets/permissions) all PASS; approved PR #39 test and plan blobs remain byte-identical
+  limitations:
+  - Protected opencode.jsonc was not modified; if the team/course later adopts a separate narrow-permission opencode.jsonc PR for shared src/papertrace/app.py, a restricted OpenCode replay session can be recorded on top of that adopted configuration
+  - Unit tests use offline stubs aligned with A/E contracts; real merged A+E component integration, live Streamlit click/bind verification, B/C/D integration, and shared repo lint/upstream regression remain separate acceptance steps
+- entry_id: SHARED-APP-REOPEN-20261125-01
+  timestamp: '2026-11-24T22:51:42Z'
+  tool: Git / GitHub CLI (human-directed branch re-publication; no code generation)
+  model: N/A
+  purpose: Re-open clean implementation PR for approved test anchor PR #39 (eb93b7f9) carrying verbatim validated shared entry point code from PR #41 (f64baad3)
+  scope:
+  - src/papertrace/app.py
+  - docs/ai-use-log.yaml
+  status: reopened-for-independent-review
+  approvals:
+  - PR #39 exact test anchor eb93b7f90cabe3d3c0a7ce433b6cd0b80875882a re-approved by Y15BeTa after branch-protection review dismissal event.
+  - Student (537Lab) authorized clean re-publication without modifying gate_evidence.py or altering previously validated PR #41 source code.
+  verification:
+  - 'All PR #41 implementation files match f64baad3 byte-for-byte.'
+  - 'All approved PR #39 test and plan files match eb93b7f9 byte-for-byte.'
+  - 'Local schema, ai-log, ruff, mypy, and app offline tests executed cleanly prior to PR publication.'
+  limitations:
+  - Re-publication preserves original PR #41 implementation verbatim; requires fresh non-author GitHub approval and remote Gate 1 verification before squash merge.
