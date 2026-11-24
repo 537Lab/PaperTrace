@@ -343,3 +343,21 @@ entries:
   - Combined plan + tests-only RED candidate drafted under 537Lab authorization in chat; no separate prior written student plan approval record exists yet, so this PR is opened as Draft awaiting explicit student plan confirmation and independent non-author test approval on the exact HEAD before any implementation begins.
   - Scope is strictly limited to the three tests-only files; source, existing tests, and protected configuration remain untouched.
   - The missing-module guard prevents execution of behavioral and AST assertions; real A/E integration, live Streamlit interaction, and full regression are separate later verification.
+
+- entry_id: SHARED-WORKBENCH-TEST-20261124-02
+  timestamp: '2026-11-24T11:40:00Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Correct the native Path fixture in response to independent peer review of PR 46
+  scope:
+  - test/offline/test_interactive_workbench.py
+  - docs/team/designs/shared-app/interactive-workbench-plan-v1.md
+  status: revised-test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Reproduced basename semantics using Python PurePosixPath and PureWindowsPath; POSIX retains backslash, Windows yields slash.txt.
+  - Preserve the forged backslash selection literal on both platforms and native valid basename availability on Windows.
+  - Full test collection, RED execution and Ruff for this revision not yet run by this assistant.
+  limitations:
+  - Test fixture and plan only; no business source or previously approved tests modified.
+  - This is not a student-supervised OpenCode implementation transcript.

@@ -297,12 +297,21 @@ def test_invalid_import_batches_fail_closed_without_disclosure(tmp_path, monkeyp
     wb = WorkbenchHarness(tmp_path, monkeypatch)
     duplicate = wb.root.parent / "other" / wb.alpha.name
     control = wb.root / "control\nname.txt"
-    backslash = wb.root / "back\\slash.txt"
+    bad_backslash_name = "back\\slash.txt"
+    backslash = wb.root / bad_backslash_name
     candidates = (wb.alpha, duplicate, control, backslash, wb.beta)
-    for bad_selection in (wb.alpha.name, control.name, backslash.name, str(wb.outside)):
+    # POSIX preserves the literal backslash in a basename. Windows instead
+    # parses it as a separator; the resulting basename is a legal slash.txt.
+    expected_options = (
+        ("beta.txt",)
+        if backslash.name == bad_backslash_name
+        else (backslash.name, "beta.txt")
+    )
+    # Forge the same forbidden widget value on both platforms, not Path.name.
+    for bad_selection in (wb.alpha.name, control.name, bad_backslash_name, str(wb.outside)):
         forged = InteractiveUI(selection=("beta.txt", bad_selection), clicks=("import",))
         state = wb.render(forged, available_paths=candidates)
-        assert forged.file_options == [("beta.txt",)]
+        assert forged.file_options == [expected_options]
         assert [message for kind, message in forged.messages if kind == "error"] == [
             SELECTION_ERROR,
         ]

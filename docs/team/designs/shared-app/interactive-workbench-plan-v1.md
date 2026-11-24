@@ -39,3 +39,6 @@ def render_interactive_workbench(
 测试复用入口提案的合成 A 服务、视图与历史存储，通过真实 `render_app` 驱动，E 使用签名严格的 spy。文件路径和错误详情均为合成数据。真实 Streamlit 点击、A/E 实体接入和完整回归属于后续验收。回环值矩阵已在现有入口测试覆盖。本轮收集应成功，执行应有且仅有 12 个 `IMPLEMENTATION_MISSING: papertrace.workbench` 失败。缺失检查位于每个用例体开头。重名与非法文件名、无效导航回退、单按钮隔离和首次渲染脱敏均在现有节点内验证。合成 A/E 端口守卫仅在真实 `render_app` 委托期间允许成员访问或调用。
 
 仅写当前计划、`test/offline/test_interactive_workbench.py` 和 `docs/ai-use-log.yaml`。执行定向 Ruff、pytest 收集、pytest RED 与差异检查，记录真实退出码，提交具体测试版本供非作者审查。收到绑定该版本的独立人工批准后，才在后续实现轮接入控件和装配层，复跑本套测试与既有回归。如需撤回本轮提案，仅撤销本轮三文件差异。
+
+### 跨平台夹具说明（独立复审反馈）
+同一 `back\\slash.txt` 字符串在 POSIX 是含反斜杠的非法 basename，在 Windows 原生 Path 中则被解释为路径，basename 为合法的 `slash.txt`。测试按实际 basename 判断候选展示，同时在两种平台均直接伪造含反斜杠的控件选择字符串并要求整批拒绝。保留重名、控制字符、越界路径、零写入与脱敏检查；不缩窄 Windows 支持范围。修订前12节点不变，修订后完整 pytest/Ruff 仍需执行。
