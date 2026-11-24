@@ -505,3 +505,20 @@ entries:
   limitations:
   - 评估版本的固定集 ID 绑定另由 B、D 和 evaluator 负责人协调
   - 本次为 Codex 准备的测试提案，未修改源码或提示词
+- entry_id: B-TEST-20261124-QUAL02-SYSTEM-BINDING
+  timestamp: '2026-11-24T23:15:53+0800'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按 PR 57 的独立复审意见加固版本化 system 提示词绑定
+  scope:
+  - test/offline/test_b_answer_request.py
+  - docs/team/designs/module-B/qual02-answer-request-test-plan.md
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 队友对 df6bea5293b04113315b5ebcd91bb6dfa1f38e5a 提出 system 绑定修改意见
+  verification:
+  - 保留原测试节点。定向复跑 73 通过、4 项预期失败。Ruff 通过。
+  - 三组正负对照验证错误的捕获 system 均被拒绝；改写 TXT 或删除末尾换行均被拒绝。
+  limitations:
+  - 本次只修改测试和记录，真实模型调用为零。新 head 需独立复审。

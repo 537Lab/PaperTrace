@@ -9,6 +9,7 @@ from pathlib import Path
 from runpy import run_path
 
 import pytest
+import yaml
 from pytest_socket import disable_socket
 
 from papertrace.contracts import CorpusSnapshot, DocumentVersion, EvidenceRecord, SourceLocator
@@ -25,10 +26,27 @@ pytestmark = pytest.mark.enable_socket
 
 ROOT = Path(__file__).resolve().parents[2]
 SYSTEM_PROMPT = ROOT / "prompts" / "answer-system-v1.0.txt"
+SYSTEM_PROMPT_YAML = ROOT / "prompts" / "prompt_v1.0.yaml"
 PENDING = "PENDING_NEVER_SEND: an unreviewed synthetic study."
 PROVIDER = "synthetic-provider"
 MODEL = "synthetic-model"
 REQUESTED_AT = datetime(2026, 11, 24, tzinfo=timezone.utc)
+
+
+@pytest.fixture(scope="module")
+def approved_system_prompt():
+    expected = yaml.safe_load(SYSTEM_PROMPT_YAML.read_bytes())["system"]
+    assert isinstance(expected, str) and expected.strip()
+    assert len(expected.splitlines()) == 6
+    assert expected.endswith("\n") and not expected.endswith("\n\n")
+    return expected
+
+
+def _validated_system_prompt(approved: str) -> str:
+    assert SYSTEM_PROMPT.is_file(), "Missing the versioned system prompt used by Gate 4"
+    content = SYSTEM_PROMPT.read_bytes()
+    assert content == approved.encode("utf-8"), "Versioned system TXT differs from approved YAML"
+    return content.decode("utf-8")
 
 
 @pytest.fixture
@@ -165,7 +183,7 @@ def capture_qual02(tmp_path, monkeypatch):
     ],
 )
 def test_qual02_model_entry_has_exact_approved_json(
-    capture_qual02, selected, expected, max_sources
+    capture_qual02, approved_system_prompt, selected, expected, max_sources
 ):
     run, check_request, gate_case = capture_qual02
     result, calls, counted = run(selected, expected, max_sources=max_sources)
@@ -174,10 +192,15 @@ def test_qual02_model_entry_has_exact_approved_json(
     assert [message["role"] for message in messages] == ["system", "user"]
     system, user = (message["content"] for message in messages)
     assert PENDING not in user
+    # Report the legacy template failure even before the versioned system is wired.
+    try:
+        json.loads(user)
+    except json.JSONDecodeError:
+        pytest.fail("request-invalid-structured-material: captured user content is not JSON")
     check_request(
         {"request": messages, "sent_ids": result.sent_evidence_ids},
         gate_case,
-        system,
+        _validated_system_prompt(approved_system_prompt),
     )
     assert f"{system}\n{user}" in counted
     assert result.citation_aliases == tuple(
@@ -186,15 +209,14 @@ def test_qual02_model_entry_has_exact_approved_json(
     assert result.unknown_citation_keys == ()
 
 
-def test_qual02_model_entry_uses_versioned_system_prompt(capture_qual02):
+def test_qual02_model_entry_uses_versioned_system_prompt(
+    capture_qual02, approved_system_prompt
+):
     run, _, _ = capture_qual02
     _, calls, _ = run(("ev-a",), ("ev-a",))
     (messages,) = calls
     assert messages[0]["role"] == "system"
-    assert SYSTEM_PROMPT.is_file(), "Missing the versioned system prompt used by Gate 4"
-    expected = SYSTEM_PROMPT.read_bytes().decode("utf-8")
-    assert expected.strip()
-    assert messages[0]["content"] == expected
+    assert messages[0]["content"] == _validated_system_prompt(approved_system_prompt)
 
 
 @pytest.mark.parametrize("scenario", ["empty-approved", "over-cap", "pending-selected"])
