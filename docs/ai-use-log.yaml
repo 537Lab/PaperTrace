@@ -524,3 +524,23 @@ entries:
   - Ruff、Schema、AI 使用披露和差异检查通过。
   limitations:
   - 临时替身不属于提交，生产摄取端口尚未实现。本轮未调用 OpenCode 或产品模型。
+- entry_id: B-OPENCODE-20261125-TXT-INGEST
+  timestamp: '2026-11-25T00:19:04+0800'
+  tool: OpenCode v2.0.12 and Codex Desktop
+  model: cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 实现已获批的 A→B UTF-8 TXT 摄取预检回执
+  scope:
+  - src/papertrace/retrieval/gateway.py
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-independent-review
+  approvals:
+  - GitHub 非作者 537Lab 正式批准 PR 47 精确提交 886e4d6578a1140b162f3c8506737dbfe6295af9
+  - 用户明确授权本轮开发模型及 #47 的获批 B 侧源码范围
+  verification:
+  - B 定向 78 项通过，合成材料 A→B CorpusService 接线复跑 1 项通过
+  - B Ruff、src/papertrace mypy、git diff 检查通过
+  - 全量离线 428 通过、6 失败，失败节点与共有 B 基线相同
+  limitations:
+  - OpenCode 会话 ses_df1b745c3ffecES4mT8qc7xdX6，EOS 期间 ECONNRESET，已输出完整补丁
+  - Codex 应用补丁，收紧文件名校验使其与共享文档 basename 约束一致，并运行离线验证
+  - 保留获批测试不变，真实产品模型调用为零
