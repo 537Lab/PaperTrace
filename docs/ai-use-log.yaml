@@ -604,3 +604,21 @@ entries:
   - OpenCode Verify 会话 ses_df18bb603ffeNUQ7AaNrsoumYG 建议在模型边界校验实际消息。Codex 落地此建议，经临时负对照验证 system 或 user 被替换时报拒绝且零模型调用。
   - 保留获批测试和计划。固定评估集 ID 映射仍需 B/D/evaluator 协调，实际捕获使用规范 ID。
   - 校验使用替身，真实产品模型调用为零，候选仅保存在本地。
+- entry_id: B-TEST-20261125-FIXED-EVALUATION-BOUNDARY
+  timestamp: '2026-11-25T02:57:43+0800'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为已对齐的固定出站 ID 和原始消息捕获准备 B 测试候选
+  scope:
+  - test/offline/test_b_evaluation_boundary.py
+  - docs/team/designs/module-B/fixed-evaluation-boundary-test-plan.md
+  - docs/ai-use-log.yaml
+  status: local-evaluation-interface-test-proposal
+  approvals:
+  - 用户要求继续完成 B 侧可独立推进工作，团队已确认固定出站 ID 和捕获口径
+  - 测试提交尚待接口负责人和独立复审者确认
+  verification:
+  - B 定向复跑 86 通过、14 项预期入口缺失失败，新增文件 Ruff 通过
+  - 全量离线复跑 436 通过、20 失败，新增失败仅为 14 项预期入口缺失
+  limitations:
+  - 只新增测试、设计和记录。真实产品模型调用为零。共享 evaluator 尚未合体。
