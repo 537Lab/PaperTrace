@@ -479,3 +479,21 @@ entries:
   limitations:
   - Independent approval of the precise test commit is pending.
   - Exceptions from the real B gateway require confirmation of a public accounting error contract. No product model was called in offline verification.
+- entry_id: D-MALFORMED-GENERATION-ACCOUNTING-TESTS-20261124-01
+  timestamp: '2026-11-24T11:47:30+08:00'
+  tool: OpenAI Codex desktop
+  model: GPT-6 (session-reported family)
+  purpose: Prepare and package six D regression cases for accounting on a rejected generation result
+  scope:
+  - test/offline/test_d_malformed_generation_accounting.py
+  - docs/team/designs/module-D/20261124-d-malformed-generation-accounting-tests.md
+  - docs/ai-use-log.yaml
+  status: test proposal prepared and verified locally
+  approvals:
+  - The supervising student authorized the in-scope work in chat. Independent test review remains pending.
+  verification:
+  - On PR 43 head c36ad0bf, three accounting-retention assertions failed and three missing or invalid accounting controls passed.
+  - The cumulative test tree collected 591 offline cases and configured Ruff passed on the new test.
+  limitations:
+  - Codex prepared these files. The archived OpenCode handoff prompt has not been dispatched.
+  - Offline verification used synthetic inputs. Product-model calls and semantic evaluation were outside this run.
