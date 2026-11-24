@@ -433,3 +433,101 @@ entries:
   - 首次以系统 Python 执行 pytest 时缺少 --disable-socket 插件，两个测试命令均以4退出；改用现有项目环境后才通过。
   - 系统 Python 的全范围 Ruff 对未修改的 scripts/paperqa_smoke.py 报 I001；不将 A 范围 Ruff 通过冒充全范围通过。
   - 本记录不证明人工审查、完整上游回归、远端 CI 通过或已合并；本轮未新增付费产品调用。
+
+- entry_id: A-VIEW-TEST-20261123-01
+  timestamp: '2026-11-23T06:35:00+00:00'
+  tool: ChatGPT (GitHub connector and isolated pytest syntax/collection check)
+  model: GPT-6
+  purpose: Prepare A-only library view and controlled interaction tests; document the A/E handoff without implementing the view or changing the shared UI
+  scope:
+  - test/offline/test_library_view.py
+  - docs/team/designs/module-A/view-plan-v1.md
+  status: test-proposal-awaiting-independent-human-review
+  approvals: []
+  verification:
+  - The proposed 15 synthetic tests passed Python syntax validation and collected as 15 pytest nodes in an isolated environment using the real shared contracts copied from the E synthetic delivery
+  - Did not run assertions against actual A checkout; no A view implementation exists at proposal time, no real behavioral PASS is claimed
+  - The preceding approved A source and tests were not modified
+  limitations:
+  - This is ChatGPT-assisted test drafting and GitHub publishing, not an OpenCode student-supervised implementation session, course D5 transcript, or independent student test approval
+  - No live provider/model evaluation, private paper access, additional dependencies, public UI code or cross-module business edits
+  - A application navigation, B ingest receipt and E publishing/export permission require separate interface confirmation and applicable approval
+
+- entry_id: A-VIEW-REVIEW-FIX-20261123-01
+  timestamp: '2026-11-23T06:49:29Z'
+  tool: ChatGPT with connected GitHub review workflow and isolated local Python collection
+  model: GPT-6
+  purpose: Address independent reviewer changes requested for A view test proposal PR 30 at head 73adbac1
+  scope:
+  - test/offline/test_library_view.py
+  - docs/team/designs/module-A/view-plan-v1.md
+  status: revised-test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Preserved the 15 original tests and added one negative test requiring ValueError FRESHNESS_MISMATCH when current_snapshot and freshness token carry different snapshot identities
+  - Fixed the test file import grouping reported as Ruff I001
+  - Python syntax and isolated pytest collection with real shared contract module returned 16 collected and zero collection errors
+  limitations:
+  - No A view product implementation exists; behavioral assertions do not run, and collection is not evidence of functional PASS
+  - Isolated environment does not have Ruff installed; any lint pass must be confirmed by actual remote checks on the new head
+  - This ChatGPT review change is not a supervised OpenCode course transcript or human Approve
+  - No provider/model experiment, private source corpus, public UI or other-module code changes
+- entry_id: A-VIEW-SRC-20261123-01
+  timestamp: '2026-11-23T12:13:34.216Z'
+  tool: ChatGPT with connected GitHub repository tools
+  model: GPT-6
+  purpose: Create an A-only framework-neutral library view adapter candidate after independent approval of PR 30 tests
+  scope:
+  - src/papertrace/library/view.py
+  - docs/ai-use-log.yaml
+  status: AI-authored-implementation-candidate-not-supervised-OpenCode
+  approvals:
+  - PR 30 exact head b4648da3ab962612a832b209ac35029713bdcda9 independently approved by ziqilin669
+  - Student owner requested urgent work in ChatGPT; PR 30 comment 7100609902 was AI-posted on their behalf and is not independent student review
+  verification:
+  - The proposed adapter delegates authorization and writes to existing CorpusService, preserves immutable snapshot/source identity, and rejects mismatched freshness tokens
+  - Code was reviewed statically in the authoring conversation, not executed against the actual project Python environment
+  - No claim of passing the 16 A view tests, full offline regression, Ruff, mypy, GitHub CI, or student-supervised OpenCode work
+  limitations:
+  - This direct GitHub-generated candidate is NOT a student-supervised OpenCode implementation session or course D5 transcript; it must not be used as such
+  - No public application entrypoint, E page, real A-to-E E2E acceptance, provider call, paid API call or private source access
+  - Draft PR must stay open and unmerged until verified by the course-compliant supervised workflow and independently reviewed
+- entry_id: A-VIEW-SRC-OPENCODE-20261123-01
+  timestamp: '2026-11-23T13:11:00+00:00'
+  tool: OpenCode v2.0.12 (restricted papertrace-build-A, --standalone, no --auto) with local supervisor under 537Lab authorization
+  model: openai/gpt-6.1-sol (OpenCode papertrace-build-A)
+  purpose: Replace the prior unverified ChatGPT candidate src/papertrace/library/view.py with a genuine restricted OpenCode implementation derived strictly from approved PR #30 plan/contracts/service and verified on macOS/POSIX
+  scope:
+  - src/papertrace/library/view.py
+  - docs/ai-use-log.yaml
+  status: opencode-implementation-verified-awaiting-independent-human-review
+  approvals:
+  - Prior ChatGPT candidate disclosure A-VIEW-SRC-20261123-01 preserved verbatim without relabeling
+  - PR #30 exact test head b4648da3ab962612a832b209ac35029713bdcda9 independently APPROVED by ziqilin669 (review 6017589113)
+  - Student owner 537Lab authorized running the restricted local OpenCode session to address ziqilin669 CHANGES_REQUESTED on PR #36
+  verification:
+  - Real restricted OpenCode session ses_df7877787ffeiFEAhOk7s5f1nS executed under opencode.jsonc allowlist without --auto, shell, network, or test-file edits (raw export session-ses_df7877787ffeiFEAhOk7s5f1nS.json sha256 d8961ffe07e5322f62a05c689e0d92eea705560a925bc7230cf4c95db28c6c5f; events sha256 37400583c19bb440d688624a2c1c99a5428264cc8d96d614d59495b619fee8bf / 9a95cfd7c5f7deeac3ccc5fd42b2e37b412028987a483d91228c1e604321aef5 / 55a7d5a5360daa4607d891061078823bab29cf026d8f20d83e3a03bc73f65533)
+  - Real supervisor interventions recorded across three turns (initial approval-hold verification, then catching and correcting an unexecuted-write hallucination so turn 3 invoked the actual write tool to create src/papertrace/library/view.py)
+  - Supported-platform macOS/POSIX (Darwin 27.2.0 arm64, Python 3.14.6) exact-node pytest passed all 49/49 tests (16 test_library_view.py + 33 test_library.py) in 0.27s
+  - Targeted Ruff passed on src/papertrace/library and both A test files; strict mypy passed all 11 source files under src/papertrace; approved PR #30 test and plan blobs remain byte-identical
+  limitations:
+  - Triggered locally by an authorized AI supervisor operating OpenCode CLI on behalf of 537Lab rather than interactive keyboard typing by the student; disclosed truthfully without claiming unverified identity
+  - Shared repository baseline lint (scripts/paperqa_smoke.py I001), full upstream regression, independent source Approve on the new HEAD, and merged public app E2E acceptance remain separate
+- entry_id: A-VIEW-REOPEN-20261125-01
+  timestamp: '2026-11-24T22:30:48Z'
+  tool: Git / GitHub CLI (human-directed branch re-publication; no code generation)
+  model: N/A
+  purpose: Re-open clean implementation PR for approved test anchor PR #30 (b4648da3) carrying verbatim validated OpenCode code from PR #36 (998f56d1)
+  scope:
+  - src/papertrace/library/view.py
+  - docs/ai-use-log.yaml
+  status: reopened-for-independent-review
+  approvals:
+  - PR #30 exact test anchor b4648da3ab962612a832b209ac35029713bdcda9 re-approved by Y15BeTa after base retarget dismissal event.
+  - Student (537Lab) authorized clean re-publication without modifying gate_evidence.py or altering previously validated OpenCode source code.
+  verification:
+  - 'src/papertrace/library/view.py matches PR #36 (998f56d1) byte-for-byte.'
+  - 'Approved PR #30 files (view-plan-v1.md and test_library_view.py) match b4648da3 byte-for-byte.'
+  - 'Local schema, ai-log, ruff, mypy, and test_library_view.py executed cleanly prior to PR publication.'
+  limitations:
+  - Re-publication preserves original OpenCode implementation verbatim; requires fresh non-author GitHub approval and remote Gate 1 verification before squash merge.
