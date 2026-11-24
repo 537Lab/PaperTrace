@@ -522,3 +522,26 @@ entries:
   - 三组正负对照验证错误的捕获 system 均被拒绝；改写 TXT 或删除末尾换行均被拒绝。
   limitations:
   - 本次只修改测试和记录，真实模型调用为零。新 head 需独立复审。
+- entry_id: B-CODEX-20261125-QUAL02-IMPLEMENTATION-CANDIDATE
+  timestamp: '2026-11-25T00:49:12+0800'
+  tool: Codex Desktop and OpenCode v2.0.12
+  model: Codex runtime model not independently attested; OpenCode used cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 为已获测试批准的 B→D JSON 出站路径验证本地实现候选
+  scope:
+  - src/papertrace/retrieval/service.py
+  - prompts/answer-system-v1.0.txt
+  - docs/ai-use-log.yaml
+  status: supervised-local-implementation-candidate
+  approvals:
+  - GitHub 非作者 537Lab 和 ziqilin669 对 PR 57 精确提交 70b16bb14ad24220985a2f562197cd56c1c71785 给出 Approve
+  - 用户明确授权两条 B 切片的本轮开发模型及源码范围
+  verification:
+  - B 定向 77 项通过，累计联调快照 B/D 定向 206 项通过
+  - 合成 QUAL-02 真正经过 D、B 与 PaperQA2，正序、逆序和裁剪均进入回答模型替身一次，空集零次
+  - B Ruff、src/papertrace mypy、schema 和 git diff 检查通过
+  - 全量离线 427 通过、6 失败，现存失败节点与基线一致
+  limitations:
+  - OpenCode 源码构建尝试因审批证据未被角色接受、权限中断和供应商 reasoning_text 错误未生成可用源码补丁。此候选源码由 Codex 编写，不能记为 OpenCode 生成的源码实现。
+  - OpenCode Verify 会话 ses_df18bb603ffeNUQ7AaNrsoumYG 建议在模型边界校验实际消息。Codex 落地此建议，经临时负对照验证 system 或 user 被替换时报拒绝且零模型调用。
+  - 保留获批测试和计划。固定评估集 ID 映射仍需 B/D/evaluator 协调，实际捕获使用规范 ID。
+  - 校验使用替身，真实产品模型调用为零，候选仅保存在本地。

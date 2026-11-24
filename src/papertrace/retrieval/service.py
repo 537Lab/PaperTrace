@@ -16,6 +16,7 @@ import asyncio
 import copy
 import hashlib
 import importlib
+import json
 import re
 import tempfile
 from collections.abc import Callable, Coroutine, Sequence
@@ -65,6 +66,8 @@ REFUSAL_EVIDENCE_OUTSIDE_SNAPSHOT = "EVIDENCE_OUTSIDE_SNAPSHOT"
 REFUSAL_EVIDENCE_VERSION_MISMATCH = "EVIDENCE_VERSION_MISMATCH"
 REFUSAL_MODEL_POLICY_MISMATCH = "MODEL_POLICY_MISMATCH"
 REFUSAL_INPUT_BUDGET_EXCEEDED = "INPUT_BUDGET_EXCEEDED"
+REFUSAL_ANSWER_PROMPT_UNAVAILABLE = "ANSWER_PROMPT_UNAVAILABLE"
+REFUSAL_ANSWER_REQUEST_MISMATCH = "ANSWER_REQUEST_MISMATCH"
 
 MAX_INPUT_TOKENS = 12000
 COMPRESS_AT_TOKENS = 9000
@@ -824,7 +827,10 @@ def _copy_answer_model(
 
 
 def _instrument_answer_model(
-    model: Any, on_entry: Callable[[], None]
+    model: Any,
+    on_entry: Callable[[], None],
+    *,
+    expected_messages: tuple[tuple[str, str], ...] | None = None,
 ) -> Callable[[], None] | None:
     """Wrap ``call_single`` so B counts actual answer-model entries.
 
@@ -838,6 +844,13 @@ def _instrument_answer_model(
     had_instance_attr = isinstance(model_dict, dict) and "call_single" in model_dict
 
     async def counted_call_single(*args: Any, **kwargs: Any) -> Any:
+        if expected_messages is not None:
+            messages = kwargs.get("messages", args[0] if args else None)
+            if not isinstance(messages, (list, tuple)) or tuple(
+                (getattr(message, "role", None), getattr(message, "content", None))
+                for message in messages
+            ) != expected_messages:
+                raise _GenerationRefusal(REFUSAL_ANSWER_REQUEST_MISMATCH)
         on_entry()
         return await original(*args, **kwargs)
 
@@ -933,6 +946,37 @@ def _final_prompt_text(*, settings: Any, serialized: str, question: str) -> str:
     return f"{system}\n{user_prompt}"
 
 
+def _bind_structured_prompt(
+    *, settings: Any, question: str, evidence: Sequence[_SessionContext]
+) -> str:
+    """Bind the approved prompt and one JSON payload on this session's settings."""
+    prompt_path = Path(__file__).resolve().parents[3] / "prompts" / "answer-system-v1.0.txt"
+    try:
+        system = prompt_path.read_bytes().decode("utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise _GenerationRefusal(REFUSAL_ANSWER_PROMPT_UNAVAILABLE) from exc
+    if not system.strip():
+        raise _GenerationRefusal(REFUSAL_ANSWER_PROMPT_UNAVAILABLE)
+
+    body = json.dumps(
+        {
+            "question": question,
+            "approved_evidence": [
+                {"id": item.evidence_id, "text": item.text} for item in evidence
+            ],
+        },
+        ensure_ascii=False,
+    )
+
+    async def serialize(**_kwargs: Any) -> str:
+        return body
+
+    settings.prompts.system = system
+    settings.prompts.qa = "{context}"
+    settings.custom_context_serializer = serialize
+    return body
+
+
 @dataclass
 class _PaperQAGenerationSession:
     """One-use synchronous wrapper over a fresh ``Docs.aquery`` session."""
@@ -972,10 +1016,11 @@ class _PaperQAGenerationSession:
         if hasattr(settings.prompts, "answer_iteration_prompt"):
             settings.prompts.answer_iteration_prompt = None
 
+        structured = self.bridge._docs_factory is None
         alias_to_evidence: dict[str, str] = {}
         paperqa_contexts: list[Any] = []
         for index, selected in enumerate(self.contexts, start=1):
-            alias = f"b{index}"
+            alias = selected.evidence_id if structured else f"b{index}"
             alias_to_evidence[alias] = selected.evidence_id
             document = paperqa_types.Doc(
                 docname=alias,
@@ -1002,16 +1047,37 @@ class _PaperQAGenerationSession:
             question=question,
             contexts=paperqa_contexts,
         )
-        serialized, serialized_aliases = await _serialize_final_contexts(
-            settings=settings,
-            contexts=paperqa_contexts,
-            question=question,
-        )
-        valid_aliases = tuple(
-            dict.fromkeys(
-                alias for alias in serialized_aliases if alias in alias_to_evidence
+        serialized_aliases: tuple[str, ...] = ()
+        if structured and settings.custom_context_serializer is None:
+            serialized = ""
+            selected_ids = set(_default_serialized_aliases(settings, paperqa_contexts))
+        else:
+            serialized, serialized_aliases = await _serialize_final_contexts(
+                settings=settings,
+                contexts=paperqa_contexts,
+                question=question,
             )
-        )
+            selected_ids = set(serialized_aliases) if serialized.strip() else set()
+            if structured and not isinstance(
+                getattr(settings, "serialized_context_ids", None), (tuple, list)
+            ):
+                selected_ids.clear()
+
+        if structured:
+            final_evidence = tuple(
+                item for item in self.contexts if item.evidence_id in selected_ids
+            )
+            valid_aliases = tuple(item.evidence_id for item in final_evidence)
+            if final_evidence:
+                serialized = _bind_structured_prompt(
+                    settings=settings, question=question, evidence=final_evidence
+                )
+        else:
+            valid_aliases = tuple(
+                dict.fromkeys(
+                    alias for alias in serialized_aliases if alias in alias_to_evidence
+                )
+            )
         if not serialized.strip() or not valid_aliases:
             return _PaperQAGenerationOutput(
                 raw_output="",
@@ -1066,8 +1132,17 @@ class _PaperQAGenerationSession:
                 self._answer_model_attempts = 0
             self._answer_model_attempts += 1
 
-        restore_call_single = _instrument_answer_model(outbound_model, count_entry)
+        expected_messages = (
+            (("system", settings.prompts.system), ("user", serialized))
+            if structured
+            else None
+        )
+        restore_call_single = _instrument_answer_model(
+            outbound_model, count_entry, expected_messages=expected_messages
+        )
         if restore_call_single is None:
+            if structured:
+                raise _GenerationRefusal(REFUSAL_ANSWER_REQUEST_MISMATCH)
             # The port may still call the model, but B cannot observe entries.
             self._answer_model_attempts = None
         try:
@@ -1082,7 +1157,7 @@ class _PaperQAGenerationSession:
             if restore_call_single is not None:
                 restore_call_single()
         post_serialized_aliases = getattr(settings, "serialized_context_ids", None)
-        if isinstance(post_serialized_aliases, (tuple, list)):
+        if not structured and isinstance(post_serialized_aliases, (tuple, list)):
             actual_aliases = tuple(
                 dict.fromkeys(
                     str(alias)
