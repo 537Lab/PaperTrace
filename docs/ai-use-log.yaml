@@ -2594,6 +2594,25 @@ entries:
   - Live verification remains pending for runner access to cl100k_base assets, protected GitHub environments and deployments, server visibility under concurrent dispatches and rerun rejection, project credential and CityU entitlement, tariff and response usage reconciliation, and independent raw and final report adoption.
   - Codex assisted with implementation. No live provider calls or remote workflow dispatch were performed. Independent adversarial review is pending.
 
+- entry_id: SHARED-EVAL-RUNNER-LABEL-FIX-20261125-01
+  timestamp: '2026-11-25T18:38:00+08:00'
+  tool: Supervising student direct 3-line workflow runner-label fix (no OpenCode role covers .github/workflows/*)
+  model: human-directed
+  purpose: Switch semantic-evaluation.yml runner labels from macos-15 to macos-latest and add --ignore-requires-python to the hash-verified pip install of requirements-runtime.lock (matching ci.yml Python 3.14.6 + litellm==1.84.1 installation after live preflight run 45594704165 failed on litellm Requires-Python <3.14)
+  scope:
+  - .github/workflows/semantic-evaluation.yml
+  - docs/ai-use-log.yaml
+  status: verified offline against all 149 approved PR #55 tests
+  student_decisions:
+  - Confirmed requirements-runtime.lock targets aarch64-apple-darwin and ci.yml regression runs cleanly on macos-latest (macos-26-arm64).
+  - Kept all security controls, permissions, pinned action SHAs, environments, credential isolation, run-name, concurrency, and CLI wiring unchanged.
+  approvals:
+  - 'Follow-up runner-label operational fix under approved test anchor PR #55 (f0048fdd09c14e3800fa2017ea27c26f49483272); awaits independent non-author review on this PR.'
+  verification:
+  - Replayed all 149 tests in test/offline/test_semantic_workflow_proposal.py in the runtime venv under --disable-socket: 149 passed.
+  - Verified schema gate PASS, ai-log gate PASS against main 0ede7519, and semantic gate NOT_REQUIRED.
+  limitations:
+  - Actual GitHub Actions runner provisioning and live 18-call execution remain pending until merge and dispatch with a fresh independent authorization review.
 - entry_id: BD-INV07-COMPACTION-TEST-20261125-01
   timestamp: '2026-11-25T14:11:15+08:00'
   tool: Codex desktop
@@ -2612,7 +2631,6 @@ entries:
   limitations:
   - 'The test uses controlled counts and an offline model. Real tokenizer and provider model-window discovery were not verified. No real model calls or complete upstream regression.'
   - 'Codex prepared the proposal. No supervised OpenCode implementation or independent GitHub approval is claimed.'
-
 - entry_id: B-INV07-THRESHOLD-POLICY-TEST-20261125-01
   timestamp: '2026-11-25T16:35:49+08:00'
   tool: Codex desktop
