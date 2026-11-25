@@ -1,0 +1,154 @@
+name: Semantic evaluation
+run-name: auth-${{ inputs.authorization_review_id }}
+'on':
+  workflow_dispatch:
+    inputs:
+      target_pr:
+        description: Current pull request number
+        required: true
+        type: string
+      target_head:
+        description: Exact 40-character current pull request head SHA
+        required: true
+        type: string
+      authorization_review_id:
+        description: Independent current-head budget approval review ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+  issues: read
+
+concurrency:
+  group: semantic-evaluation-${{ inputs.authorization_review_id }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify trusted evaluation controls
+        run: |
+          git merge-base --is-ancestor origin/main HEAD
+          git diff --exit-code origin/main HEAD -- .github/workflows/semantic-evaluation.yml test/evaluation/evaluator.py test/evaluation/cases.json test/evaluation/report-schema.json requirements-runtime.lock scripts/gates.py scripts/semantic_evidence.py scripts/gate_evidence.py scripts/semantic_changes.py
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: 3.14.6
+      - name: Install locked runtime
+        run: >-
+          python -m pip install --disable-pip-version-check --no-deps
+          --only-binary=:all: --require-hashes --ignore-requires-python -r requirements-runtime.lock
+      - run: python test/evaluation/evaluator.py preflight
+        env:
+          PAPERTRACE_TARGET_PR: ${{ inputs.target_pr }}
+          PAPERTRACE_TARGET_HEAD: ${{ inputs.target_head }}
+          PAPERTRACE_AUTHORIZATION_REVIEW_ID: ${{ inputs.authorization_review_id }}
+          PAPERTRACE_RUN_ID: ${{ github.run_id }}
+          PAPERTRACE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          PAPERTRACE_RUN_HEAD: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          PAPERTRACE_LLM_BASE_URL: ${{ vars.PAPERTRACE_LLM_BASE_URL }}
+          PAPERTRACE_LLM_MODEL_VERSION: ${{ vars.PAPERTRACE_LLM_MODEL_VERSION }}
+          PAPERTRACE_LLM_CURRENCY: ${{ vars.PAPERTRACE_LLM_CURRENCY }}
+          PAPERTRACE_LLM_INPUT_COST_PER_MILLION: ${{ vars.PAPERTRACE_LLM_INPUT_COST_PER_MILLION }}
+          PAPERTRACE_LLM_OUTPUT_COST_PER_MILLION: ${{ vars.PAPERTRACE_LLM_OUTPUT_COST_PER_MILLION }}
+          PAPERTRACE_LLM_PACING_SECONDS: ${{ vars.PAPERTRACE_LLM_PACING_SECONDS }}
+
+  collect:
+    runs-on: macos-latest
+    needs: preflight
+    environment: papertrace-evaluation-execution
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify trusted evaluation controls
+        run: |
+          git merge-base --is-ancestor origin/main HEAD
+          git diff --exit-code origin/main HEAD -- .github/workflows/semantic-evaluation.yml test/evaluation/evaluator.py test/evaluation/cases.json test/evaluation/report-schema.json requirements-runtime.lock scripts/gates.py scripts/semantic_evidence.py scripts/gate_evidence.py scripts/semantic_changes.py
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: 3.14.6
+      - name: Install locked runtime
+        run: >-
+          python -m pip install --disable-pip-version-check --no-deps
+          --only-binary=:all: --require-hashes --ignore-requires-python -r requirements-runtime.lock
+      - name: Generate upstream SCM metadata
+        run: |
+          python -m pip install --disable-pip-version-check --target "$RUNNER_TEMP/papertrace-uv" uv==0.12.9
+          UV_PROJECT_ENVIRONMENT="$RUNNER_TEMP/papertrace-scm" \
+            "$RUNNER_TEMP/papertrace-uv/bin/uv" sync --frozen --no-dev --python "$(command -v python)"
+          test -f src/paperqa/version.py
+      - run: python test/evaluation/evaluator.py collect
+        env:
+          PAPERTRACE_TARGET_PR: ${{ inputs.target_pr }}
+          PAPERTRACE_TARGET_HEAD: ${{ inputs.target_head }}
+          PAPERTRACE_AUTHORIZATION_REVIEW_ID: ${{ inputs.authorization_review_id }}
+          PAPERTRACE_RUN_ID: ${{ github.run_id }}
+          PAPERTRACE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          PAPERTRACE_RUN_HEAD: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          PAPERTRACE_LLM_BASE_URL: ${{ vars.PAPERTRACE_LLM_BASE_URL }}
+          PAPERTRACE_LLM_MODEL_VERSION: ${{ vars.PAPERTRACE_LLM_MODEL_VERSION }}
+          PAPERTRACE_LLM_CURRENCY: ${{ vars.PAPERTRACE_LLM_CURRENCY }}
+          PAPERTRACE_LLM_INPUT_COST_PER_MILLION: ${{ vars.PAPERTRACE_LLM_INPUT_COST_PER_MILLION }}
+          PAPERTRACE_LLM_OUTPUT_COST_PER_MILLION: ${{ vars.PAPERTRACE_LLM_OUTPUT_COST_PER_MILLION }}
+          PAPERTRACE_LLM_PACING_SECONDS: ${{ vars.PAPERTRACE_LLM_PACING_SECONDS }}
+          PAPERTRACE_PROVIDER_API_KEY: ${{ secrets.PAPERTRACE_EVALUATION_API_KEY }}
+      # The approved plan requires retaining partial evidence when collect fails.
+      - name: Preserve raw capture
+        if: ${{ success() || failure() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: papertrace-semantic-raw
+          path: |
+            semantic-raw/raw-capture.json
+            semantic-raw/raw-capture.sha256
+          if-no-files-found: error
+
+  finalize:
+    runs-on: macos-latest
+    needs: collect
+    environment: papertrace-independent-rating
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify trusted evaluation controls
+        run: |
+          git merge-base --is-ancestor origin/main HEAD
+          git diff --exit-code origin/main HEAD -- .github/workflows/semantic-evaluation.yml test/evaluation/evaluator.py test/evaluation/cases.json test/evaluation/report-schema.json requirements-runtime.lock scripts/gates.py scripts/semantic_evidence.py scripts/gate_evidence.py scripts/semantic_changes.py
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: 3.14.6
+      - name: Install locked runtime
+        run: >-
+          python -m pip install --disable-pip-version-check --no-deps
+          --only-binary=:all: --require-hashes --ignore-requires-python -r requirements-runtime.lock
+      - run: python test/evaluation/evaluator.py finalize
+        env:
+          PAPERTRACE_TARGET_PR: ${{ inputs.target_pr }}
+          PAPERTRACE_TARGET_HEAD: ${{ inputs.target_head }}
+          PAPERTRACE_AUTHORIZATION_REVIEW_ID: ${{ inputs.authorization_review_id }}
+          PAPERTRACE_RUN_ID: ${{ github.run_id }}
+          PAPERTRACE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          PAPERTRACE_RUN_HEAD: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+      - name: Publish independently rated evaluation
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: papertrace-semantic
+          path: evaluation-report.json
+          if-no-files-found: error
