@@ -70,10 +70,10 @@ def collect_attempt(
 ) -> dict[str, Any]:
     """Assemble one attempt row from B's checked pre-dispatch request.
 
-    The request is taken only from the observer callback, so the row cannot be
-    built from an expected envelope. Invalid bindings raise before ``drive`` is
-    called, and an invalid or rejected capture raises inside the observer, which
-    B handles before any model call.
+    The observed send set, request messages and evidence text all come from the
+    observer callback; the draft and result may only confirm what was captured.
+    A row requires readable accounting, an exact capture, and consistent draft,
+    result and citation mappings.
     """
     case_id = case.get("id")
     if not isinstance(case_id, str) or not case_id:
@@ -90,7 +90,12 @@ def collect_attempt(
         raise ValueError("Binding registry is not a bijection of identifiers.")
     inverse = {runtime: fixed for fixed, runtime in mapping.items()}
     expected_question = case.get("input", {}).get("question")
+    expected_text = {
+        item.get("id"): item.get("text")
+        for item in case.get("input", {}).get("approved_evidence", [])
+    }
     captured: list[tuple[str, str]] = []
+    captured_sent: list[str] = []
 
     def observe(messages: Any) -> None:
         if not isinstance(messages, tuple) or len(messages) != 2:
@@ -117,12 +122,13 @@ def collect_attempt(
                 raise ValueError("Captured evidence item is malformed.")
             if not isinstance(item["id"], str) or not isinstance(item["text"], str):
                 raise ValueError("Captured evidence item has non-string fields.")
-            if item["id"] not in mapping:
-                raise ValueError("Captured evidence id is outside the binding.")
+            if item["id"] not in mapping or expected_text.get(item["id"]) != item["text"]:
+                raise ValueError("Captured evidence is not authorized by the fixed case.")
             sent.append(item["id"])
         if len(set(sent)) != len(sent):
             raise ValueError("Captured evidence ids repeat.")
         captured[:] = [("system", system_text), ("user", user_text)]
+        captured_sent[:] = sent
 
     outcome, response = drive(request_observer=observe)
     accounting = getattr(outcome, "accounting", None)
@@ -132,34 +138,43 @@ def collect_attempt(
         "accounting_present": accounting is not None,
         "answer_model_attempts": attempts,
     }
+    if not captured or not captured_sent or accounting is None:
+        return collected
     draft = getattr(outcome, "draft", None)
     raw_result = getattr(outcome, "result", None)
     if (
-        not captured
-        or draft is None
+        draft is None
         or getattr(draft, "status", None) != "draft"
         or raw_result is None
         or response is None
     ):
         return collected
-    sent_ids: list[str] = []
+    draft_sent: list[str] = []
     for value in draft.sent_evidence_ids:
         if value not in inverse:
             return collected
-        sent_ids.append(inverse[value])
+        draft_sent.append(inverse[value])
+    result_sent: list[str] = []
+    for value in raw_result.sent_evidence_ids:
+        if value not in inverse:
+            return collected
+        result_sent.append(inverse[value])
+    observed = set(captured_sent)
+    if set(draft_sent) != observed or set(result_sent) != observed:
+        return collected
     cited_ids: list[str] = []
     for value in draft.citation_evidence_ids:
         if value not in inverse:
             return collected
         cited_ids.append(inverse[value])
-    if not set(cited_ids) <= set(sent_ids):
+    if not set(cited_ids) <= observed:
         return collected
     request = [{"role": role, "content": content} for role, content in captured]
     collected["record"] = {
         "case_id": case_id,
         "repeat": repeat,
         "request": request,
-        "sent_ids": sent_ids,
+        "sent_ids": list(captured_sent),
         "cited_ids": cited_ids,
         "input_sha256": _digest_json(case["input"]),
         "prompt_sha256": _digest_json(request),
