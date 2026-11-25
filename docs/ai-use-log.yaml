@@ -1193,3 +1193,23 @@ entries:
   - Complete regression is not confirmed passing. No real model evaluation, final
     publication transaction or full real B/C/D E2E acceptance claimed. Independent
     source review remains required.
+- entry_id: SHARED-CI-GATE5-IMPORTLIB-TEST-20261125-01
+  timestamp: '2026-11-25T04:19:48+00:00'
+  tool: Codex
+  model: GPT-6 (Codex runtime)
+  purpose: Prepare the test-only proposal for the existing Gate 5 importlib collection failure
+  scope:
+  - docs/team/designs/shared-ci/gate5-team-imports-plan.md
+  - test/offline/test_gate5_importlib_collection.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  approvals:
+  - Li Yafei took ownership of shared CI and directed continuation of the work
+  verification:
+  - The new regression fails on main because importlib collection cannot import the neighboring test helper
+  - An isolated team-only pytest path experiment passed 30 focused tests and collected 85 tests across the original and prospective evaluator files
+  - Ruff passed for the new test
+  limitations:
+  - No independent human approval is recorded by this entry
+  - The experiment is local; upstream full regression and real model evaluation remain separate
+  - This proposal contains no runner configuration change and no OpenCode session claim
