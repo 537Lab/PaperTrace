@@ -2102,6 +2102,16 @@ def workflow_with_transport(*, qualify_condition="failure() || cancelled()",
         yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
     )
     _job_name, _job, steps, gate_index = regression_gate_job(workflow)
+    # The product workflow may already contain the approved transport chain.
+    # Validate it before replacing it in this synthetic mutation fixture; never
+    # silently discard malformed/broader uploads or change real workflow tests.
+    try:
+        installed = validate_regression_diagnostics_workflow(workflow)
+    except MissingDiagnosticsTransport:
+        pass
+    else:
+        remove = {installed[key] for key in ("qualify_index", "upload_index", "summary_index")}
+        steps[:] = [step for index, step in enumerate(steps) if index not in remove]
     gate = steps[gate_index]
     gate["id"] = gate_id
     if upload_condition is None:
@@ -2163,6 +2173,45 @@ def workflow_with_transport(*, qualify_condition="failure() || cancelled()",
             "run": summary_run,
         })
     return workflow
+
+
+def test_transport_fixture_replaces_an_already_valid_installed_chain(monkeypatch):
+    installed = workflow_with_transport()
+    validate_regression_diagnostics_workflow(installed)
+    original = Path.read_text
+    workflow_path = ROOT / ".github/workflows/ci.yml"
+
+    def read(self, *args, **kwargs):
+        if self == workflow_path:
+            return yaml.safe_dump(installed)
+        return original(self, *args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "read_text", read)
+        fixture = workflow_with_transport(gate_id="second-gate", qualify_id="second-qualify", upload_id="second-upload")
+    chain = validate_regression_diagnostics_workflow(fixture)
+    assert chain["gate_id"] == "second-gate"
+    assert chain["qualify_id"] == "second-qualify"
+    assert chain["upload_id"] == "second-upload"
+
+
+def test_transport_fixture_does_not_discard_an_invalid_installed_chain(monkeypatch):
+    installed = workflow_with_transport()
+    installed["jobs"]["regression"]["steps"].append({
+        "uses": "actions/upload-artifact@v4", "with": {"path": "target/.local"},
+    })
+    original = Path.read_text
+    workflow_path = ROOT / ".github/workflows/ci.yml"
+
+    def read(self, *args, **kwargs):
+        if self == workflow_path:
+            return yaml.safe_dump(installed)
+        return original(self, *args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "read_text", read)
+        with pytest.raises(AssertionError):
+            workflow_with_transport()
 
 
 @pytest.mark.parametrize(

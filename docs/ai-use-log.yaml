@@ -2675,3 +2675,21 @@ entries:
     and triage use Codex, not a newly claimed OpenCode generation session.
   - Full regression remains failed. Local Windows verification is not the supported macOS/Python 3.14.6
     CI runtime.
+- entry_id: CI-DIAGNOSTICS-FIXTURE-FOLLOWUP-20261125-01
+  timestamp: '2026-11-25T09:52:48.631137+00:00'
+  tool: Codex Desktop
+  model: Codex runtime; identifier not independently attested
+  purpose: 'Correct the synthetic workflow mutation fixture after installing the #79 transport contract;
+    preserve real workflow and safety assertions.'
+  scope:
+  - test/offline/test_full_regression_diagnostics.py
+  - docs/team/designs/shared/20261125-diagnostics-fixture-followup.md
+  - docs/ai-use-log.yaml
+  approvals:
+  - Student assigned CI ownership and immediate authorized completion; this test revision still requires
+    independent exact-head approval before implementation adoption.
+  verification:
+  - 31 workflow controls passed; real-workflow availability RED on unimplemented baseline. All original
+    76 nodes and assertions retained; 2 controls added. Ruff passed.
+  limitations:
+  - Codex runner-authored; no new OpenCode session claimed. No source/workflow change or provider call.
