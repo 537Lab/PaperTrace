@@ -2652,3 +2652,23 @@ entries:
   limitations:
   - 'No OpenCode role may edit test/evaluation, so this hardening was written by the supervising runner and must be reviewed as runner-authored work.'
   - No product model call was made.
+
+
+- entry_id: SHARED-EVAL-RUNSTATUS-FIX-20261125-01
+  timestamp: '2026-11-25T21:30:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session)
+  model: deepseek/deepseek-flash
+  purpose: Let the evaluation preflight and collect stages read a workflow run that is still settling at the deployment gate, and name the mismatching field when the check fails
+  scope:
+  - test/evaluation/evaluator.py
+  - docs/ai-use-log.yaml
+  status: awaiting independent review
+  student_decisions:
+  - The student asked the supervising runner to keep debugging the 18-call evaluation instead of shipping without it.
+  approvals:
+  - 'Follow-up under approved test anchor PR #55.'
+  verification:
+  - 'Run 45620419892: preflight passed the same check at 13:17, then collect failed it at 13:18:38 with ValueError: Evaluation run does not match the approved workflow target, twelve seconds in and before any provider call. The deployment gate had just been released, so the run status could still read waiting instead of in_progress.'
+  limitations:
+  - No OpenCode role authored this change; review it as runner-authored work.
+  - No product model call was made while preparing this patch.

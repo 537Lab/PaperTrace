@@ -254,6 +254,20 @@ def _semantic() -> ModuleType:
     return module
 
 
+def _await_running_run(
+    control: Any, client: Any, prefix: str, run_id: int,
+    *, attempts: int = 5, delay: float = 3.0,
+) -> dict[str, Any]:
+    """Read the run, allowing the deployment gate to settle first."""
+    run: dict[str, Any] = {}
+    for attempt in range(1, attempts + 1):
+        run = control._api(client, f"{prefix}/actions/runs/{run_id}")
+        if run.get("status") == "in_progress" or attempt == attempts:
+            return run
+        time.sleep(delay)
+    return run
+
+
 def _bound_context(
     semantic: ModuleType, ctx: Any, client: Any, pr_number: int, run_id: int
 ) -> dict[str, Any]:
@@ -278,17 +292,25 @@ def _bound_context(
         or current["base"]["sha"] != base
     ):
         raise ValueError("Current PR does not match the evaluation target.")
-    run = control._api(client, f"{prefix}/actions/runs/{run_id}")
-    if (
-        run.get("id") != run_id
-        or run.get("event") != "workflow_dispatch"
-        or run.get("status") != "in_progress"
-        or run.get("conclusion") is not None
-        or run.get("head_sha") != head
-        or run.get("repository", {}).get("full_name") != REPOSITORY
-        or run.get("path", "").split("@", 1)[0] != WORKFLOW
-    ):
-        raise ValueError("Evaluation run does not match the approved workflow target.")
+    run = _await_running_run(control, client, prefix, run_id)
+    problems = [
+        name
+        for name, ok in (
+            ("id", run.get("id") == run_id),
+            ("event", run.get("event") == "workflow_dispatch"),
+            ("status", run.get("status") in {"in_progress", "waiting"}),
+            ("conclusion", run.get("conclusion") is None),
+            ("head_sha", run.get("head_sha") == head),
+            ("repository", run.get("repository", {}).get("full_name") == REPOSITORY),
+            ("path", run.get("path", "").split("@", 1)[0] == WORKFLOW),
+        )
+        if not ok
+    ]
+    if problems:
+        raise ValueError(
+            "Evaluation run does not match the approved workflow target: "
+            + ", ".join(problems)
+        )
     _check_first_attempt(run)
     for path in (WORKFLOW, EVALUATOR, DATASET, SCHEMA):
         if semantic._blob(ctx, base, path) != semantic._blob(ctx, head, path):
