@@ -2549,3 +2549,43 @@ entries:
   limitations:
   - 'No OpenCode role holds write access to test/evaluation, so this implementation was written by the supervising runner and must be reviewed as runner-authored work.'
   - 'No product model call was made; the real 18-run evaluation remains a separate authorized run.'
+
+- entry_id: BD-INV07-COMPACTION-TEST-20261125-01
+  timestamp: '2026-11-25T14:11:15+08:00'
+  tool: Codex desktop
+  model: GPT-6
+  purpose: Draft offline tests and a plan for INV-07 answer-context compaction at the B model boundary
+  scope:
+  - test/offline/test_inv07_answer_compaction.py
+  - docs/team/designs/module-B/inv07-answer-compaction-plan.md
+  status: test-proposal-awaiting-independent-review
+  student_decisions:
+  - The student authorized publication of in-scope PRs and supplied the agreed B/D test scope from the group discussion.
+  approvals: []
+  verification:
+  - 'On main 6fbf37d1ccb9ad70caee3f49f730f2daec10e10c, pytest in importlib mode across retrieval, B evaluation boundary, two D generation-accounting files, and the new test file gave 118 passes and 10 expected failures. All failures are new cases covering missing reduction or budget records.'
+  - The same five-file run gave 118 passes and 10 expected failures after rebasing onto main c5b657293a7953714911319fc61b925975aedf0c. Scoped Ruff and the requirements-schema gate passed.
+  limitations:
+  - 'The test uses controlled counts and an offline model. Real tokenizer and provider model-window discovery were not verified. No real model calls or complete upstream regression.'
+  - 'Codex prepared the proposal. No supervised OpenCode implementation or independent GitHub approval is claimed.'
+
+- entry_id: BD-INV07-COMPACTION-IMPL-20261125-01
+  timestamp: '2026-11-25T15:04:22+08:00'
+  tool: OpenCode CLI v2.3.0 (papertrace-build-B), with Codex desktop verification and publication
+  model: deepseek/deepseek-flash
+  purpose: Implement deterministic answer context compaction at the B model boundary
+  scope:
+  - src/papertrace/retrieval/service.py
+  status: implemented-offline-awaiting-independent-source-review
+  student_decisions:
+  - The student authorized the OpenCode implementation and in-scope PR workflow. The implementation scope follows the approved test and design for B request assembly.
+  approvals:
+  - 'GitHub PR #76 stayed open. 537Lab approved 0b68c392442cf069f3dbfaf0c0ba3685221364d7 in review 6053010862 at 2026-11-25T06:42:59Z.'
+  - 'ldk13856478627-cell also approved that exact test head in review 6053017811 at 2026-11-25T06:43:47Z.'
+  verification:
+  - 'OpenCode session ses_dee879502ffeA6FnP7EgQQObdj ran from 2026-11-25T06:50:34Z to 2026-11-25T06:57:16Z. The original export was retained privately. SHA-256: 24154dda45113bc3447c3e8691c4d9d811e364ed24f0659584d8f042b919fb42.'
+  - 'The approved #76 test and plan are byte-identical. The five-file B/D offline suite passed 128 tests, including all 18 INV-07 cases. Ruff, mypy (33 files), schema, and diff checks passed.'
+  - 'The full team offline run with isolated tooling reported 944 passed, 3 failed, and 2 skipped. The same three failure nodes reproduced on main d893cefe162eb687fbd2854ee63b29569e087b2e. The workflow tests skipped because this runtime did not locate an OpenCode executable.'
+  limitations:
+  - The offline tests use controlled counts and the configured effective request cap. Live tokenizer and provider window behavior were not verified. Real product-model calls were zero.
+  - Independent implementation review, remote review gates, and full upstream regression remain outstanding.

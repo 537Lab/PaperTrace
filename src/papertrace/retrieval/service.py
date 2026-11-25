@@ -17,6 +17,7 @@ import copy
 import hashlib
 import importlib
 import json
+import logging
 import re
 import tempfile
 from collections.abc import Callable, Coroutine, Sequence
@@ -32,6 +33,8 @@ from papertrace.contracts import (
     EvidenceRecord,
     SourceLocator,
 )
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 # B-private result/refusal codes (NOT shared contracts: FR-B-02, INV-08)
@@ -1024,6 +1027,21 @@ def _final_prompt_text(*, settings: Any, serialized: str, question: str) -> str:
     return f"{system}\n{user_prompt}"
 
 
+def _render_structured_body(
+    *, question: str, evidence: Sequence[_SessionContext]
+) -> str:
+    """Render the JSON message body without touching any bound settings."""
+    return json.dumps(
+        {
+            "question": question,
+            "approved_evidence": [
+                {"id": item.outbound_id, "text": item.text} for item in evidence
+            ],
+        },
+        ensure_ascii=False,
+    )
+
+
 def _bind_structured_prompt(
     *, settings: Any, question: str, evidence: Sequence[_SessionContext]
 ) -> str:
@@ -1036,15 +1054,7 @@ def _bind_structured_prompt(
     if not system.strip():
         raise _GenerationRefusal(REFUSAL_ANSWER_PROMPT_UNAVAILABLE)
 
-    body = json.dumps(
-        {
-            "question": question,
-            "approved_evidence": [
-                {"id": item.outbound_id, "text": item.text} for item in evidence
-            ],
-        },
-        ensure_ascii=False,
-    )
+    body = _render_structured_body(question=question, evidence=evidence)
 
     async def serialize(**_kwargs: Any) -> str:
         return body
@@ -1053,6 +1063,129 @@ def _bind_structured_prompt(
     settings.prompts.qa = "{context}"
     settings.custom_context_serializer = serialize
     return body
+
+
+def _token_count_is_valid(value: Any) -> bool:
+    """True only for a real, non-negative token count (bools are not counts)."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def _compaction_required(
+    *, input_tokens: int, input_cap: int, compress_at_tokens: int
+) -> bool:
+    """INV-07: compact at the soft threshold and whenever the hard cap is over."""
+    return input_tokens >= compress_at_tokens or input_tokens > input_cap
+
+
+def _log_compaction_floor(*, input_tokens: int, input_cap: int) -> None:
+    """Report an irreducible in-cap request without any request or evidence text."""
+    logger.info(
+        "event=answer_compaction_floor input_tokens=%d input_cap=%d",
+        input_tokens,
+        input_cap,
+        extra={
+            "event": "answer_compaction_floor",
+            "input_tokens": input_tokens,
+            "input_cap": input_cap,
+        },
+    )
+
+
+def _required_content_fits(
+    *,
+    settings: Any,
+    question: str,
+    count_tokens: Callable[[str], Any],
+    policy: _SessionPolicy,
+) -> bool:
+    """Check the irreducible frame: versioned system, question, no evidence.
+
+    The skeleton body is rendered purely, so the bound outbound serializer and
+    any observer stay untouched.  A later scripted recount cannot make an
+    over-cap frame look usable.
+    """
+    required_tokens = count_tokens(
+        _final_prompt_text(
+            settings=settings,
+            serialized=_render_structured_body(question=question, evidence=()),
+            question=question,
+        )
+    )
+    return (
+        _token_count_is_valid(required_tokens)
+        and required_tokens <= policy.max_input_tokens
+    )
+
+
+@dataclass(frozen=True)
+class _CompactedAnswerRequest:
+    """Retained evidence plus the exact message body sent onward."""
+
+    evidence: tuple[_SessionContext, ...]
+    serialized: str
+
+
+def _compact_answer_request(
+    *,
+    settings: Any,
+    question: str,
+    evidence: Sequence[_SessionContext],
+    serialized: str,
+    count_tokens: Callable[[str], Any],
+    input_tokens: Any,
+    policy: _SessionPolicy,
+) -> _CompactedAnswerRequest | None:
+    """Drop trailing whole evidence records until the request fits the budget.
+
+    ``evidence`` and ``serialized`` already carry the serializer's approved
+    priority order, so each step removes the lowest-priority retained record and
+    rebuilds the same versioned system/question body.  ``None`` means the
+    request must stop before any observer or model sees it.
+    """
+    if not _token_count_is_valid(input_tokens):
+        return None
+    retained = tuple(evidence)
+    tokens: int = input_tokens
+    if _compaction_required(
+        input_tokens=tokens,
+        input_cap=policy.max_input_tokens,
+        compress_at_tokens=policy.compress_at_tokens,
+    ) and not _required_content_fits(
+        settings=settings,
+        question=question,
+        count_tokens=count_tokens,
+        policy=policy,
+    ):
+        return None
+    while len(retained) > 1 and _compaction_required(
+        input_tokens=tokens,
+        input_cap=policy.max_input_tokens,
+        compress_at_tokens=policy.compress_at_tokens,
+    ):
+        retained = retained[:-1]
+        serialized = _bind_structured_prompt(
+            settings=settings, question=question, evidence=retained
+        )
+        recounted = count_tokens(
+            _final_prompt_text(
+                settings=settings,
+                serialized=serialized,
+                question=question,
+            )
+        )
+        if not _token_count_is_valid(recounted):
+            return None
+        tokens = recounted
+    if tokens > policy.max_input_tokens:
+        return None
+    if tokens >= policy.compress_at_tokens:
+        _log_compaction_floor(
+            input_tokens=tokens, input_cap=policy.max_input_tokens
+        )
+    return _CompactedAnswerRequest(
+        evidence=retained,
+        serialized=serialized,
+    )
 
 
 @dataclass
@@ -1141,6 +1274,7 @@ class _PaperQAGenerationSession:
             ):
                 selected_ids.clear()
 
+        final_evidence: tuple[_SessionContext, ...] = ()
         if structured:
             final_evidence = tuple(
                 item for item in self.contexts if item.outbound_id in selected_ids
@@ -1164,13 +1298,6 @@ class _PaperQAGenerationSession:
                 refusal_reason=REFUSAL_EMPTY_SENT,
             )
 
-        valid_alias_set = set(valid_aliases)
-        final_contexts = [
-            context
-            for context in paperqa_contexts
-            if getattr(context, "id", None) in valid_alias_set
-        ]
-        session.contexts = final_contexts
         outbound_model = _copy_answer_model(
             self.bridge._answer_llm_model,
             max_output_tokens=self.policy.max_output_tokens,
@@ -1179,7 +1306,9 @@ class _PaperQAGenerationSession:
             # bridge never mutates the caller's reusable model configuration.
             preserve_legacy_identity=(
                 not callable(getattr(settings, "context_serializer", None))
-                and not callable(getattr(self.bridge._answer_llm_model, "call_single", None))
+                and not callable(
+                    getattr(self.bridge._answer_llm_model, "call_single", None)
+                )
             ),
         )
         counter = getattr(outbound_model, "count_tokens", None)
@@ -1192,11 +1321,27 @@ class _PaperQAGenerationSession:
                 question=question,
             )
         )
-        if (
-            not isinstance(prompt_tokens, int)
-            or isinstance(prompt_tokens, bool)
-            or prompt_tokens < 0
-            or prompt_tokens > self.policy.max_input_tokens
+        if structured:
+            compacted = _compact_answer_request(
+                settings=settings,
+                question=question,
+                evidence=final_evidence,
+                serialized=serialized,
+                count_tokens=counter,
+                input_tokens=prompt_tokens,
+                policy=self.policy,
+            )
+            if compacted is None:
+                return _PaperQAGenerationOutput(
+                    raw_output="",
+                    citations=(),
+                    sent_evidence_ids=(),
+                    refusal_reason=REFUSAL_INPUT_BUDGET_EXCEEDED,
+                )
+            serialized = compacted.serialized
+            valid_aliases = tuple(item.outbound_id for item in compacted.evidence)
+        elif not _token_count_is_valid(prompt_tokens) or (
+            prompt_tokens > self.policy.max_input_tokens
         ):
             return _PaperQAGenerationOutput(
                 raw_output="",
@@ -1204,6 +1349,20 @@ class _PaperQAGenerationSession:
                 sent_evidence_ids=(),
                 refusal_reason=REFUSAL_INPUT_BUDGET_EXCEEDED,
             )
+
+        valid_alias_set = set(valid_aliases)
+        session.contexts = [
+            context
+            for context in paperqa_contexts
+            if getattr(context, "id", None) in valid_alias_set
+        ]
+        if structured:
+            # Removed evidence must not remain a citation candidate.
+            alias_to_evidence = {
+                alias: evidence_id
+                for alias, evidence_id in alias_to_evidence.items()
+                if alias in valid_alias_set
+            }
 
         def count_entry() -> None:
             if self._answer_model_attempts is None:
