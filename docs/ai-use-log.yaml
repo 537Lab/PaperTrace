@@ -2264,3 +2264,79 @@ entries:
   approvals: []
   verification: ["Retained the main B source and the prior D answer implementation byte for byte. Preserved main AI-use log bytes and added 26 existing D records by entry ID.", "274 targeted B/C/D offline tests, team Ruff, PaperTrace mypy and requirements schema passed locally.", "Offline QUAL-02 replay with the merged B sources and the prior D implementation matched the captured requests and sequence 1/1/1/0."]
   limitations: ["This synchronization used Codex. The earlier supervised OpenCode implementation is recorded separately. The exact new head still requires independent review.", "No real product model calls were made. This record does not assert a full regression pass."]
+- entry_id: SHARED-CI-GATE5-IMPORTLIB-TEST-20261125-01
+  timestamp: '2026-11-25T04:19:48+00:00'
+  tool: Codex
+  model: GPT-6 (Codex runtime)
+  purpose: Prepare the test-only proposal for the existing Gate 5 importlib collection failure
+  scope:
+  - docs/team/designs/shared-ci/gate5-team-imports-plan.md
+  - test/offline/test_gate5_importlib_collection.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-review
+  approvals:
+  - Li Yafei took ownership of shared CI and directed continuation of the work
+  verification:
+  - The new regression fails on main because importlib collection cannot import the neighboring test helper
+  - An isolated team-only pytest path experiment passed 30 focused tests and collected 85 tests across the original and prospective evaluator files
+  - Ruff passed for the new test
+  limitations:
+  - No independent human approval is recorded by this entry
+  - The experiment is local; upstream full regression and real model evaluation remain separate
+  - This proposal contains no runner configuration change and no OpenCode session claim
+- entry_id: SHARED-CI-GATE5-IMPORTLIB-IMPL-20261125-E-01
+  timestamp: '2026-11-25T05:26:29.216089+00:00'
+  tool: Codex Desktop
+  model: Codex runtime; model identifier not independently attested
+  purpose: 'Implement the independently approved team-only pytest import search path fix from PR #71.'
+  scope:
+  - papertrace.pytest.ini
+  - docs/ai-use-log.yaml
+  status: implementation-candidate-awaiting-independent-exact-head-review
+  approvals:
+  - LIN ZIQI explicitly accepted ownership in chat of this exact one-line configuration change, history-preserving
+    main synchronization, offline verification and implementation PR publication.
+  - 'Independent Y15BeTa APPROVED exact PR #71 head 8498888208baf92bef7293ac80a4b5f383ec996e at 2026-11-25T04:33:29Z;
+    review 6051898779. This implementation did not author that test proposal.'
+  verification:
+  - 'Retained #71 as the first history parent and synchronized main b9f79a92b082c8a9cd93eff7b650b5d130ecfbcb
+    through a separate two-parent merge. Preserved all main and #71 AI-use entries and the exact approved
+    test/plan Git blobs.'
+  - Independently reproduced baseline collection regression RED. With the one-line patch, 30 focused tests
+    passed on a snapshot preserving exact Git LF bytes.
+  - 'The entire current team suite collected 666 tests without a collection error. A separate diagnostic
+    adding the unchanged exact #53/#58 test blobs collected 85 cases across three affected evaluator files;
+    this is collection, not 85 executed passes.'
+  - Complete configured Ruff and Linux-target mypy passed. Requirements schema passed in the Git worktree
+    (27 requirements).
+  limitations:
+  - This shared runner-configuration repair was implemented using Codex under the explicit narrow student
+    instruction, not a successful OpenCode source session; no new OpenCode contribution or product model
+    call is claimed.
+  - Initial broader diagnostics from the native Windows CRLF checkout failed existing byte-sensitive synthetic
+    gate checks; focused verification was repeated with exact Git LF blobs. This does not change repository
+    tests or Git configuration.
+  - Full supported Python 3.14 Linux/PaperQA2 upstream runtime regression and live semantic evaluation
+    are separate requirements and not claimed green. Missing-runtime cases are not removed or skipped
+    by this patch.
+  - The new implementation SHA requires another non-implementer review. No merge, protection bypass, workflow
+    change, gate-rule change or model invocation is authorized by this record.
+- entry_id: SHARED-CI-GATE5-MAIN-SYNC-20261125-E-01
+  timestamp: '2026-11-25T05:37:49.435522+00:00'
+  tool: Codex Desktop
+  model: Codex runtime; model identifier not independently attested
+  purpose: 'Resolve the AI-log-only merge conflict after D #50 was merged into main; retain the approved
+    one-line Gate 5 fix.'
+  scope:
+  - docs/ai-use-log.yaml
+  status: awaiting-independent-review-of-new-synchronization-head
+  approvals:
+  - 'LIN ZIQI directed continuation of the reviewed #74 change; exact new head still requires independent
+    GitHub approval.'
+  verification:
+  - 'Preserved all entries from both parents, exact approved #71 test/plan blobs and unchanged one-line
+    pytest patch. Main source tree is identical to previously reviewed D #50 21cb81b7.'
+  limitations:
+  - Full remote regression is not claimed green. Old baseline collection can independently block the current
+    verifier; no verifier, baseline archive, assertions, dependency or gate policy was edited. No provider/model
+    calls or merge into main.
