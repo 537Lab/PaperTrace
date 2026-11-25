@@ -357,7 +357,14 @@ def test_empty_approved_set_has_no_report_or_model_call(collect_attempt, fixed_c
 
 
 @pytest.mark.parametrize(
-    "fault", ["system", "malformed-user", "unknown-fixed-id", "evidence-text"]
+    "fault",
+    [
+        "system",
+        "malformed-user",
+        "unknown-fixed-id",
+        "evidence-text",
+        "extra-field",
+    ],
 )
 def test_rejected_capture_prevents_model_call(collect_attempt, fixed_case, fault):
     _, case, system = fixed_case
@@ -366,6 +373,10 @@ def test_rejected_capture_prevents_model_call(collect_attempt, fixed_case, fault
         system_entry = ("system", system + "\n")
     if fault == "malformed-user":
         user_entry = ("user", "unexpected question template")
+    if fault == "extra-field":
+        payload = json.loads(user_entry[1])
+        payload["unapproved_note"] = "extra"
+        user_entry = ("user", json.dumps(payload))
     if fault == "evidence-text":
         payload = json.loads(user_entry[1])
         payload["approved_evidence"][0]["text"] = (

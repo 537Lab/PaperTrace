@@ -2633,3 +2633,22 @@ entries:
   - Verified ruff, mypy, schema gate PASS, and ai-log gate PASS against main 1a7babfa.
   limitations:
   - Live 18-call GitHub Actions collection and independent blind rating remain pending until merge, #85 sync, and fresh authorized dispatch.
+- entry_id: SHARED-EVAL-CAPTURE-STRICT-PARSE-20261125-01
+  timestamp: '2026-11-25T16:28:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session)
+  model: deepseek/deepseek-flash
+  purpose: Reject extra fields, duplicate keys and non-finite numbers in the captured evaluator user payload
+  scope:
+  - test/evaluation/evaluator.py
+  - docs/ai-use-log.yaml
+  status: follow-up hardening for the approved capture tests; awaiting review
+  student_decisions:
+  - The student asked the supervising runner to add the strict payload comparison requested on the implementation review and to align JSON parsing with Gate 4.
+  approvals:
+  - 'Test approval PR: #73, approved head 0ab6a10.'
+  verification:
+  - 'test/offline/test_semantic_capture_proposal.py: 29 passed, including the extra-field negative case.'
+  - 'The observer now compares the whole parsed payload to the expected object and parses with duplicate-key and invalid-constant rejection, mirroring scripts/semantic_evidence.py.'
+  limitations:
+  - 'No OpenCode role may edit test/evaluation, so this hardening was written by the supervising runner and must be reviewed as runner-authored work.'
+  - No product model call was made.
