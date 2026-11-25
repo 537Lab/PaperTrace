@@ -6,9 +6,10 @@ and a deterministic counting double at D's generation port, driven through the
 real ``AnswerGenerationService`` and ``ReleaseGate``. It makes no product model,
 SDK, HTTP or PaperQA2 call, writes nothing and publishes nothing.
 
-Streamlit is imported inside ``main`` only, so importing this module never
-requires the Streamlit runtime. The preview keeps one panel per Streamlit
-session and that panel retains only the current scope and the current view.
+Streamlit is resolved through :func:`_streamlit` at call time only, so importing
+this module never requires the Streamlit runtime or a Streamlit type stub. The
+preview keeps one panel per Streamlit session and that panel retains only the
+current scope and the current view.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from papertrace.answer.generation import (
     AnswerGenerationRequest,
@@ -144,17 +145,33 @@ class SyntheticGenerationPort:
         )
 
 
+def _streamlit() -> Any:
+    """Import Streamlit for local runtime use, or raise :class:`ImportError`.
+
+    Streamlit is an optional local preview convenience and is not a pinned CI
+    dependency. Under type checking the module is treated as an ``Any``-typed
+    facade so this module never needs a Streamlit stub or ``# type: ignore``; at
+    runtime the ordinary explicit :mod:`streamlit` import is performed here.
+    """
+    if TYPE_CHECKING:
+        st: Any = None
+    else:
+        import streamlit as st
+
+    return st
+
+
 class StreamlitPanelUI:
     """Minimal Streamlit display adapter; it exposes no publication command.
 
-    Streamlit is imported inside each method, never at module scope, and each
-    call resolves the current module. A panel retained from an earlier rerun
-    therefore still reaches the live session instead of a stale import.
+    Streamlit is resolved through :func:`_streamlit` on every call, never at
+    module scope, so a panel retained from an earlier rerun still reaches the
+    live session instead of a stale import.
     """
 
     def take_generate_request(self) -> bool:
         """Report one explicit Generate click for this rerun."""
-        import streamlit as st
+        st = _streamlit()
 
         clicked: bool = st.button(
             "Generate answer", type="primary", key=_GENERATE_KEY
@@ -163,7 +180,7 @@ class StreamlitPanelUI:
 
     def render(self, view: PanelView | None) -> None:
         """Display one panel view, or the empty panel, without writing state."""
-        import streamlit as st
+        st = _streamlit()
 
         if view is None:
             st.info("No validated answer is displayed for the current scope.")
@@ -365,7 +382,7 @@ def render_preview(
 
 def main() -> None:
     """Standalone Streamlit entrypoint; imports Streamlit at call time only."""
-    import streamlit as st
+    st = _streamlit()
 
     st.set_page_config(page_title="PaperTrace answer panel preview", layout="wide")
     st.title("PaperTrace answer panel preview")
