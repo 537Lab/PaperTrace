@@ -106,3 +106,13 @@ head 的独立 Review；测试 PR 的处理仍遵守人工合并流程；真实 
 [8] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/src/paperqa/agents/main.py — 固定基线 src/paperqa/agents/main.py
 [10] https://github.com/Future-House/paper-qa/blob/c692d0dfeac4a0296599f7fe21a253a58b7ac12a/pyproject.toml — 固定基线 pyproject.toml
 [12] urn:sha256:21f1c516a57e975a284d1d278926fedd9755a6d0036314279663c4074063942a — PaperQA2 审计交接ZIP（仅读解出的Markdown）
+
+## 修订：真实评测锁版前的发送前 BPE 计数
+
+为落实 Li Yafei 对 ADR-001 的治理要求，`cityu-litellm` / `CS5351/DeepSeek-V4-Flash` 采用锁定的 `tiktoken==0.12.0` 和 `cl100k_base` 对最终出站聊天消息执行确定性 BPE 计数，并计入确定性的聊天消息封装开销。固定版本、编码及封装规则可复现同一请求的预算判断，并以 BPE 计数取代 UTF-8 字节数或字符数近似。
+
+CityU LiteLLM 网关未公开实际部署的 DeepSeek-V4-Flash 模型修订版本或官方聊天编码器资产。因此，该计数仅适用于发送前的确定性 BPE 估算，无法证明它是与供应商精确计数一致的上界。
+
+- **发送前硬门禁**：`tiktoken` 或编码加载失败、计数无效，或发送前输入计数超过 **12,000 tokens** 时，一律拒绝发送，供应商调用次数为零。禁止静默回退到 UTF-8 字节数或字符数启发式。
+- **响应侧独立核验**：逐条独立核验每个 CityU 真实响应中报告的 `usage.prompt_tokens`、`usage.completion_tokens` 和 `usage.total_tokens`，并将实际用量记入不可变的 v3 评测报告。
+- **替换条件**：如果 CityU 后续公布确切的部署模型修订版本及官方 tokenizer 资产，必须先通过新的 ADR 更新取代本修订，再切换计数器。
