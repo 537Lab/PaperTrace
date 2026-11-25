@@ -1,0 +1,2864 @@
+{
+  "info": {
+    "id": "ses_dff02f043ffep3PJYXRMy43zJA",
+    "projectID": "8e3fd6d0032fa97c4da0ef1d3be830194956f9de",
+    "agent": "papertrace-build-E",
+    "model": {
+      "id": "CS5351/DeepSeek-V4-Flash",
+      "providerID": "cityucs",
+      "variant": "default"
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 31486,
+      "output": 22903,
+      "reasoning": 0,
+      "cache": {
+        "read": 1170688,
+        "write": 0
+      }
+    },
+    "outcome": "succeeded",
+    "time": {
+      "created": 1795312914933,
+      "updated": 1795313709564,
+      "idle": 1795313725657
+    },
+    "title": "E implementation after PR8 approval",
+    "location": {
+      "directory": "[REDACTED_LOCAL_PATH]"
+    }
+  },
+  "messages": [
+    {
+      "id": "msg_200fd120c0018A8XuLMtbRtcHT",
+      "time": {
+        "created": 1795312914956
+      },
+      "type": "agent-switched",
+      "agent": "papertrace-build-E",
+      "previous": "papertrace-build-E"
+    },
+    {
+      "id": "msg_200fd120a001C2e2AL7fqmymMs",
+      "time": {
+        "created": 1795312915274
+      },
+      "text": "\"学生已批准Module E Plan，PR8的精确测试head 81e834596771cfbf5d140b2e68cb9431fcf083af已于2026-11-22获得独立APPROVED。现在进入源码实现阶段。先读取AGENTS.md、Prompt.md、docs/team/module-E.md、集成契约、src/papertrace/contracts.py及test/offline/test_reports.py。仅创建src/papertrace/reports/内实现文件，完整实现获批32项测试所要求的ResearchRecord、HistoryStore、ExportPermission、ExportService、export_json、export_markdown、history_detail及异常。不得改获批测试、共享契约、其他模块或规则。保存不可变JSON、校验来源与ledger digest、默认拒绝未经可信issuer验证的原文导出、过滤敏感配置及绝对路径、原子写入失败无残留。真实发布判断归D，不伪造批准。学校模型开发已授权，不允许产品模型调用。无批准的shell不得执行。完成后报告实际改动与限制。\"",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_200fd13560015Q0m8b4bvoT91L",
+      "time": {
+        "created": 1795312915286
+      },
+      "type": "idle",
+      "outcome": "failed"
+    },
+    {
+      "id": "msg_200fd674c001AvdGp4vBVV0vHu",
+      "time": {
+        "created": 1795312936780
+      },
+      "type": "agent-switched",
+      "agent": "papertrace-build-E",
+      "previous": "papertrace-build-E"
+    },
+    {
+      "id": "msg_200fd6612001FMC0oWgN7ncbRL",
+      "time": {
+        "created": 1795312937238
+      },
+      "text": "继续已批准的模块E实现，读取本会话任务和仓库AGENTS规则。仅实现src/papertrace/reports，不改已批准测试，完成后报告。",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_200fd6923001gUVirlblSKpv3B",
+      "time": {
+        "created": 1795312937267,
+        "streamed": 1795312941551,
+        "completed": 1795312941574
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "我会先读取治理文档和现有材料。"
+        },
+        {
+          "type": "tool",
+          "id": "call_00_7XiKvmDgxIFzCnrkBDKP8925",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-28\n1: # PaperTrace 编码代理唯一入口\r\n2: \r\n3: 本项目在固定 PaperQA2 基线上扩展，不替换原实现。先读本文，再读 `Prompt.md`，先交计划，等学生真实批准测试及计划，才能开发该次授权范围。文件中的“必须”是约束，不是已经满足的证据。\r\n4: \r\n5: ## 阅读顺序\r\n6: 1. `Prompt.md`、`architecture-blueprint.md`、`.opencode/rules.md`（仅限人工维护）与 `.agent/rules.md`。\r\n7: 2. 本人 `docs/team/module-A.md` 至 `module-E.md` 中的一份、相关 `docs/req/requirements.yaml` 条目、`src/papertrace/contracts.py` 与集成合同相关部分。\r\n8: 3. 涉及的 ADR、不变量、权限、状态、验证和课程原文按需读取，不为一个小变更通读整个治理目录；课程依据见 `docs/sources/course-compliance.md`。\r\n9: \r\n10: ## 基线、目录与权威\r\n11: - 基线：`c692d0dfeac4a0296599f7fe21a253a58b7ac12a`，tag `papertrace-upstream-baseline`。\r\n12: - 冻结：`src/paperqa/`、`packages/`、`tests/`、`pyproject.toml`、`uv.lock`、`LICENSE`。上游README与自动发布工作流原样保存在 `docs/upstream/`，旧工作流不自动执行。\r\n13: - 新代码只放 `src/papertrace/`；共享定义仅 `contracts.py`。A=library，B=retrieval，C=review，D=answer，E=reports。只有B适配器允许直接导入PaperQA2；D经B的受控回答端口使用它，不绕过审批过滤。成员开发前不创建这些业务实现。\r\n14: - 团队测试在 `test/offline/`、`test/live/`；旧 `tests/` 原样保留，初始化通过不等于完整上游回归通过。\r\n15: - 模型只给建议。人工决定授予证据；D的确定性检查决定是否可发布；UI和合约序列化都不能替代运行时授权。\r\n16: - 不读取 `.local/`、凭据、环境秘密、私人目录；不推送，不改Git设置/工作流/权限/人工规则，不导入第三方pickle索引，不自行增加依赖或收费调用。\r\n17: \r\n18: ## 可执行验证\r\n19: ```sh\r\n20: .venv/bin/python -m pytest -c papertrace.pytest.ini test/offline\r\n21: .venv/bin/python -m ruff check --config papertrace.ruff.toml src/papertrace test/offline scripts\r\n22: .venv/bin/python -m mypy --config-file mypy.ini src/papertrace\r\n23: .venv/bin/python scripts/gates.py --gate schema\r\n24: ```\r\n25: 学生一次确认本轮模块范围与常用离线工具后，范围内日常编辑、新文件及配置中的精确离线命令不逐次审批；其他 shell 默认 ask，高影响操作仍须单独确认。模型/完整回归/远端人审的真实状态见 `docs/ci/gates.md` 和 `INITIALIZATION_STATUS.md`。\r\n26: \r\n27: ## 人工检查点\r\n28: 需求分类/计划 → **监督学生批准计划** → 仅生成本模块测试/合成fixtures/计划记录（禁止业务实现）→ **非实现者事前批准具体测试版本** → OpenCode受限实现 → 三级验证 → 独立人工PR审查。测试准备可使用对应模块角色，但没有源码实现授权；审批是学生真实行为，角色选择本身不证明批准。每阶段保留真实记录，不补造审批，不将本轮Hermes工程修复称为学生OpenCode贡献。安全路径与共享契约修改须ADR及受影响owner人审；普通模块细节不逐项新增ADR。原基线例外流程见ADR-002，当前仍由frozen_check保护。\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312941184,
+            "ran": 1795312941532,
+            "completed": 1795312941568
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_01_l2DDCG17VivtY63Orn4w9104",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-21\n1: # PaperTrace 静态启动提示\r\n2: \r\n3: 按 `AGENTS.md` 阅读顺序取得足够上下文。默认角色 `papertrace-plan` 是只读计划入口；此提示不是无人值守完成全项目的授权。\r\n4: \r\n5: ## Plan：只输出计划，然后停止\r\n6: 1. 明确认领的单一功能模块及本次小变更；映射需求 ID、不变量 ID 与可测量 fit criterion。\r\n7: 2. 列出精确读取/拟修改路径、冻结区、输入/输出契约与依赖；若配置不允许，停止并请求学生人工窄范围授权，禁止自行放权。\r\n8: 3. 设计正常、负面、回归和行为测试，指出离线模拟与需真实模型/远端权限的项目；给预算、调用次数、停止条件。\r\n9: 4. 列实现步骤、每步验证、非作者审查点、恢复办法和本次证据记录位置。\r\n10: 5. 只给计划，然后停止并等待学生本人批准本次精确计划。获批后可用同一模块 Build 角色进入测试准备阶段，但此时不得写任何 src/；具体测试 commit 还须由未参与该测试实现的另一位学生在 GitHub 真实批准，之后才进入源码实现。\r\n11: \r\n12: ## Human Review：真人审批，不是 OpenCode 角色\r\n13: 学生本人须审核并批准精确计划；之后 Build 只可准备该模块 tests/、fixtures/和设计记录。非实现者必须是另一位未参与测试实现的学生，并在 GitHub 对具体测试 commit 实际 Approve，审批记录绑定该 commit。测试提案 PR 可保持 open 且 RED，不必为审批而合并；源码实现 PR 从该测试 head 分支创建，描述中写入精确行 `Test approval PR: #N`。拒绝、沉默、模型生成的批准语句或仅有角色权限都不授权。记录必须真实留存，不补造。\r\n14: \r\n15: ## Build：同一模块角色，分为测试准备与源码实现两个行为阶段\r\n16: 计划获学生真实批准后，由人选择对应 `papertrace-build-A` 至 `papertrace-build-E`，在新会话附上精确计划。先只生成/编辑本模块独立 tests/、fixtures/和设计记录，严禁写任何 `src/`，即使 native tool permission 已允许源码路径；跑获准的离线 RED 检查。测试提案 PR 可保持 open 且 RED，不需要为了审批合并。另一位未参与测试实现的学生在 GitHub 对具体测试 commit 真实 Approve 后，同一 Build 角色才继续本模块源码实现；实现 PR 从测试 head 分支创建，描述写入 `Test approval PR: #N`。学生一次确认本模块范围与精确常用离线命令后，范围内日常编辑不逐项重复授权；共享契约、跨模块、依赖、收费/费用、安全路径等越界仍立即停止。\r\n17: \r\n18: 角色与 permission 仅界定角色/路径范围，不记录或证明学生身份/审批。源码在测试准备阶段虽可能处于 permission allow 范围，禁止写 src 是行为约束，不是新角色、新权限门禁、OS sandbox 或身份服务。路径规则按 lexical path 匹配，preflight 仅能拒绝检查时已存在的 symlink，不是永久隔离。\r\n19: \r\n20: ## Verify：独立报告\r\n21: 运行可信静态 preflight、完整已有离线回归、类型/lint/schema 检查；提交真实 diff 和退出码。缺环境/授权的旧回归须 BLOCKED，真实行为评测未运行须 NOT_RUN。引擎 API 探针不等于工具 E2E；本地 fake-model 工具循环只证明模拟工具路径，不证明真人审批、真实模型质量或课程完成。学生检查后才进入独立人工 PR 审查；代理不 push、merge 或发布。\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312941196,
+            "ran": 1795312941545,
+            "completed": 1795312941572
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 2793,
+        "output": 106,
+        "reasoning": 0,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_200fd7a39001pwzSobTEZBkHjb",
+      "time": {
+        "created": 1795312941667,
+        "streamed": 1795312945068,
+        "completed": 1795312945132
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_3MjPHAZWcBhEm0QWU8iD7179",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-49\n1: # 模块 E｜研究历史、来源追溯与导出\r\n2: \r\n3: > **Owner E：**端到端负责 reports/history/export 用户功能、自己的 view、需求/设计、监督 OpenCode、测试与 PR；不是只写课程材料。此任务书不是业务实现或授权记录。\r\n4: >\r\n5: > 统一从[团队启动入口](../../TEAM_START_HERE.md)进入；合同细节见 [`integration-contract.md`](integration-contract.md) 与真实 `src/papertrace/contracts.py`。\r\n6: \r\n7: ## 用户结果与责任\r\n8: \r\n9: 研究者可保存一次成功、被阻断、拒答或失败的研究过程；关闭重开后仍能定位当时的 snapshot、来源、审核与发布状态；导出 JSON 和 Markdown。文献后来换版时，旧研究保留原内容并标记 superseded，而不是用当前库回填。\r\n10: \r\n11: E 负责版本化研究记录封装、不可变历史、回读和导出。共享的五种模型保持唯一字段/枚举事实源；E 不重生答案、不改 C ledger、不依据外来 bool/按钮把 blocked 升级为 released。缺原件要显示缺失，不用同名文件替换。\r\n12: \r\n13: ## Must 与可验收结果\r\n14: \r\n15: | 需求/不变量 | 必须行为与验收 |\r\n16: |---|---|\r\n17: | `FR-E-01`, `INV-02/04` | 保存/跨会话回读问题、snapshot、证据/定位、人审记录与 token、approved/sent/cited、AnswerDraft 和 ReleaseDecision；JSON 能重新解析；Markdown 与 JSON 表达同一来源和状态。 |\r\n18: | `FR-E-02`, `INV-05/08` | 历史只追加；换版只显示 superseded，不改旧记录。默认导出不含凭据、本机绝对路径、未经许可全文或模型私有推理；路径越界/符号链接逃逸/写失败不损坏历史。 |\r\n19: | `QA-01`, `SEC-01` | 使用真实模型字段和枚举；schema 版本/未知字段策略明确；合成敏感 sentinel 可测脱敏，不扫描私人目录。 |\r\n20: \r\n21: 历史包是后续版本化封装，须在 Plan 和相关生产者/消费者共同审核后确定，不往 frozen 模型加私有字段。当前 AnswerDraft 仅有 `draft/abstained/failed`，ReleaseDecision 仅有 `released/blocked`；`stale/superseded/incomplete` 是封装/展示语义，不擅改传输枚举。缺 usage/费用记 unknown，不补零。\r\n22: \r\n23: ## 边界与拟议改动范围\r\n24: \r\n25: - 接 A/B/C/D 的原版本对象与审核 ledger；最终一致性提交由获批应用编排/D/E 共同设计，E 负责存储/读回/导出，不另造发布门。\r\n26: - **常规模块范围（在 Plan 一次确认；范围内日常编辑/新增文件不逐次批准）：**`src/papertrace/reports/`（存储、读取、exporter 与 view）、`test/offline/test_reports.py`、`test/fixtures/reports/`。record envelope 对外接口、共享模型、A/C/D 端口、入口/锁/编排、依赖/CI 和治理日志另批。\r\n27: - 不写 A 文库/C ledger/D 发布门，不读取 `.env`、密钥、真实私人论文/历史，不擅自联网或引入大型数据库/云服务。\r\n28: \r\n29: ## 不等 A–D 的 fake 开发与验收\r\n30: \r\n31: 用规范五模型和自写 synthetic 完整 released、blocked、abstained、failed 记录；fixture 明示 synthetic，不假装真实人审、OpenCode 会话或模型输出。假数据只在测试临时输出目录内读写。\r\n32: \r\n33: 至少验证：保存/关闭重开/JSON roundtrip；JSON/Markdown 必要字段与 evidence/locator 无错配；换版后旧内容 hash 不变；blocked/abstained/failed 保持未发布；缺对象/错关联/坏 digest/未知 schema 不补齐成成功；路径穿越、symlink、冲突、写中断/磁盘失败无范围外写、无破坏旧包；合成敏感值、绝对路径、未许可全文标记不进入导出。外部读取/导出许可要分开验证，不因 Apache-2.0 根许可证而假设论文可分享。\r\n34: \r\n35: ## D1–D9：E 应留下的模块证据\r\n36: \r\n37: | 项 | 本模块证据 |\r\n38: |---|---|\r\n39: | D1 | `FR-E-01/02`、`INV-02/04/05/08` 的导出/历史 fit、测试与 trace。 |\r\n40: | D2 | 版本化封装、不可变存储/恢复、许可字段白名单、与 D 的最终提交边界及必要 ADR。 |\r\n41: | D3 | reports 与导出目标精确路径/工具授权、路径保护与冻结基线/例外证据。 |\r\n42: | D4 | 事前批准、跨会话/脱敏/路径/中断负测、团队回归和独立 review memo。 |\r\n43: | D5 | 学生监督 OpenCode 的真实完整原始会话与历史/许可干预；Hermes 初始化不算成员开发。Transcript 口径待核实。 |\r\n44: | D6 | E 的真实业务/协作贡献和反思素材；正式身份/贡献由本人填写，不能以课程文档替代功能。 |\r\n45: | D7 | 本地 diff、真实 PR/CI/独立审查及分支保护读回；之前保护 403 未生效，须重查。 |\r\n46: | D8 | history/export 服务/view、合成研究包、正负/回读测试和复现步骤。 |\r\n47: | D9 | 根 `Prompt.md` 的 Plan 停点、事前测试/计划/路径批准及监督 Verify 记录。 |\r\n48: \r\n49: 验收从最终导出件读回核字段/状态；不能只检查“导出成功”提示或生成几份 Markdown 示例。"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312943550,
+            "ran": 1795312945040,
+            "completed": 1795312945128
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_01_M4iM08yXdUGTtIU5jh9p6991",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-271\n1: \"\"\"Deterministic shared data interfaces only; no PaperQA or model calls.\r\n2: \r\n3: Architecture: ADR-001; QA-01; INV-01..04; SEC-01. See docs/contracts/schema.md.\r\n4: \"\"\"\r\n5: \r\n6: import json\r\n7: from collections.abc import Mapping, Sequence\r\n8: from datetime import timezone\r\n9: from hashlib import sha256\r\n10: from typing import Annotated, Any, Literal, Self\r\n11: \r\n12: from pydantic import (\r\n13:     AfterValidator,\r\n14:     AwareDatetime,\r\n15:     BaseModel,\r\n16:     ConfigDict,\r\n17:     Field,\r\n18:     StrictBool,\r\n19:     StringConstraints,\r\n20:     field_validator,\r\n21:     model_validator,\r\n22: )\r\n23: \r\n24: UTCTimestamp = Annotated[\r\n25:     AwareDatetime, AfterValidator(lambda value: value.astimezone(timezone.utc))\r\n26: ]\r\n27: PositiveInt = Annotated[int, Field(strict=True, ge=1)]\r\n28: ReviewRevision = Annotated[int, Field(strict=True, ge=0)]\r\n29: ReasonCode = Annotated[str, StringConstraints(strict=True, pattern=r\"^[A-Z][A-Z0-9_]{0,63}$\")]\r\n30: AnswerId = Annotated[str, StringConstraints(strict=True, pattern=r\"^ans-[a-z0-9][a-z0-9_-]{0,63}$\")]\r\n31: QuestionId = Annotated[str, StringConstraints(strict=True, pattern=r\"^q-[a-z0-9][a-z0-9_-]{0,63}$\")]\r\n32: ReviewerRef = Annotated[\r\n33:     str, StringConstraints(strict=True, pattern=r\"^reviewer-[A-Z][A-Z0-9_-]{0,31}$\")\r\n34: ]\r\n35: EvidenceId = Annotated[str, StringConstraints(strict=True, pattern=r\"^ev-[0-9a-f]{64}$\")]\r\n36: SnapshotId = Annotated[str, StringConstraints(strict=True, pattern=r\"^snap-[0-9a-f]{64}$\")]\r\n37: Sha256 = Annotated[str, StringConstraints(strict=True, pattern=r\"^[0-9a-f]{64}$\")]\r\n38: DocumentId = Annotated[\r\n39:     str, StringConstraints(strict=True, pattern=r\"^doc-[a-z0-9][a-z0-9_-]{0,63}$\")\r\n40: ]\r\n41: NonBlank = Annotated[str, StringConstraints(strict=True, min_length=1, pattern=r\"\\S\")]\r\n42: \r\n43: \r\n44: class ContractModel(BaseModel):\r\n45:     \"\"\"QA-01, SEC-01: closed, immutable shared interface envelope.\"\"\"\r\n46: \r\n47:     model_config = ConfigDict(frozen=True, extra=\"forbid\", revalidate_instances=\"always\")\r\n48:     schema_version: Literal[1]\r\n49: \r\n50:     @field_validator(\"schema_version\", mode=\"before\")\r\n51:     @classmethod\r\n52:     def explicit_schema_version(cls, value: object) -> int:\r\n53:         \"\"\"INV-02, QA-01: preserve protocol values rather than coercing them.\"\"\"\r\n54:         if type(value) is not int or value != 1:\r\n55:             raise ValueError(\"schema_version must be the explicit integer 1\")\r\n56:         return value\r\n57: \r\n58: \r\n59: class DocumentVersion(ContractModel):\r\n60:     \"\"\"INV-02: a logical document and its distinct content version.\"\"\"\r\n61: \r\n62:     document_id: DocumentId\r\n63:     version_sha256: Sha256\r\n64:     title: NonBlank\r\n65:     source_name: NonBlank\r\n66:     status: Literal[\"ready\"]\r\n67: \r\n68:     @field_validator(\"source_name\")\r\n69:     @classmethod\r\n70:     def safe_source_name(cls, value: str) -> str:\r\n71:         \"\"\"QA-01, SEC-01: store a display basename, never a path or control sequence.\"\"\"\r\n72:         if value in {\".\", \"..\"} or any(c in value for c in \"/\\\\:\"):\r\n73:             raise ValueError(\"source_name must be a pure filename\")\r\n74:         if any(ord(c) < 32 or ord(c) == 127 for c in value):\r\n75:             raise ValueError(\"source_name cannot contain control characters\")\r\n76:         return value\r\n77: \r\n78: \r\n79: def _canonical_hash(payload: Mapping[str, object]) -> str:\r\n80:     \"\"\"INV-02, QA-01: UTF-8 canonical JSON, no lossy normalization or non-finite numbers.\"\"\"\r\n81:     encoded = json.dumps(\r\n82:         payload, ensure_ascii=False, sort_keys=True, separators=(\",\", \":\"), allow_nan=False\r\n83:     ).encode(\"utf-8\")\r\n84:     return sha256(encoded).hexdigest()\r\n85: \r\n86: \r\n87: def _snapshot_id(documents: Sequence[DocumentVersion]) -> str:\r\n88:     \"\"\"INV-02, QA-01: identity covers complete ready metadata, not capture time.\"\"\"\r\n89:     return \"snap-\" + _canonical_hash(\r\n90:         {\r\n91:             \"schema_version\": 1,\r\n92:             \"documents\": [\r\n93:                 doc.model_dump(mode=\"json\")\r\n94:                 for doc in sorted(documents, key=lambda item: item.document_id)\r\n95:             ],\r\n96:         }\r\n97:     )\r\n98: \r\n99: \r\n100: class CorpusSnapshot(ContractModel):\r\n101:     \"\"\"INV-02, QA-01: immutable, deterministically identified ready corpus.\"\"\"\r\n102: \r\n103:     documents: tuple[DocumentVersion, ...]\r\n104:     created_at: UTCTimestamp\r\n105:     snapshot_id: SnapshotId = Field(default_factory=lambda data: _snapshot_id(data[\"documents\"]))\r\n106: \r\n107:     @model_validator(mode=\"after\")\r\n108:     def canonical_order(self) -> Self:\r\n109:         \"\"\"INV-02, QA-01: a single document ordering in memory and serialized output.\"\"\"\r\n110:         ids = [doc.document_id for doc in self.documents]\r\n111:         if len(ids) != len(set(ids)):\r\n112:             raise ValueError(\"snapshot has duplicate document identity\")\r\n113:         if self.snapshot_id != _snapshot_id(self.documents):\r\n114:             raise ValueError(\"snapshot_id does not match canonical documents\")\r\n115:         object.__setattr__(\r\n116:             self, \"documents\", tuple(sorted(self.documents, key=lambda item: item.document_id))\r\n117:         )\r\n118:         return self\r\n119: \r\n120: \r\n121: class SourceLocator(ContractModel):\r\n122:     \"\"\"INV-02, INV-04: parser metadata and page/line ranges, never free-form locations.\"\"\"\r\n123: \r\n124:     page_start: PositiveInt | None = None\r\n125:     page_end: PositiveInt | None = None\r\n126:     line_start: PositiveInt | None = None\r\n127:     line_end: PositiveInt | None = None\r\n128:     chunk_id: NonBlank\r\n129:     parser_name: NonBlank\r\n130:     parser_version: NonBlank\r\n131: \r\n132:     @model_validator(mode=\"after\")\r\n133:     def valid_ranges(self) -> Self:\r\n134:         \"\"\"INV-02, INV-04: at least one complete 1-based inclusive range is required.\"\"\"\r\n135:         if self.page_start is None and self.line_start is None:\r\n136:             raise ValueError(\"locator needs a page or line range\")\r\n137:         for start, end in ((self.page_start, self.page_end), (self.line_start, self.line_end)):\r\n138:             if (start is None) != (end is None):\r\n139:                 raise ValueError(\"locator range needs both start and end\")\r\n140:             if start is not None and end is not None and end < start:\r\n141:                 raise ValueError(\"locator range is reversed\")\r\n142:         return self\r\n143: \r\n144: \r\n145: def _evidence_id(data: dict[str, Any]) -> str:\r\n146:     \"\"\"INV-03, INV-02, INV-04, QA-01: advisory summaries, upstream IDs and retrieval time excluded.\"\"\"\r\n147:     payload = {\r\n148:         key: data[key]\r\n149:         for key in (\"schema_version\", \"snapshot_id\", \"document_id\", \"version_sha256\", \"excerpt\")\r\n150:     }\r\n151:     payload[\"locator\"] = data[\"locator\"].model_dump(mode=\"json\")\r\n152:     return \"ev-\" + _canonical_hash(payload)\r\n153: \r\n154: \r\n155: class EvidenceRecord(ContractModel):\r\n156:     \"\"\"INV-03, INV-02, INV-04: exact excerpt and provenance only; no accepted/status field.\"\"\"\r\n157: \r\n158:     snapshot_id: SnapshotId\r\n159:     document_id: DocumentId\r\n160:     version_sha256: Sha256\r\n161:     locator: SourceLocator\r\n162:     excerpt: NonBlank\r\n163:     retrieved_at: UTCTimestamp\r\n164:     advisory_summary: str | None = None\r\n165:     upstream_context_id: str | None = None\r\n166:     evidence_id: EvidenceId = Field(default_factory=_evidence_id)\r\n167: \r\n168:     @model_validator(mode=\"after\")\r\n169:     def canonical_identity(self) -> Self:\r\n170:         \"\"\"INV-02, INV-04, QA-01: a caller-supplied evidence hash must match its provenance.\"\"\"\r\n171:         if self.evidence_id != _evidence_id(self.__dict__):\r\n172:             raise ValueError(\"evidence_id does not match canonical provenance\")\r\n173:         return self\r\n174: \r\n175: \r\n176: class ReviewDecision(ContractModel):\r\n177:     \"\"\"INV-03: human review event; authenticity belongs to C's future ledger.\"\"\"\r\n178: \r\n179:     evidence_id: EvidenceId\r\n180:     snapshot_id: SnapshotId\r\n181:     question_id: QuestionId\r\n182:     status: Literal[\"pending\", \"accepted\", \"excluded\"]\r\n183:     actor_kind: Literal[\"human\"]\r\n184:     reviewer_ref: ReviewerRef\r\n185:     revision: PositiveInt\r\n186:     reason: NonBlank\r\n187:     decided_at: UTCTimestamp\r\n188: \r\n189: \r\n190: class AnswerDraft(ContractModel):\r\n191:     \"\"\"INV-04, INV-02, INV-01, QA-01: declared review scope, not proof of a genuine current ledger.\"\"\"\r\n192: \r\n193:     answer_id: AnswerId\r\n194:     snapshot_id: SnapshotId\r\n195:     question_id: QuestionId\r\n196:     review_revision: ReviewRevision\r\n197:     review_digest: Sha256\r\n198:     approved_evidence_ids: tuple[EvidenceId, ...] = Field(json_schema_extra={\"uniqueItems\": True})\r\n199:     sent_evidence_ids: tuple[EvidenceId, ...] = Field(json_schema_extra={\"uniqueItems\": True})\r\n200:     citation_evidence_ids: tuple[EvidenceId, ...] = Field(json_schema_extra={\"uniqueItems\": True})\r\n201:     status: Literal[\"draft\", \"abstained\", \"failed\"]\r\n202:     body: str\r\n203:     refusal_reason: str | None = None\r\n204:     generated_at: UTCTimestamp\r\n205: \r\n206:     @model_validator(mode=\"after\")\r\n207:     def valid_scope(self) -> Self:\r\n208:         \"\"\"INV-04, INV-02: cited subset of sent subset of approved, without aliases.\"\"\"\r\n209:         for name in (\"approved_evidence_ids\", \"sent_evidence_ids\", \"citation_evidence_ids\"):\r\n210:             values = getattr(self, name)\r\n211:             if len(values) != len(set(values)):\r\n212:                 raise ValueError(f\"{name} contains duplicate evidence identity\")\r\n213:         if not set(self.sent_evidence_ids) <= set(self.approved_evidence_ids):\r\n214:             raise ValueError(\"sent evidence is outside approved scope\")\r\n215:         if not set(self.citation_evidence_ids) <= set(self.sent_evidence_ids):\r\n216:             raise ValueError(\"citation evidence is outside sent scope\")\r\n217:         if self.status == \"draft\":\r\n218:             if self.review_revision == 0:\r\n219:                 raise ValueError(\"draft requires a nonzero human-review revision\")\r\n220:             if (\r\n221:                 not self.approved_evidence_ids\r\n222:                 or not self.sent_evidence_ids\r\n223:                 or not self.body.strip()\r\n224:             ):\r\n225:                 raise ValueError(\"draft requires approved and sent evidence and a nonempty body\")\r\n226:             if self.refusal_reason is not None:\r\n227:                 raise ValueError(\"draft cannot contain refusal_reason\")\r\n228:         else:\r\n229:             if self.body != \"\" or self.citation_evidence_ids:\r\n230:                 raise ValueError(\"abstained/failed answer must have empty body and no citations\")\r\n231:             if self.refusal_reason is None or not self.refusal_reason.strip():\r\n232:                 raise ValueError(\"abstained/failed answer needs refusal_reason\")\r\n233:         return self\r\n234: \r\n235: \r\n236: class ReleaseDecision(ContractModel):\r\n237:     \"\"\"INV-04: deterministic check claims; never a substitute for D's checks.\"\"\"\r\n238: \r\n239:     answer_id: AnswerId\r\n240:     snapshot_id: SnapshotId\r\n241:     question_id: QuestionId\r\n242:     review_revision: ReviewRevision\r\n243:     review_digest: Sha256\r\n244:     status: Literal[\"released\", \"blocked\"]\r\n245:     reason_codes: tuple[ReasonCode, ...] = Field(json_schema_extra={\"uniqueItems\": True})\r\n246:     snapshot_check_passed: StrictBool\r\n247:     review_check_passed: StrictBool\r\n248:     evidence_check_passed: StrictBool\r\n249:     citation_check_passed: StrictBool\r\n250:     answer_check_passed: StrictBool\r\n251:     decided_at: UTCTimestamp\r\n252: \r\n253:     @model_validator(mode=\"after\")\r\n254:     def consistent_decision(self) -> Self:\r\n255:         \"\"\"INV-04: released claims require every structural check and no reason.\"\"\"\r\n256:         if len(self.reason_codes) != len(set(self.reason_codes)):\r\n257:             raise ValueError(\"duplicate release reason code\")\r\n258:         checks = (\r\n259:             self.snapshot_check_passed,\r\n260:             self.review_check_passed,\r\n261:             self.evidence_check_passed,\r\n262:             self.citation_check_passed,\r\n263:             self.answer_check_passed,\r\n264:         )\r\n265:         if self.status == \"released\" and (\r\n266:             self.review_revision == 0 or not all(checks) or self.reason_codes\r\n267:         ):\r\n268:             raise ValueError(\"released requires all checks true and no reason codes\")\r\n269:         if self.status == \"blocked\" and not self.reason_codes:\r\n270:             raise ValueError(\"blocked requires at least one reason code\")\r\n271:         return self\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312944320,
+            "ran": 1795312945048,
+            "completed": 1795312945124
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 1989,
+        "output": 109,
+        "reasoning": 0,
+        "cache": {
+          "read": 2816,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_200fd8802001F3iDPAJ12oAylw",
+      "time": {
+        "created": 1795312945193,
+        "streamed": 1795312948047,
+        "completed": 1795312948070
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_oe45KVUhBh4waKSDDxmV0713",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-313\n1: \"\"\"Module E test proposal. FR-E-01/02, INV-02/04/05/08, SEC-01.\r\n2: \r\n3: Synthetic only. Proposed public API awaiting independent test review.\r\n4: Missing implementation must fail explicitly. No source implementation is supplied.\r\n5: \"\"\"\r\n6: \r\n7: from __future__ import annotations\r\n8: \r\n9: import hashlib\r\n10: import importlib\r\n11: import importlib.util\r\n12: import json\r\n13: from pathlib import Path\r\n14: \r\n15: import pytest\r\n16: \r\n17: FIXTURES = Path(__file__).resolve().parents[1] / \"fixtures\"\r\n18: \r\n19: \r\n20: def reports():\r\n21:     assert importlib.util.find_spec(\"papertrace.reports\") is not None, (\r\n22:         \"FR-E-01: reports implementation missing; expected RED before source approval\"\r\n23:     )\r\n24:     return importlib.import_module(\"papertrace.reports\")\r\n25: \r\n26: \r\n27: def payload():\r\n28:     \"\"\"Preserve shared synthetic object identities without inventing digest values.\"\"\"\r\n29:     def shared(name):\r\n30:         wrapper = json.loads((FIXTURES / \"contracts\" / f\"{name}.json\").read_text(\"utf-8\"))\r\n31:         assert wrapper[\"synthetic\"] is True\r\n32:         return wrapper[\"data\"]\r\n33: \r\n34:     scenario = json.loads((FIXTURES / \"reports\" / \"scenarios.json\").read_text(\"utf-8\"))\r\n35:     decision = shared(\"ReviewDecision\")\r\n36:     events = [{\"command_id\": \"synthetic-command-1\", \"decision\": decision}]\r\n37:     ledger = {\r\n38:         \"schema_version\": 1,\r\n39:         \"snapshot_id\": decision[\"snapshot_id\"],\r\n40:         \"question_id\": decision[\"question_id\"],\r\n41:         \"revision\": 1,\r\n42:         \"events\": events,\r\n43:     }\r\n44:     digest = hashlib.sha256(json.dumps(\r\n45:         ledger, ensure_ascii=False, sort_keys=True, separators=(\",\", \":\"), allow_nan=False,\r\n46:     ).encode(\"utf-8\")).hexdigest()\r\n47:     draft = shared(\"AnswerDraft\")\r\n48:     release = shared(\"ReleaseDecision\")\r\n49:     draft[\"review_digest\"] = digest\r\n50:     release[\"review_digest\"] = digest\r\n51:     return {\r\n52:         \"record_schema_version\": 1,\r\n53:         \"record_id\": \"efaf8a8c-97e5-47ea-bada-79a1da14715b\",\r\n54:         \"saved_at\": \"2026-11-20T00:00:00Z\",\r\n55:         \"question\": scenario[\"question\"],\r\n56:         \"snapshot\": shared(\"CorpusSnapshot\"),\r\n57:         \"evidence\": [shared(\"EvidenceRecord\")],\r\n58:         \"review_events\": events,\r\n59:         \"review_revision\": 1,\r\n60:         \"review_digest\": digest,\r\n61:         \"draft\": draft,\r\n62:         \"release\": release,\r\n63:         \"run_metadata\": {},\r\n64:     }\r\n65: \r\n66: \r\n67: def record():\r\n68:     return reports().ResearchRecord.model_validate(payload())\r\n69: \r\n70: \r\n71: def test_shared_fixture_associations():\r\n72:     \"\"\"Test-preparation check independent of the future E implementation.\"\"\"\r\n73:     data = payload()\r\n74:     snapshot_id = data[\"snapshot\"][\"snapshot_id\"]\r\n75:     for value in (data[\"evidence\"][0], data[\"draft\"], data[\"release\"]):\r\n76:         assert value[\"snapshot_id\"] == snapshot_id\r\n77:     assert data[\"draft\"][\"answer_id\"] == data[\"release\"][\"answer_id\"]\r\n78:     assert data[\"draft\"][\"review_digest\"] == data[\"release\"][\"review_digest\"]\r\n79: \r\n80: \r\n81: def test_save_reopen_preserves_original(tmp_path):\r\n82:     api = reports()\r\n83:     original = record()\r\n84:     api.HistoryStore(tmp_path).save(original)\r\n85:     loaded = api.HistoryStore(tmp_path).load(original.record_id)\r\n86:     assert loaded.model_dump(mode=\"json\") == original.model_dump(mode=\"json\")\r\n87: \r\n88: \r\n89: def test_conflicting_save_preserves_bytes(tmp_path):\r\n90:     api = reports()\r\n91:     original = record()\r\n92:     store = api.HistoryStore(tmp_path)\r\n93:     store.save(original)\r\n94:     before = {p.relative_to(tmp_path): p.read_bytes() for p in tmp_path.rglob(\"*\") if p.is_file()}\r\n95:     with pytest.raises(api.RecordConflict):\r\n96:         store.save(original)\r\n97:     after = {p.relative_to(tmp_path): p.read_bytes() for p in tmp_path.rglob(\"*\") if p.is_file()}\r\n98:     assert before == after\r\n99: \r\n100: \r\n101: @pytest.mark.parametrize(\"record_id\", [\"../escape\", \"/outside\", \"[REDACTED_LOCAL_PATH]\", \"a/b\", \"\"])\r\n102: def test_record_id_cannot_escape_root(tmp_path, record_id):\r\n103:     api = reports()\r\n104:     with pytest.raises(api.InvalidRecord):\r\n105:         api.HistoryStore(tmp_path).load(record_id)\r\n106: \r\n107: \r\n108: @pytest.mark.parametrize(\"mutation\", [\"schema\", \"unknown\", \"snapshot\", \"citation\"])\r\n109: def test_invalid_package_is_rejected(mutation):\r\n110:     api = reports()\r\n111:     data = payload()\r\n112:     if mutation == \"schema\":\r\n113:         data[\"record_schema_version\"] = 999\r\n114:     elif mutation == \"unknown\":\r\n115:         data[\"unrecognized\"] = True\r\n116:     elif mutation == \"snapshot\":\r\n117:         data[\"draft\"][\"snapshot_id\"] = \"snap-\" + \"0\" * 64\r\n118:     else:\r\n119:         data[\"draft\"][\"citation_evidence_ids\"] = [\"ev-\" + \"0\" * 64]\r\n120:     with pytest.raises(ValueError):\r\n121:         api.ResearchRecord.model_validate(data)\r\n122: \r\n123: \r\n124: def test_exports_preserve_blocked_status_and_source_mapping():\r\n125:     api = reports()\r\n126:     original = record()\r\n127:     exported = json.loads(api.export_json(original))\r\n128:     markdown = api.export_markdown(original)\r\n129:     assert exported[\"release\"][\"status\"] == \"blocked\"\r\n130:     assert \"blocked\" in markdown\r\n131:     evidence_id = original.evidence[0].evidence_id\r\n132:     assert evidence_id in markdown\r\n133:     assert evidence_id in json.dumps(exported)\r\n134:     assert original.evidence[0].document_id in markdown\r\n135: \r\n136: \r\n137: def test_export_metadata_rejects_credentials():\r\n138:     api = reports()\r\n139:     data = payload()\r\n140:     data[\"run_metadata\"][\"api_key\"] = \"SYNTHETIC_API_KEY_DO_NOT_EXPORT_20261120\"\r\n141:     with pytest.raises(ValueError):\r\n142:         api.ResearchRecord.model_validate(data)\r\n143: \r\n144: \r\n145: @pytest.mark.parametrize(\"status\", [\"released\", \"blocked\", \"abstained\", \"failed\"])\r\n146: def test_all_outcomes_roundtrip_without_status_promotion(tmp_path, status):\r\n147:     api = reports()\r\n148:     data = payload()\r\n149:     if status == \"released\":\r\n150:         data[\"release\"][\"status\"] = \"released\"\r\n151:         data[\"release\"][\"reason_codes\"] = []\r\n152:         for name in (\"snapshot\", \"review\", \"evidence\", \"citation\", \"answer\"):\r\n153:             data[\"release\"][f\"{name}_check_passed\"] = True\r\n154:     elif status in (\"abstained\", \"failed\"):\r\n155:         data[\"draft\"].update(\r\n156:             status=status, body=\"\", citation_evidence_ids=[],\r\n157:             refusal_reason=\"SYNTHETIC outcome\",\r\n158:         )\r\n159:     original = api.ResearchRecord.model_validate(data)\r\n160:     api.HistoryStore(tmp_path).save(original)\r\n161:     loaded = api.HistoryStore(tmp_path).load(original.record_id)\r\n162:     assert loaded.draft.status == original.draft.status\r\n163:     assert loaded.release.status == original.release.status\r\n164: \r\n165: \r\n166: @pytest.mark.parametrize(\"field\", [\"review_digest\", \"review_revision\"])\r\n167: def test_tampered_ledger_token_rejected(field):\r\n168:     api = reports()\r\n169:     data = payload()\r\n170:     data[field] = \"0\" * 64 if field == \"review_digest\" else 2\r\n171:     with pytest.raises(ValueError):\r\n172:         api.ResearchRecord.model_validate(data)\r\n173: \r\n174: \r\n175: def test_changed_current_snapshot_does_not_rewrite_history(tmp_path):\r\n176:     api = reports()\r\n177:     original = record()\r\n178:     store = api.HistoryStore(tmp_path)\r\n179:     store.save(original)\r\n180:     before = store.load(original.record_id).model_dump_json()\r\n181:     detail = api.history_detail(original, current_snapshot_id=\"snap-\" + \"0\" * 64)\r\n182:     assert detail[\"superseded\"] is True\r\n183:     assert store.load(original.record_id).model_dump_json() == before\r\n184: \r\n185: \r\n186: def test_original_excerpt_requires_export_permission():\r\n187:     api = reports()\r\n188:     original = record()\r\n189:     for exported in (api.export_json(original), api.export_markdown(original)):\r\n190:         assert original.evidence[0].excerpt not in exported\r\n191:     with pytest.raises(api.ExportPermissionDenied):\r\n192:         api.export_json(original, include_excerpts=True)\r\n193:     permission = api.ExportPermission(\r\n194:         record_id=original.record_id,\r\n195:         evidence_ids=(original.evidence[0].evidence_id,),\r\n196:         purpose=\"external-export\",\r\n197:         granted_by=\"reviewer-SYNTHETIC\",\r\n198:     )\r\n199:     for exporter in (api.export_json, api.export_markdown):\r\n200:         with pytest.raises(api.ExportPermissionDenied):\r\n201:             exporter(original, include_excerpts=True, permission=permission)\r\n202:     # A trusted integration port validates the grant against its private ledger.\r\n203:     trusted_grants = (permission,)\r\n204:     service = api.ExportService(permission_verifier=lambda grant: grant is trusted_grants[0])\r\n205:     for exporter in (service.export_json, service.export_markdown):\r\n206:         assert original.evidence[0].excerpt in exporter(\r\n207:             original, include_excerpts=True, permission=permission,\r\n208:         )\r\n209: \r\n210: \r\n211: @pytest.mark.parametrize(\"scope\", [\"wrong-record\", \"no-evidence\", \"internal-read\"])\r\n212: def test_export_permission_must_match_record_evidence_and_purpose(scope):\r\n213:     api = reports()\r\n214:     original = record()\r\n215:     permission = api.ExportPermission(\r\n216:         record_id=\"d3a03bf6-88af-4acb-a368-c1a02592192d\"\r\n217:         if scope == \"wrong-record\" else original.record_id,\r\n218:         evidence_ids=() if scope == \"no-evidence\" else (original.evidence[0].evidence_id,),\r\n219:         purpose=\"internal-read\" if scope == \"internal-read\" else \"external-export\",\r\n220:         granted_by=\"reviewer-SYNTHETIC\",\r\n221:     )\r\n222:     for exporter in (api.export_json, api.export_markdown):\r\n223:         with pytest.raises(api.ExportPermissionDenied):\r\n224:             exporter(original, include_excerpts=True, permission=permission)\r\n225: \r\n226: \r\n227: def test_symlink_history_root_cannot_escape(tmp_path):\r\n228:     api = reports()\r\n229:     outside = tmp_path / \"outside\"\r\n230:     outside.mkdir()\r\n231:     sentinel = outside / \"sentinel.txt\"\r\n232:     sentinel.write_text(\"SYNTHETIC unchanged\", encoding=\"utf-8\")\r\n233:     linked = tmp_path / \"history\"\r\n234:     linked.symlink_to(outside, target_is_directory=True)\r\n235:     with pytest.raises(api.InvalidRecord):\r\n236:         api.HistoryStore(linked).save(record())\r\n237:     assert sentinel.read_text(\"utf-8\") == \"SYNTHETIC unchanged\"\r\n238:     assert sorted(p.name for p in outside.iterdir()) == [\"sentinel.txt\"]\r\n239: \r\n240: \r\n241: @pytest.mark.parametrize(\"path\", [\"[REDACTED_LOCAL_PATH]\", \"[REDACTED_LOCAL_PATH]\"])\r\n242: def test_absolute_path_in_metadata_is_rejected(path):\r\n243:     api = reports()\r\n244:     data = payload()\r\n245:     data[\"run_metadata\"][\"source_path\"] = path\r\n246:     with pytest.raises(ValueError):\r\n247:         api.ResearchRecord.model_validate(data)\r\n248: \r\n249: \r\n250: @pytest.mark.parametrize(\"path\", [\"[REDACTED_LOCAL_PATH]\", \"[REDACTED_LOCAL_PATH]\"])\r\n251: def test_absolute_path_in_free_text_is_not_exported(path):\r\n252:     api = reports()\r\n253:     data = payload()\r\n254:     data[\"draft\"][\"body\"] = f\"SYNTHETIC answer from {path}\"\r\n255:     original = api.ResearchRecord.model_validate(data)\r\n256:     for exporter in (api.export_json, api.export_markdown):\r\n257:         assert path not in exporter(original)\r\n258: \r\n259: \r\n260: def test_write_failure_does_not_damage_previous_record(tmp_path, monkeypatch):\r\n261:     api = reports()\r\n262:     original = record()\r\n263:     store = api.HistoryStore(tmp_path)\r\n264:     store.save(original)\r\n265:     before = store.load(original.record_id).model_dump_json()\r\n266:     data = payload()\r\n267:     data[\"record_id\"] = \"d3a03bf6-88af-4acb-a368-c1a02592192d\"\r\n268:     second = api.ResearchRecord.model_validate(data)\r\n269: \r\n270:     reached = []\r\n271: \r\n272:     def disk_failure(*args, **kwargs):\r\n273:         reached.append(True)\r\n274:         raise OSError(\"SYNTHETIC disk full\")\r\n275: \r\n276:     # Public injectable boundary receives the serialized bytes for atomic storage.\r\n277:     store = api.HistoryStore(tmp_path, atomic_writer=disk_failure)\r\n278:     with pytest.raises(OSError):\r\n279:         store.save(second)\r\n280:     assert reached == [True]\r\n281:     assert store.load(original.record_id).model_dump_json() == before\r\n282:     assert second.record_id not in [item.record_id for item in store.list_records()]\r\n283:     assert {p.name for p in tmp_path.iterdir()} == {f\"{original.record_id}.json\"}\r\n284: \r\n285: \r\n286: def test_forged_export_grant_is_rejected_by_trusted_verifier():\r\n287:     api = reports()\r\n288:     original = record()\r\n289:     forged = api.ExportPermission(\r\n290:         record_id=original.record_id,\r\n291:         evidence_ids=(original.evidence[0].evidence_id,),\r\n292:         purpose=\"external-export\",\r\n293:         granted_by=\"reviewer-SYNTHETIC\",\r\n294:     )\r\n295:     issued = api.ExportPermission(\r\n296:         record_id=original.record_id,\r\n297:         evidence_ids=(original.evidence[0].evidence_id,),\r\n298:         purpose=\"external-export\",\r\n299:         granted_by=\"reviewer-SYNTHETIC\",\r\n300:     )\r\n301:     checked = []\r\n302: \r\n303:     def reject_unissued_grant(grant):\r\n304:         checked.append(grant)\r\n305:         return grant is issued\r\n306: \r\n307:     service = api.ExportService(permission_verifier=reject_unissued_grant)\r\n308:     for exporter in (service.export_json, service.export_markdown):\r\n309:         with pytest.raises(api.ExportPermissionDenied):\r\n310:             exporter(\r\n311:                 original, include_excerpts=True, permission=forged,\r\n312:             )\r\n313:     assert checked == [forged, forged]\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312947726,
+            "ran": 1795312948042,
+            "completed": 1795312948066
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 5477,
+        "output": 60,
+        "reasoning": 0,
+        "cache": {
+          "read": 4864,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_200fd939f001MbtTLHeyzI6WZn",
+      "time": {
+        "created": 1795312948167,
+        "streamed": 1795312951545,
+        "completed": 1795312951647
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_ri5flCFeyfssHFA6gahL0104",
+          "name": "shell",
+          "executed": false,
+          "state": {
+            "status": "error",
+            "input": {
+              "command": "git status --short; git log --oneline -3; git branch --show-current"
+            },
+            "error": {
+              "type": "aborted",
+              "message": "The user declined this tool call"
+            }
+          },
+          "time": {
+            "created": 1795312951096,
+            "ran": 1795312951535,
+            "completed": 1795312951640
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_01_TLaQyOimzxIGwy13JJ2w7942",
+          "name": "shell",
+          "executed": false,
+          "state": {
+            "status": "error",
+            "input": {
+              "command": "Get-ChildItem -Recurse test\\fixtures\\reports, test\\fixtures\\contracts, src\\papertrace | Select-Object FullName"
+            },
+            "error": {
+              "type": "aborted",
+              "message": "The user declined this tool call"
+            }
+          },
+          "time": {
+            "created": 1795312951288,
+            "ran": 1795312951540,
+            "completed": 1795312951643
+          }
+        }
+      ],
+      "finish": "error",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 4491,
+        "output": 113,
+        "reasoning": 0,
+        "cache": {
+          "read": 10368,
+          "write": 0
+        }
+      },
+      "error": {
+        "type": "aborted",
+        "message": "Step interrupted"
+      }
+    },
+    {
+      "id": "msg_200fe056e001kXW09pSIKFYlcp",
+      "time": {
+        "created": 1795312977262
+      },
+      "type": "agent-switched",
+      "agent": "papertrace-build-E",
+      "previous": "papertrace-build-E"
+    },
+    {
+      "id": "msg_200fe0425001jEZODtxCkE85Gi",
+      "time": {
+        "created": 1795312977837
+      },
+      "text": "继续。禁止调用任何shell工具，验证由监督者运行。精确Git状态已核对，当前feat/E-history-export基于获批81e8345，工作树干净。你已读取contracts和获批测试。使用read读取明确文件并使用edit/write实现src/papertrace/reports/。无需git或目录枚举。fixture文件直接读test/fixtures/contracts/CorpusSnapshot.json、EvidenceRecord.json、ReviewDecision.json、AnswerDraft.json、ReleaseDecision.json。完成全部E实现后停止。",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_200fe07bc001KXt5MdpLHBWEdH",
+      "time": {
+        "created": 1795312977873,
+        "streamed": 1795312982416,
+        "completed": 1795312982565
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "继续读取 fixtures 与需要对接的包结构。"
+        },
+        {
+          "type": "tool",
+          "id": "call_00_LoCf9WDkefGOwpJ4ZhUU4328",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-20\n1: {\r\n2:   \"synthetic\": true,\r\n3:   \"provenance\": \"handwritten; not a model response, human approval, or runtime release\",\r\n4:   \"contract\": \"CorpusSnapshot\",\r\n5:   \"data\": {\r\n6:     \"schema_version\": 1,\r\n7:     \"snapshot_id\": \"snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5\",\r\n8:     \"created_at\": \"2026-01-01T00:00:00Z\",\r\n9:     \"documents\": [\r\n10:       {\r\n11:         \"schema_version\": 1,\r\n12:         \"document_id\": \"doc-synthetic-a\",\r\n13:         \"version_sha256\": \"1f008283b605be4baa1da0f90d4204eda7d8dd66646135f8ba501830f9538e6c\",\r\n14:         \"title\": \"合成文献 A：契约示例（不是真实论文）\",\r\n15:         \"source_name\": \"synthetic-paper-a.txt\",\r\n16:         \"status\": \"ready\"\r\n17:       }\r\n18:     ]\r\n19:   }\r\n20: }\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312980828,
+            "ran": 1795312982333,
+            "completed": 1795312982542
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_01_sm0zOuLojH2NESp2K3mq5818",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-26\n1: {\r\n2:   \"synthetic\": true,\r\n3:   \"provenance\": \"handwritten; not a model response, human approval, or runtime release\",\r\n4:   \"contract\": \"EvidenceRecord\",\r\n5:   \"data\": {\r\n6:     \"schema_version\": 1,\r\n7:     \"snapshot_id\": \"snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5\",\r\n8:     \"document_id\": \"doc-synthetic-a\",\r\n9:     \"version_sha256\": \"1f008283b605be4baa1da0f90d4204eda7d8dd66646135f8ba501830f9538e6c\",\r\n10:     \"locator\": {\r\n11:       \"schema_version\": 1,\r\n12:       \"page_start\": null,\r\n13:       \"page_end\": null,\r\n14:       \"line_start\": 1,\r\n15:       \"line_end\": 1,\r\n16:       \"chunk_id\": \"chunk-synthetic-a\",\r\n17:       \"parser_name\": \"synthetic-lines\",\r\n18:       \"parser_version\": \"1.0\"\r\n19:     },\r\n20:     \"excerpt\": \"SYNTHETIC：本行只是共享契约测试样例，不是真实论文或科学结论。\",\r\n21:     \"retrieved_at\": \"2026-01-01T00:01:00Z\",\r\n22:     \"advisory_summary\": \"synthetic 手写摘要；没有审核权威。\",\r\n23:     \"upstream_context_id\": \"synthetic-upstream-context-a\",\r\n24:     \"evidence_id\": \"ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a\"\r\n25:   }\r\n26: }\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312981112,
+            "ran": 1795312982338,
+            "completed": 1795312982538
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_02_deZul07JVAnLl34ZgyIR9563",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-17\n1: {\r\n2:   \"synthetic\": true,\r\n3:   \"provenance\": \"handwritten; not a model response, human approval, or runtime release\",\r\n4:   \"contract\": \"ReviewDecision\",\r\n5:   \"data\": {\r\n6:     \"schema_version\": 1,\r\n7:     \"snapshot_id\": \"snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5\",\r\n8:     \"evidence_id\": \"ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a\",\r\n9:     \"question_id\": \"q-synthetic-a\",\r\n10:     \"status\": \"accepted\",\r\n11:     \"actor_kind\": \"human\",\r\n12:     \"reviewer_ref\": \"reviewer-A\",\r\n13:     \"revision\": 1,\r\n14:     \"reason\": \"synthetic：模拟结构，不表示真实人工批准。\",\r\n15:     \"decided_at\": \"2026-01-01T00:02:00Z\"\r\n16:   }\r\n17: }\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312981488,
+            "ran": 1795312982349,
+            "completed": 1795312982535
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_03_iKhZMCFreYzNcRGinysA9263",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-26\n1: {\r\n2:   \"synthetic\": true,\r\n3:   \"provenance\": \"handwritten; not a model response, human approval, or runtime release\",\r\n4:   \"contract\": \"AnswerDraft\",\r\n5:   \"data\": {\r\n6:     \"schema_version\": 1,\r\n7:     \"answer_id\": \"ans-synthetic-a\",\r\n8:     \"snapshot_id\": \"snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5\",\r\n9:     \"question_id\": \"q-synthetic-a\",\r\n10:     \"review_revision\": 1,\r\n11:     \"review_digest\": \"98acd79c4446be3675733a105a003591d427487fc56102258750c1b1ed2adffd\",\r\n12:     \"approved_evidence_ids\": [\r\n13:       \"ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a\"\r\n14:     ],\r\n15:     \"sent_evidence_ids\": [\r\n16:       \"ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a\"\r\n17:     ],\r\n18:     \"citation_evidence_ids\": [\r\n19:       \"ev-e700b1f54a8771b9e4ad2cdd13ee98524bab859d92139411dba616d56345b05a\"\r\n20:     ],\r\n21:     \"status\": \"draft\",\r\n22:     \"body\": \"SYNTHETIC：仅为可序列化草稿示例，没有真实研究答案或模型生成。\",\r\n23:     \"refusal_reason\": null,\r\n24:     \"generated_at\": \"2026-01-01T00:03:00Z\"\r\n25:   }\r\n26: }\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312981513,
+            "ran": 1795312982369,
+            "completed": 1795312982559
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_04_NUkoXNgurJZ5xWOVo6Jj4635",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-23\n1: {\r\n2:   \"synthetic\": true,\r\n3:   \"provenance\": \"handwritten; not a model response, human approval, or runtime release\",\r\n4:   \"contract\": \"ReleaseDecision\",\r\n5:   \"data\": {\r\n6:     \"schema_version\": 1,\r\n7:     \"answer_id\": \"ans-synthetic-a\",\r\n8:     \"snapshot_id\": \"snap-fa1147029c12a7138f951b5f99a38b4f02ee6d5b8ddf1f38e36de334b9e8fac5\",\r\n9:     \"question_id\": \"q-synthetic-a\",\r\n10:     \"review_revision\": 1,\r\n11:     \"review_digest\": \"98acd79c4446be3675733a105a003591d427487fc56102258750c1b1ed2adffd\",\r\n12:     \"status\": \"blocked\",\r\n13:     \"reason_codes\": [\r\n14:       \"SYNTHETIC_NOT_RUNTIME_VERIFIED\"\r\n15:     ],\r\n16:     \"snapshot_check_passed\": false,\r\n17:     \"review_check_passed\": false,\r\n18:     \"evidence_check_passed\": false,\r\n19:     \"citation_check_passed\": false,\r\n20:     \"answer_check_passed\": false,\r\n21:     \"decided_at\": \"2026-01-01T00:04:00Z\"\r\n22:   }\r\n23: }\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312982055,
+            "ran": 1795312982384,
+            "completed": 1795312982552
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_05_a5WjLofYDtwmTyDdaQRD6572",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-7\n1: {\r\n2:   \"synthetic\": true,\r\n3:   \"provenance\": \"Codex-assisted test preparation after student plan approval on 2026-11-20; no real review or model run\",\r\n4:   \"question\": \"SYNTHETIC What does the fixture support?\",\r\n5:   \"sentinel\": \"SYNTHETIC_API_KEY_DO_NOT_EXPORT_20261120\",\r\n6:   \"statuses\": [\"released\", \"blocked\", \"abstained\", \"failed\"]\r\n7: }\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312982184,
+            "ran": 1795312982395,
+            "completed": 1795312982562
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 300,
+        "output": 339,
+        "reasoning": 0,
+        "cache": {
+          "read": 14848,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_200fe1a48001Bdr01o55FMNCpY",
+      "time": {
+        "created": 1795312982638,
+        "streamed": 1795312985146,
+        "completed": 1795312985167
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_btuc4jA1C2SrZX9LW8y42063",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "error",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "error": {
+              "type": "permission.rejected",
+              "message": "Permission denied: read"
+            }
+          },
+          "time": {
+            "created": 1795312984714,
+            "ran": 1795312985136,
+            "completed": 1795312985151
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_01_AlJ3j4C2ZeT9NBRgBdhO6382",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-147\n1: # PaperTrace｜集成合同与契约变更流程\r\n2: \r\n3: ## 0. 本文件的效力与当前阶段\r\n4: \r\n5: 本文件是五模块共同遵守的**语义交接合同**，用于需求/测试审批和后续实现。本轮只建立共享契约、合成 fixtures 和离线 gate，**业务调用与编排尚未实现**；本文件不另造共享模型，也不把设计 port 写成已可调用。\r\n6: \r\n7: 门禁定义与实际运行状态见 [`../ci/gates.md`](../ci/gates.md)；任务书的测试案例和本文件的交互表均是实现合同，不代表已运行或通过。\r\n8: \r\n9: - 类型、字段、枚举、序列化与身份算法的事实源：`src/papertrace/contracts.py` 及其共享测试/规范 fixtures。\r\n10: - 需求与不变量的事实源：`docs/req/requirements.yaml`、`docs/architecture/invariants.md`；架构/权限以 `architecture-blueprint.md`、ADR、permission-model 为准。\r\n11: - 文字与真实共享契约不一致时，以**已批准的真实 contracts 文件**作为程序接口依据，立刻登记冲突；这不是削弱不变量的许可。缺少实现安全规则所需字段时，阻止相关集成/发布，走本页第 8 节变更流程，不在模块里偷偷补兼容字段或默认批准。\r\n12: - `INV-01`–`INV-08`、`QA-01`、`PERF-01`、`COST-01`、`SEC-01`、`GOV-01`–`GOV-04` 的编号/含义不在本页重排。模块测试用这些真实 ID 与 registry 对齐。\r\n13: \r\n14: ## 1. 模块所有权、允许依赖与 UI 边界\r\n15: \r\n16: | 模块 | 权威所有权 | 向外只提供 | 绝不能做 |\r\n17: |---|---|---|---|\r\n18: | A `library` | 文献逻辑身份、内容版本、导入状态、快照 | 版本固定的 CorpusSnapshot；受限文件访问/状态信息 | 直接导入 `paperqa`；把部分失败称为完整库；替 C 批准证据 |\r\n19: | B `retrieval` | PaperQA2 映射、检索执行、受控生成的底层适配 | EvidenceRecord；中立生成端口的原始结果/实际发送及引用映射 | 产生人工 accepted；发布答案；返回跨模块可变 Docs/PQASession |\r\n20: | C `review` | 人工决定与追加式审核 ledger | ReviewDecision 集合；可重放 revision/digest；有效决定投影 | 以 AI 分数自动批准；原地覆盖历史决定；修改文献版本 |\r\n21: | D `answer` | 获准集/发送集/引用集；调用授权、上下文策略与确定性发布门 | AnswerDraft、ReleaseDecision 及核查原因 | 直接导入 `paperqa`；取回未审核证据；用模型自评代替门禁 |\r\n22: | E `reports` | 研究历史、追溯存储与导出 | 绑定原快照/ledger/draft/release 的研究记录与导出件 | 重新生成答案；将 blocked 草稿升级为 released；回写审核 |\r\n23: \r\n24: **只有 B 可以在团队新增源码中 import `paperqa`。**固定上游源码自己的 import 不受这条新增代码限制；不能为了结构检查去修改上游。D 是回答功能 owner，B 维护第三方适配/调用：D 决定获准输入、预算、提示词和发布，B 不获得批准/放行权。B-only 是代码依赖边界，不是禁止 A/D 阅读上游源码；A/D 可在本轮 Plan 明列且获准的精确只读路径内核实行为，但不得直接 import/调用上游。\r\n25: \r\n26: 各模块不通过 import 邻居的私有实现调用。后续应用 orchestration 以依赖注入/中立端口传递共享模型，负责安排顺序与一致性读取；端口由相应业务 owner 提案并在 Plan 获批，**不是本轮预先实现一个跨模块大服务**。例如 D 的离线测试可注入 fake 生成端口，不依赖 B 完工。\r\n27: \r\n28: UI 仅展示状态、收集操作、调用应用编排：\r\n29: \r\n30: - 各人 view 位于自己的模块目录，接受中立输入/命令，不各写一套审批状态机。\r\n31: - A 的首个装配 PR 连接导航和依赖注入；入口/编排的实际路径在该 PR 的批准计划中明确，其他人不同时改同一入口。\r\n32: - “按钮不可点击”不是安全控制；绕过 UI 直接调服务，审核和发布约束仍须生效。\r\n33: - Streamlit session state 只能缓存展示状态，不能成为权威 ledger、快照或 ReleaseDecision。\r\n34: \r\n35: ## 2. 五个共享模型的语义责任\r\n36: \r\n37: 本表描述语义，不是另一份字段定义；实现时直接读 contracts 的字段名和校验器。\r\n38: \r\n39: | 模型 | 生产者 → 消费者 | 必须保持的语义 | 拒绝/失效条件 |\r\n40: |---|---|---|---|\r\n41: | `CorpusSnapshot` | A → B/C/D/E | 逻辑文献 ID 与 SHA256 内容版本分开；快照内容 hash 稳定；`documents` 只含 `status=\"ready\"` 的 DocumentVersion，不随当前库原地变化；失败/处理中信息留在 A 的导入记录而非塞进快照 | 文件内容与版本不符、来源不可访问、批次不完整且流程不允许、无法核验身份 |\r\n42: | `EvidenceRecord` | B → C/D/E | 绑定 snapshot、doc、version、locator、原文；摘要/相关度为建议；稳定 evidence ID 由这五项按共享算法计算 | 外来快照、版本不存在、原文/定位缺失或无法核验、身份 hash 不符 |\r\n43: | `ReviewDecision` | C（仅 human 操作）→ D/E | 按 snapshot、question、evidence 作用域追加接受/排除/重置 pending；不抹掉旧记录；ledger revision/digest 可重放。没有决定是 pending，不是 accepted；`actor_kind=\"human\"` 的字段校验本身不证明操作真实性 | 非 human 来源、越界 evidence/问题、旧 revision 写入冲突、重放摘要不一致 |\r\n44: | `AnswerDraft` | D（经 B 底层调用）→ 发布核查/E | 绑定问题、snapshot、审核版本、实际输入证据与原始引用映射；草稿不自动有发布资格 | 未知引用、上下文污染、生成错误/截断、关联状态变化 |\r\n45: | `ReleaseDecision` | D 的确定性门 → UI/E | 明示能否发布及原因；与被判定的特定 draft、快照和审核版本绑定；非模型自评 | 不能重现三集关系、新鲜度/身份核验失败、未授权调用等均 fail closed |\r\n46: \r\n47: 业务状态的**显示标签**可以是“等待/导入中/可用/失败”“待审/接受/排除”“草稿/阻断/可发布”，但传输枚举一律使用 contracts 的真实定义，不把中文 UI 标签当 schema 值。\r\n48: \r\n49: 当前 v1 的关键实际值：ReviewDecision 为 `pending/accepted/excluded` 且 `actor_kind=\"human\"`；AnswerDraft 为 `draft/abstained/failed`；ReleaseDecision 为 `released/blocked`。`stale` 是阻断原因/展示状态，不是可擅加的 ReleaseDecision 枚举。所有五模型显式 `schema_version=1`、未知字段拒绝。原始模型回复、usage、表示指纹、导入失败清单等不在五模型里的信息，应由 owner 在获批端口/版本化记录包中另存，不往 frozen 模型加 extra 字段。\r\n50: \r\n51: ### 身份与摘要规则\r\n52: \r\n53: 1. 逻辑文献 ID 代表同一文献条目；SHA256 代表文件内容版本。文件名、标题、DOI、上游 MD5 和 `dockey` 都不能单独替代内容版本。\r\n54: 2. snapshot 身份来自共享合同规定的内容 hash，不拿当前时间、随机数或列表显示序号替代。文件顺序、规范化和编码规则调用共享实现；不得各模块各写一个哈希算法。\r\n55: 3. evidence 身份来自 `(snapshot, doc, version, locator, 原文)` 的共享 hash 算法。原文是来源文本，不是模型摘要；改变其中任何有意义的来源内容应产生新身份。不要截取摘要前缀充当稳定 ID。\r\n56: 4. `SourceLocator` 必须有完整的 1-based inclusive 页范围或行范围，同时带 `chunk_id`、`parser_name`、`parser_version`；只有 chunk 名还不满足当前合同。只有页范围就不能捏造精确句子 offset；上游不能提供可验证行范围时，B 应从受控源文本建立映射，无法做到则显式失败/先审合同，不伪造行号。\r\n57: 5. 相同内容的重复导入行为由 A 的策略明确区分幂等复用与新逻辑条目；绝不静默覆盖旧历史。已保存的研究记录只读原版本，不自动迁移到最新 snapshot。\r\n58: \r\n59: ## 3. 后续应用编排的六次交接\r\n60: \r\n61: 下列为**设计交互**，不是已实现函数签名。批准计划须把它们映射到最小端口、输入/输出、错误与可测试的调用计数；不要让 UI 直接拼接五套可变对象。\r\n62: \r\n63: | 次序 | 调用方 / owner | 输入 | 输出与必须检查 | 失败后的动作 |\r\n64: |---|---|---|---|---|\r\n65: | 1 文库准备 | 编排 → A；A 经中立摄取端口调用 B | 用户明确选定的本地允许文件、人工元数据、预期版本 | 各文件导入结果和固定 snapshot；A 决定库状态，B 只报告解析/索引结果 | 保留失败清单，禁止暗中扩大到用户目录；未完成不可标完整 |\r\n66: | 2 候选检索 | 编排 → B | 固定 snapshot、问题、批准的检索配置 | 合法 EvidenceRecord 集合，来源均属于 snapshot，原文/摘要分开 | 空集正常返回“无证据”；错误显式失败，不自动请求全库回答 |\r\n67: | 3 人工审核 | view → 编排 → C | evidence ID、human 选择/理由、预期 ledger revision | 新 ReviewDecision 和新 revision/digest；读回确认 | 旧 revision 冲突不覆盖；保留表单并要求刷新确认 |\r\n68: | 4 受控生成 | 编排 → D → B 的中立生成端口 | 固定 snapshot、该版本人工 ledger、问题、获准证据、上下文/预算策略 | D 记录 approved；记录最终序列化后 sent；B 新建过滤 session，仅执行 aquery 并回传原始结果 | 空 approved/sent 时端口调用数为零；未知/过期/预算错误均停止，不能再搜证据 |\r\n69: | 5 发布核查 | 编排 → D，向 A/C 读当前 token | 草稿、实际输入/原始引用、开始与结束的 snapshot/review token | 确定性 ReleaseDecision；通过才作为发布候选 | 保留草稿及具体阻断原因，不删除未知引用后假称通过 |\r\n70: | 6 保存/导出 | 编排 → E | 不可变 snapshot、evidence、ledger、draft、release 及必要运行元数据 | 历史可回读；导出保持同一版本/状态/引用映射，发布提交与 token 比较处于一致性边界 | 缺原版本则显式 incomplete/blocked，不用当前库替代，不把 blocked 冒充 released |\r\n71: \r\n72: B 的解析/索引准备与检索可能有独立错误或费用；A 的“导入”操作不因此被视为免费离线。默认仍使用 fake 摄取/检索端口，批准业务依赖和 live 前不能真实调用。\r\n73: \r\n74: ## 4. B/D 之间最重要的调用约束\r\n75: \r\n76: 固定上游源码在 `src/paperqa/docs.py` 已核对：`aquery` 在 contexts 为空时可能再次 `aget_evidence`；`pre/post` 可能额外请求模型；session 可复用旧 contexts；格式化会处理未知引用但不证明语义支持。因此不能只写“提示词要求只用获准证据”。\r\n77: \r\n78: 后续 B 适配器必须在 D 的授权边界内执行：\r\n79: \r\n80: - 摄取/检索路线采用 `Docs.aadd` 与 `Docs.aget_evidence`；不用 `agents.ask`、`run_agent`、CLI 自治流程或“fake agent”。fake agent 仍可能请求真实模型。\r\n81: - 生成路线采用 `Docs.aquery`，**每次新建仅含 D 选定证据的 session**，不接收/复用旧 session 或 B 检索时的全量 contexts。\r\n82: - 显式 `answer.get_evidence_if_no_contexts=false`、`prompts.pre=None`、`prompts.post=None`；不附带旧答案、未审核会话历史或隐藏背景来源。其他模型角色与客户端初始化同样要受网络/预算边界控制，不能因为某角色“应当不用”就默认它无外连。\r\n83: - 由 D 决定层级上下文、预算/裁剪、约束再注入和提示词版本；B 按批准策略序列化并记录**最终实际送出的**来源 ID 与引用 key 映射。serializer 的排序、cutoff、`answer_max_sources` 可能使 sent 小于 approved，不能只记录过滤前列表。\r\n84: - B 返回模型原始输出及引用映射，D 在格式化清理未知引用之前完成解析/核查。未知 key 不能先静默删除再当作“未引用”；上游 `has_successful_answer` 不是 ReleaseDecision。\r\n85: - B/D 的测试要能截获发送内容，证明排除与 pending 原文没有流入请求。测试 fake 不能只返回“OK”而不观察输入。\r\n86: \r\n87: ## 5. 三个集合、ledger token 与并发失效\r\n88: \r\n89: - `approved`：属于所选 snapshot 和 question 作用域，且在指定 ledger revision/digest 下由 human 有效接受的证据 ID 集合。排除和无决定均不在其中；另一问题的决定不能直接挪用。\r\n90: - `sent`：经过本次预算、排序、过滤、序列化后实际发送的证据 ID 集合；正文里若混入其他证据来源，即使没有显式 ID 也属于泄漏，须阻断。\r\n91: - `cited`：从原始生成结果解析并可靠映射的实际引用 ID 集合；未知引用不能映射为任意获准 ID。\r\n92: \r\n93: 发布至少要求 `cited ⊆ sent ⊆ approved`，并满足 registry 的其他 fit criteria。三集关系只能证明来源授权/结构，**不能证明每项自然语言主张被原文支持**；忠实度、相关性和安全逃逸还需固定集语义评估与人工核查。\r\n94: \r\n95: 生成开始捕获 `(snapshot 内容身份, ledger revision, ledger digest)`，生成完成与最终保存/发布时重新核对。revision/digest 都须与原始 ledger 可重放一致；“只是另一条证据被改了”也不能擅自忽略整体审核版本变化。\r\n96: \r\n97: 为避免“核对之后、保存之前”又被修改，批准的编排设计须为最终发布提交选择一个一致性机制（如单进程锁内比较后提交，或带预期 token 的 compare-and-swap），用可控并发 fixture 验证。此设计不能只做两次没有提交保护的普通读。A/C/E 提供必要端口，D 保持唯一发布判断；UI 不能补一个 `if accepted` 替代它。\r\n98: \r\n99: 任何 token 改变、文献撤销、来源丢失、ledger 冲突或解析失败：本次 draft 保留但不发布，要求用户在新版本重新审核/生成；不自动把旧批准迁到新 snapshot。历史发布记录保留当时有效状态与版本，可显示“与当前版本不同”，不能篡改历史。\r\n100: \r\n101: ## 6. 错误、离线隔离与可观测信息\r\n102: \r\n103: | 情况 | 必须向调用方/用户呈现 | 禁止的 fallback |\r\n104: |---|---|---|\r\n105: | 部分导入失败、文件被替换 | 哪些项失败、当前版本/完整性、允许的显式重试 | 沿用同名缓存并宣称全库完成 |\r\n106: | 检索无结果/解析错误 | 区分空集与执行失败，保留来源和阶段 | 开启自治 Agent 到网上寻找答案 |\r\n107: | ledger 写冲突/非 human 决定 | 刷新后重新确认；拒绝无效写 | 覆盖最新决定、把模型建议当确认 |\r\n108: | approved/sent 为空 | 不可回答及原因，模型调用数零 | 调用模型“说明为什么没证据” |\r\n109: | 请求超时/限流/金额耗尽 | 失败阶段、真实尝试和成本，草稿不发布 | 无批准重试、换 provider、换模型 |\r\n110: | 未知引用/生成中 token 变化 | 具体阻断原因、保留原草稿与版本 | 删掉引用、取最新 ledger 自动放行 |\r\n111: | 历史文件丢失/导出目标不安全 | 记录不完整或拒绝路径，原记录不受影响 | 读取个人目录补原文、覆盖不相关文件 |\r\n112: \r\n113: 日志仅记录允许的 ID、状态、阶段、版本、计数与脱敏错误。原文/问题/答案可能有隐私，完整运行证据放受控研究记录，不默认打印全量 settings、绝对个人路径或 credentials。禁止导入外来的 pickle 缓存；不从真实 `~/.pqa` 继承状态。\r\n114: \r\n115: ## 7. 共享 fixtures 与集成验收\r\n116: \r\n117: 先使用 `test/fixtures/contracts/` 的规范 fixtures；其 wrapper 的 `data` 才是共享模型输入，synthetic 元信息不能传入 `extra=\"forbid\"` 模型。模块测试拟放 `test/offline/test_library.py`、`test_retrieval.py`、`test_review.py`、`test_answer.py`、`test_reports.py`（后四项同目录），模块专属合成材料拟放 `test/fixtures/<module>/`；在 Plan 一次确认对应模块范围；范围内正常创建测试/fixtures 不逐文件重复审批，共享 fixtures 改动仍需受影响 owner 审查。不要修改共享 fixture 的预期迁就实现；身份由真实模型/共享算法算，不能手填看似合法的随机 hash。\r\n118: \r\n119: 最低跨模块场景：\r\n120: \r\n121: 1. 正常链：同一 snapshot 的两条候选，一条 human 接受、一条排除；只发送/引用获准项，E 读回同一版本。\r\n122: 2. 默认 pending：全无审核或仅有模型高分；D 调用计数为零，E 可保存失败原因但无 released。\r\n123: 3. 预算裁剪：approved 多于 sent；模型引用未发送但已批准的证据仍须阻断。\r\n124: 4. 未知引用：保存原始输出，不能依赖上游清理后的答案做唯一检查。\r\n125: 5. 中途撤销/替换：在请求执行时换文献或写新审核 revision；旧草稿不得发布，历史不覆盖。\r\n126: 6. 身份篡改/串快照：同名不同内容、不同 snapshot 复用 evidence、错误 locator/原文 hash、冲突 ledger 均被拒绝。\r\n127: 7. 失败与恢复：一项导入失败、检索错误、模型超时、导出路径穿越/已有文件冲突；无隐式成功、无非预期覆盖。\r\n128: 8. 不经过 UI 调服务仍执行同样的授权/发布门；全程 synthetic 且外部模型调用为零。\r\n129: \r\n130: 每个用例写真实 requirement/invariant ID、断言和违反该规则时测试会失败的证据。离线 fixture 集成不是 live 模型质量测评。运行入口与实际 gate 状态见 [../ci/gates.md](../ci/gates.md)。\r\n131: \r\n132: ## 8. 契约变更：提出 → 批准 → 同步 → 复验\r\n133: \r\n134: 任何字段/枚举、hash/规范化算法、默认状态、审核 authority、集合关系、端口或异常语义改变，都不能口头决定：\r\n135: \r\n136: 1. **提出人建变更记录/后续 issue：**写当前合同版本或提交、需求 IDs、问题复现、旧/新序列化样例、受影响消费者、兼容/迁移方案、失败风险。尚无 GitHub 时保留本地讨论和 diff，不伪造 issue URL。\r\n137: 2. **通知所有受影响 owner：**至少生产者和每个消费者确认；快照、审核或发布安全含义变化须 ADR、真实人工批准，批准人不能是本变更作者。指明冻结期间哪些工作可继续 fixture 开发、哪些集成暂停。\r\n138: 3. **先批准测试再实现：**给旧/新规范 fixture、兼容/拒绝旧格式测试、至少一个负例和跨模块回归；按工作计划轮换安排事前测试批准、独立 reviewer 和集成人。\r\n139: 4. **独立共享契约 PR：**最小修改 contracts、schema/fixtures/测试、受影响 requirements、ADR、invariants、trace matrix、运行策略及本页；显式写新版本和旧记录处理，不混入大批业务功能。\r\n140: 5. **按依赖同步：**契约先合并，再由 A–E 各自同步映射/测试；安全不兼容旧结果默认 blocked，不自动转换 accepted/released。共享文件指定一位临时编辑者，其他 owner 给补丁，避免互相覆盖。\r\n141: 6. **复验并解除冻结：**完整离线回归和门禁；prompt/model 受影响时追加经授权 live 固定集评估。读回真实接口与记录，非作者审查批准后才解除对应集成冻结。记录谁批准什么版本及证据，不用“大家默认同意”。\r\n142: \r\n143: ### 上游兼容修复与固定基线\r\n144: \r\n145: 普通模块 PR 保持固定 PaperQA2 基线，由现有 `frozen_check` 按当前 fitness rule/比较口径保护。必要兼容修复须另开 ADR + 人工 PR，明确更新该 rule/比较口径、说明受影响源码/所有者并运行负测及受影响回归；仅口头批准不能让当前 CI 通过。不得在业务 PR 裸改或绕过 gate，也不新增旁路授权平台。A/D 对上游的精确只读检查按各自获批 Plan 提出；B-only 仍只约束新增源码的 import/adapter 实现位置。\r\n146: \r\n147: 契约变更不会转移长期功能 ownership；支持角色轮换也不会允许集成人未经作者/审批修改别人的业务边界。\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312984975,
+            "ran": 1795312985143,
+            "completed": 1795312985164
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 2496,
+        "output": 107,
+        "reasoning": 0,
+        "cache": {
+          "read": 15360,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_200fe245f001zyhjvMcpkXPpvs",
+      "time": {
+        "created": 1795312985196,
+        "streamed": 1795312988716,
+        "completed": 1795312988738
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_TQn75BcHEj5qriHCXFRf8953",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-8\n1: [pytest]\r\n2: minversion = 9.0\r\n3: pythonpath = src\r\n4: addopts = -ra --strict-markers --disable-socket\r\n5: testpaths = test/offline\r\n6: markers =\r\n7:     offline: deterministic initialization checks with sockets disabled\r\n8:     live: requires separately approved real provider access; never a default initialization run\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312988027,
+            "ran": 1795312988703,
+            "completed": 1795312988734
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_01_hRC5ioBt7X94s157wfce5042",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-7\n1: target-version = \"py314\"\r\n2: line-length = 100\r\n3: [lint]\r\n4: select = [\"E4\", \"E7\", \"E9\", \"F\", \"I\", \"B\", \"S\"]\r\n5: [lint.per-file-ignores]\r\n6: \"test/**/*.py\" = [\"S101\", \"S603\", \"S607\"]\r\n7: \"scripts/*.py\" = [\"S603\", \"S607\"]\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312988271,
+            "ran": 1795312988709,
+            "completed": 1795312988736
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_02_4JNw426i3I1Zc25IfcIg6010",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-6\n1: [mypy]\r\n2: python_version = 3.14\r\n3: strict = True\r\n4: mypy_path = src\r\n5: files = src/papertrace\r\n6: cache_dir = .local/mypy-cache\r"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795312988659,
+            "ran": 1795312988714,
+            "completed": 1795312988731
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 5476,
+        "output": 153,
+        "reasoning": 0,
+        "cache": {
+          "read": 17920,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_200fe3252001qD89FofRoKM12b",
+      "time": {
+        "created": 1795312988769,
+        "streamed": 1795312993033,
+        "completed": 1795312993076
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_5vWOOxxUNbGYORP9EExN2799",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "error",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "error": {
+              "type": "aborted",
+              "message": "Tool execution interrupted"
+            }
+          },
+          "time": {
+            "created": 1795312992569,
+            "ran": 1795312993017,
+            "completed": 1795312993063
+          }
+        },
+        {
+          "type": "tool",
+          "id": "call_01_vqCdzcwxkXay6JwHw74d9517",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "error",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "error": {
+              "type": "aborted",
+              "message": "Tool execution interrupted"
+            }
+          },
+          "time": {
+            "created": 1795312992783,
+            "ran": 1795312993030,
+            "completed": 1795312993071
+          }
+        }
+      ],
+      "finish": "error",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 515,
+        "output": 108,
+        "reasoning": 0,
+        "cache": {
+          "read": 23424,
+          "write": 0
+        }
+      },
+      "error": {
+        "type": "aborted",
+        "message": "Step interrupted"
+      }
+    },
+    {
+      "id": "msg_200fe43400015ZdTowY5w5XCKM",
+      "time": {
+        "created": 1795312993088
+      },
+      "type": "idle",
+      "outcome": "interrupted"
+    },
+    {
+      "id": "msg_200fea2a5001uRu04zNEasc3Th",
+      "time": {
+        "created": 1795313017509
+      },
+      "type": "agent-switched",
+      "agent": "papertrace-build-E",
+      "previous": "papertrace-build-E"
+    },
+    {
+      "id": "msg_200fea14f001uKLC8NEPHVEZOy",
+      "time": {
+        "created": 1795313018002
+      },
+      "text": "不要读取src/papertrace/validation.py，不存在且不在白名单。无通用validation辅助函数可复用。只读已经明确允许的contracts.py、test_reports.py、上轮列出的fixture，直接用pydantic和标准库实现。禁止shell、目录列表或其他路径读取。写src/papertrace/reports/__init__.py即可先实现全部API，代码可读，之后再模块化。",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_200fea49d001pfGtjhENbuyiDf",
+      "time": {
+        "created": 1795313018037,
+        "streamed": 1795313078358,
+        "completed": 1795313078363
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "我会按获批测试实现 `src/papertrace/reports/__init__.py`（单文件，公开 API 齐全，便于后续模块化）。"
+        },
+        {
+          "type": "tool",
+          "id": "call_00_uRgvi7Jy7orucqzXbqcf3425",
+          "name": "write",
+          "executed": false,
+          "state": {
+            "status": "error",
+            "input": {},
+            "error": {
+              "type": "aborted",
+              "message": "Tool execution interrupted: write"
+            }
+          },
+          "time": {
+            "created": 1795313022173,
+            "completed": 1795313131261
+          }
+        }
+      ],
+      "finish": "length",
+      "rawFinish": "length",
+      "cost": 0,
+      "tokens": {
+        "input": 259,
+        "output": 8192,
+        "reasoning": 0,
+        "cache": {
+          "read": 23936,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_200ff9067001LFini8Xwa8ZDkw",
+      "time": {
+        "created": 1795313078375
+      },
+      "type": "idle",
+      "outcome": "succeeded"
+    },
+    {
+      "id": "msg_201005ce80012eYFfcoU8O6ttO",
+      "time": {
+        "created": 1795313130728
+      },
+      "type": "agent-switched",
+      "agent": "papertrace-build-E",
+      "previous": "papertrace-build-E"
+    },
+    {
+      "id": "msg_201005bae001uGiEY727ZMlAaJ",
+      "time": {
+        "created": 1795313131270
+      },
+      "text": "\"上轮finish reason=length，未写任何文件。改为小步工具写入。本轮只创建src/papertrace/reports/record.py，实现ResearchRecord、ReviewEvent封装、InvalidRecord及ExportPermission类型。不要实现存储或导出，不读取任何额外文件，不在回复中输出代码，直接write工具写文件，单次输出控制3000tokens以内，然后停止。\"",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_201005f100019yUwO1jw7xPmZk",
+      "time": {
+        "created": 1795313131293,
+        "streamed": 1795313151450,
+        "completed": 1795313151467
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_VYycF11yaO5IzGLZgN066674",
+          "name": "write",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]",
+              "content": "\"\"\"Module E record envelope: immutable research history package. FR-E-01/02, INV-02/04/05/08.\n\nThis is a versioned wrapper around the five shared models. It never adds private\nfields to them, never re-generates answers and never upgrades a blocked draft to\nreleased. Synthetic-only offline development; no model or network calls.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport json\nimport re\nfrom collections.abc import Mapping\nfrom hashlib import sha256\nfrom typing import Annotated, Any, Literal, Self\n\nfrom pydantic import (\n    AfterValidator,\n    AwareDatetime,\n    BaseModel,\n    ConfigDict,\n    Field,\n    StringConstraints,\n    ValidationError,\n    field_validator,\n    model_validator,\n)\n\nfrom papertrace.contracts import (\n    AnswerDraft,\n    CorpusSnapshot,\n    DocumentVersion,\n    EvidenceId,\n    EvidenceRecord,\n    NonBlank,\n    QuestionId,\n    ReleaseDecision,\n    ReviewDecision,\n    Sha256,\n    UTCTimestamp,\n)\n\n__all__ = [\n    \"ExportPermission\",\n    \"InvalidRecord\",\n    \"RecordConflict\",\n    \"ResearchRecord\",\n    \"ReviewEvent\",\n]\n\n# UUIDv4-shaped record identifier; path-hostile input is rejected before any I/O.\nRecordId = Annotated[\n    str,\n    StringConstraints(\n        strict=True,\n        pattern=r\"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$\",\n    ),\n]\n\nSENSITIVE_KEY_MARKERS = (\n    \"api_key\",\n    \"apikey\",\n    \"access_key\",\n    \"secret\",\n    \"password\",\n    \"passwd\",\n    \"token\",\n    \"credential\",\n    \"authorization\",\n    \"cookie\",\n    \"private_key\",\n    \"session_key\",\n)\n\n_ABSOLUTE_PATH = re.compile(\n    r\"(?:\"\n    r\"(?<![A-Za-z0-9])[A-Za-z]:[\\\\/]\"  # Windows drive root\n    r\"|\\\\\\\\[^\\\\\\s]+\"  # UNC share\n    r\"|(?<![\\w.])/(?:[^/\\s]+/)*[^/\\s]*\"  # POSIX absolute path\n    r\")\"\n)\n\n\ndef _strip_control(value: str) -> str:\n    return \"\".join((\" \" if ord(c) < 32 or ord(c) == 127 else c) for c in value)\n\n\ndef contains_absolute_path(value: str) -> bool:\n    \"\"\"SEC-01: detect machine-local absolute paths without touching the filesystem.\"\"\"\n    return _ABSOLUTE_PATH.search(value) is not None\n\n\ndef _reject_absolute_path(value: str) -> str:\n    if contains_absolute_path(value):\n        raise ValueError(\"free text cannot contain a local absolute path\")\n    return value\n\n\nSafeText = Annotated[str, AfterValidator(_reject_absolute_path)]\n\n\nclass _ReportModel(BaseModel):\n    \"\"\"Closed, immutable E-owned envelope; unknown fields fail closed (QA-01).\"\"\"\n\n    model_config = ConfigDict(frozen=True, extra=\"forbid\", revalidate_instances=\"always\")\n\n\nclass InvalidRecord(ValueError):\n    \"\"\"FR-E-02, SEC-01: record is missing, malformed, unsafe or tampered.\"\"\"\n\n\nclass RecordConflict(InvalidRecord):\n    \"\"\"INV-05/08: append-only history never overwrites an existing record id.\"\"\"\n\n\ndef _canonical_json(payload: Any) -> str:\n    return json.dumps(\n        payload, ensure_ascii=False, sort_keys=True, separators=(\",\", \":\"), allow_nan=False\n    )\n\n\ndef canonical_digest(payload: Any) -> str:\n    \"\"\"QA-01, INV-02: one deterministic digest rule shared with C's ledger tokens.\"\"\"\n    return sha256(_canonical_json(payload).encode(\"utf-8\")).hexdigest()\n\n\nclass ReviewEvent(_ReportModel):\n    \"\"\"FR-E-01: one append-only ledger entry, replayed by hash not by trust.\"\"\"\n\n    command_id: NonBlank\n    decision: ReviewDecision\n\n    @field_validator(\"command_id\")\n    @classmethod\n    def safe_command_id(cls, value: str) -> str:\n        if any(ord(c) < 32 or ord(c) == 127 for c in value):\n            raise ValueError(\"command_id cannot contain control characters\")\n        return value\n\n\ndef _ledger_digest(events: tuple[ReviewEvent, ...], snapshot_id: str, question_id: str) -> str:\n    \"\"\"Reproduce C's ledger digest from the recorded events only (INV-05).\"\"\"\n    return canonical_digest(\n        {\n            \"schema_version\": 1,\n            \"snapshot_id\": snapshot_id,\n            \"question_id\": question_id,\n            \"revision\": len(events),\n            \"events\": [\n                {\n                    \"command_id\": event.command_id,\n                    \"decision\": event.decision.model_dump(mode=\"json\"),\n                }\n                for event in events\n            ],\n        }\n    )\n\n\ndef _check_metadata(value: Mapping[str, Any], *, where: str) -> None:\n    \"\"\"SEC-01, FR-E-02: reject credentials and local paths anywhere in run metadata.\"\"\"\n    for key, item in value.items():\n        lowered = str(key).lower()\n        if any(marker in lowered for marker in SENSITIVE_KEY_MARKERS):\n            raise ValueError(f\"{where} must not contain credential-like key {key!r}\")\n        if isinstance(item, Mapping):\n            _check_metadata(item, where=where)\n        elif isinstance(item, (list, tuple)):\n            for element in item:\n                if isinstance(element, Mapping):\n                    _check_metadata(element, where=where)\n                elif isinstance(element, str) and contains_absolute_path(element):\n                    raise ValueError(f\"{where} must not contain local absolute paths\")\n        elif isinstance(item, str) and contains_absolute_path(item):\n            raise ValueError(f\"{where} must not contain local absolute paths\")\n\n\nclass ResearchRecord(_ReportModel):\n    \"\"\"FR-E-01/02: immutable snapshot+evidence+ledger+draft+release research package.\"\"\"\n\n    record_schema_version: Literal[1]\n    record_id: RecordId\n    saved_at: UTCTimestamp\n    question: NonBlank\n    snapshot: CorpusSnapshot\n    evidence: tuple[EvidenceRecord, ...]\n    review_events: tuple[ReviewEvent, ...]\n    review_revision: int = Field(strict=True, ge=0)\n    review_digest: Sha256\n    draft: AnswerDraft\n    release: ReleaseDecision\n    run_metadata: dict[str, Any] = Field(default_factory=dict)\n\n    @field_validator(\"record_schema_version\", mode=\"before\")\n    @classmethod\n    def explicit_schema(cls, value: object) -> int:\n        if type(value) is not int or value != 1:\n            raise ValueError(\"record_schema_version must be the explicit integer 1\")\n        return value\n\n    @field_validator(\"question\", mode=\"after\")\n    @classmethod\n    def safe_question(cls, value: str) -> str:\n        return _strip_control(_reject_absolute_path(value))\n\n    @model_validator(mode=\"after\")\n    def consistent_package(self) -> Self:\n        \"\"\"INV-02/04/05: associations, ledger replay and no status promotion.\"\"\"\n        snapshot_id = self.snapshot.snapshot_id\n        documents = {doc.document_id: doc for doc in self.snapshot.documents}\n        question_id = self.draft.question_id\n\n        evidence_ids: set[str] = set()\n        for item in self.evidence:\n            if item.evidence_id in evidence_ids:\n                raise ValueError(\"record contains duplicate evidence identity\")\n            evidence_ids.add(item.evidence_id)\n            if item.snapshot_id != snapshot_id:\n                raise ValueError(\"evidence belongs to a different snapshot\")\n            document: DocumentVersion | None = documents.get(item.document_id)\n            if document is None:\n                raise ValueError(\"evidence document is absent from the snapshot\")\n            if document.version_sha256 != item.version_sha256:\n                raise ValueError(\"evidence version does not match the snapshot document\")\n        if not self.evidence:\n            raise ValueError(\"record requires at least one evidence item\")\n\n        if len(self.review_events) != self.review_revision:\n            raise ValueError(\"review_revision does not match replayed ledger length\")\n        if self.review_revision == 0:\n            raise ValueError(\"record requires at least one human review event\")\n        seen_commands: set[str] = set()\n        for event in self.review_events:\n            decision = event.decision\n            if event.command_id in seen_commands:\n                raise ValueError(\"duplicate ledger command_id\")\n            seen_commands.add(event.command_id)\n            if decision.snapshot_id != snapshot_id:\n                raise ValueError(\"review event belongs to a different snapshot\")\n            if decision.question_id != question_id:\n                raise ValueError(\"review event belongs to a different question\")\n            if decision.evidence_id not in evidence_ids:\n                raise ValueError(\"review event references unknown evidence\")\n        if _ledger_digest(self.review_events, snapshot_id, question_id) != self.review_digest:\n            raise ValueError(\"review_digest does not match recorded ledger\")\n\n        for label, bound in ((\"draft\", self.draft), (\"release\", self.release)):\n            if bound.snapshot_id != snapshot_id:\n                raise ValueError(f\"{label} belongs to a different snapshot\")\n            if bound.question_id != question_id:\n                raise ValueError(f\"{label} belongs to a different question\")\n            if bound.review_revision != self.review_revision:\n                raise ValueError(f\"{label} review_revision does not match ledger\")\n            if bound.review_digest != self.review_digest:\n                raise ValueError(f\"{label} review_digest does not match ledger\")\n        if self.draft.answer_id != self.release.answer_id:\n            raise ValueError(\"release decision judges a different answer\")\n        for name in (\"approved_evidence_ids\", \"sent_evidence_ids\", \"citation_evidence_ids\"):\n            if not set(getattr(self.draft, name)) <= evidence_ids:\n                raise ValueError(f\"draft {name} reference outside record evidence\")\n        if self.release.status == \"released\" and self.draft.status != \"draft\":\n            raise ValueError(\"released requires an answer draft, not abstained/failed\")\n\n        _check_metadata(self.run_metadata, where=\"run_metadata\")\n        return self\n\n    def export_payload(self) -> dict[str, Any]:\n        \"\"\"FR-E-01: JSON-ready structure preserving the recorded identities.\"\"\"\n        return self.model_dump(mode=\"json\")\n\n\nclass ExportPermission(_ReportModel):\n    \"\"\"FR-E-02, SEC-01: declared export grant; authority is only the trusted verifier.\"\"\"\n\n    record_id: RecordId\n    evidence_ids: tuple[EvidenceId, ...]\n    purpose: Literal[\"external-export\"]\n    granted_by: NonBlank\n\n    @field_validator(\"evidence_ids\")\n    @classmethod\n    def unique_grants(cls, value: tuple[str, ...]) -> tuple[str, ...]:\n        if len(value) != len(set(value)):\n            raise ValueError(\"permission contains duplicate evidence identity\")\n        return value\n\n    @field_validator(\"granted_by\")\n    @classmethod\n    def safe_grantor(cls, value: str) -> str:\n        return _strip_control(_reject_absolute_path(value))\n\n\ndef to_validation_error(error: ValidationError) -> InvalidRecord:\n    \"\"\"FR-E-02: surface malformed packages as one explicit E error type.\"\"\"\n    return InvalidRecord(f\"invalid research record: {error.error_count()} problem(s)\")\n\n\ndef parse_record(raw: str | bytes | Mapping[str, Any]) -> ResearchRecord:\n    \"\"\"FR-E-01: read back only through the closed envelope; no silent repair.\"\"\"\n    try:\n        if isinstance(raw, (str, bytes)):\n            data = json.loads(raw)\n        else:\n            data = dict(raw)\n        return ResearchRecord.model_validate(data)\n    except ValidationError as error:\n        raise to_validation_error(error) from None\n    except (json.JSONDecodeError, UnicodeDecodeError, TypeError) as error:\n        raise InvalidRecord(\"research record is not readable JSON\") from None\n\n\ndef _unused_imports() -> None:  # pragma: no cover - keeps typing imports honest\n    _ = (AwareDatetime, UTCTimestamp)\n"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Created file successfully: src/papertrace/reports/record.py"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313134233,
+            "ran": 1795313151447,
+            "completed": 1795313151464
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 173,
+        "output": 2793,
+        "reasoning": 0,
+        "cache": {
+          "read": 24192,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20100adf9001Wq5gpQ9r85FQ4x",
+      "time": {
+        "created": 1795313151498,
+        "streamed": 1795313156181,
+        "completed": 1795313156197
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "我删掉文件中两处多余的残留内容（无用的占位函数和不必要的导入），保持文件干净。"
+        },
+        {
+          "type": "tool",
+          "id": "call_00_bUKelcrHVwSDXTHaZB002576",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]",
+              "oldString": "    except (json.JSONDecodeError, UnicodeDecodeError, TypeError) as error:\n        raise InvalidRecord(\"research record is not readable JSON\") from None\n\n\ndef _unused_imports() -> None:  # pragma: no cover - keeps typing imports honest\n    _ = (AwareDatetime, UTCTimestamp)\n",
+              "newString": "    except (json.JSONDecodeError, UnicodeDecodeError, TypeError):\n        raise InvalidRecord(\"research record is not readable JSON\") from None\n"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/record.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/record.py",
+                  "patch": "Index: src/papertrace/reports/record.py\n===================================================================\n--- src/papertrace/reports/record.py\n+++ src/papertrace/reports/record.py\n@@ -303,10 +303,6 @@\n             data = dict(raw)\n         return ResearchRecord.model_validate(data)\n     except ValidationError as error:\n         raise to_validation_error(error) from None\n-    except (json.JSONDecodeError, UnicodeDecodeError, TypeError) as error:\n+    except (json.JSONDecodeError, UnicodeDecodeError, TypeError):\n         raise InvalidRecord(\"research record is not readable JSON\") from None\n-\n-\n-def _unused_imports() -> None:  # pragma: no cover - keeps typing imports honest\n-    _ = (AwareDatetime, UTCTimestamp)\n",
+                  "status": "modified",
+                  "additions": 1,
+                  "deletions": 5
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313155451,
+            "ran": 1795313156174,
+            "completed": 1795313156195
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 176,
+        "output": 218,
+        "reasoning": 0,
+        "cache": {
+          "read": 27008,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20100c072001DrA02ablECcPkO",
+      "time": {
+        "created": 1795313156228,
+        "streamed": 1795313162161,
+        "completed": 1795313162177
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_lHA5SVIS5o0pq4Q862sz0547",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "from pydantic import (\n    AfterValidator,\n    BaseModel,\n    ConfigDict,\n    Field,\n    StringConstraints,\n    ValidationError,\n    field_validator,\n    model_validator,\n)\n\nfrom papertrace.contracts import (\n    AnswerDraft,\n    CorpusSnapshot,\n    DocumentVersion,\n    EvidenceId,\n    EvidenceRecord,\n    NonBlank,\n    ReleaseDecision,\n    ReviewDecision,\n    Sha256,\n    UTCTimestamp,\n)",
+              "oldString": "from pydantic import (\n    AfterValidator,\n    AwareDatetime,\n    BaseModel,\n    ConfigDict,\n    Field,\n    StringConstraints,\n    ValidationError,\n    field_validator,\n    model_validator,\n)\n\nfrom papertrace.contracts import (\n    AnswerDraft,\n    CorpusSnapshot,\n    DocumentVersion,\n    EvidenceId,\n    EvidenceRecord,\n    NonBlank,\n    QuestionId,\n    ReleaseDecision,\n    ReviewDecision,\n    Sha256,\n    UTCTimestamp,\n)",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/record.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/record.py",
+                  "patch": "Index: src/papertrace/reports/record.py\n===================================================================\n--- src/papertrace/reports/record.py\n+++ src/papertrace/reports/record.py\n@@ -14,9 +14,8 @@\n from typing import Annotated, Any, Literal, Self\n \n from pydantic import (\n     AfterValidator,\n-    AwareDatetime,\n     BaseModel,\n     ConfigDict,\n     Field,\n     StringConstraints,\n@@ -31,9 +30,8 @@\n     DocumentVersion,\n     EvidenceId,\n     EvidenceRecord,\n     NonBlank,\n-    QuestionId,\n     ReleaseDecision,\n     ReviewDecision,\n     Sha256,\n     UTCTimestamp,\n",
+                  "status": "modified",
+                  "additions": 0,
+                  "deletions": 2
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313159789,
+            "ran": 1795313162158,
+            "completed": 1795313162174
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 164,
+        "output": 283,
+        "reasoning": 0,
+        "cache": {
+          "read": 27264,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20100d7cb001h3NdWEH1ct1tQo",
+      "time": {
+        "created": 1795313162205,
+        "streamed": 1795313169859,
+        "completed": 1795313169861
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "已创建 `src/papertrace/reports/record.py`，本轮完成以下内容：\n\n- `ResearchRecord`：记录外层包，`extra=\"forbid\"`、冻结且显式 `record_schema_version=1`；校验快照与证据的关联（文档存在、版本 sha 匹配、无重复 evidence）。\n- ledger 重放：`ReviewEvent` 封装 `ReviewDecision`，用与 C 一致的 canonical-JSON sha256 规则从 `review_events` 重算出 `review_digest` 并校验 `review_revision == len(events)`；事件必须属于同一 snapshot、question、记录内 evidence。\n- draft、release 绑定校验：snapshot、question、revision、digest 一致；`answer_id` 相同；三集引用必须在记录证据内；`released` 只允许 `draft` 状态（不升级 blocked、abstained、failed）。\n- 脱敏与路径：`run_metadata` 递归拒绝凭据类键名与绝对路径（POSIX、盘符、UNC），自由文本（`question`、`granted_by`）拒绝绝对路径并剔除控制字符。\n- 类型：`InvalidRecord(ValueError)`、`RecordConflict(InvalidRecord)`、`ExportPermission`（`external-export` purpose、去重、安全 `granted_by`）、`canonical_digest`、`contains_absolute_path`、`parse_record`（只经封闭包回读，异常统一为 `InvalidRecord`）。\n\n未实现存储、导出、`__init__.py`，未读额外文件，未运行任何 shell。下一步建议（等你指令）：`store.py`、`export.py`，最后 `__init__.py` 汇总。"
+        }
+      ],
+      "finish": "stop",
+      "rawFinish": "stop",
+      "cost": 0,
+      "tokens": {
+        "input": 217,
+        "output": 380,
+        "reasoning": 0,
+        "cache": {
+          "read": 27520,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20100f5cc001Z4lnwihGweF5bb",
+      "time": {
+        "created": 1795313169868
+      },
+      "type": "idle",
+      "outcome": "succeeded"
+    },
+    {
+      "id": "msg_20101612c001KPeulUz6fJuy6X",
+      "time": {
+        "created": 1795313197356
+      },
+      "type": "agent-switched",
+      "agent": "papertrace-build-E",
+      "previous": "papertrace-build-E"
+    },
+    {
+      "id": "msg_201015fd4001qBe5xWjaEKYOdO",
+      "time": {
+        "created": 1795313198009
+      },
+      "text": "\"继续只创建store.py，复用record.py。HistoryStore(root, atomic_writer=可选)，save/load/list_records。UUID.json布局，独占发布不覆盖，原子临时文件写入fsync，清理失败，不读写符号链接，路径越界拒绝。RecordConflict异常。atomic_writer注入必须在save序列化后的真实写入边界被调用并传播OSError，旧记录保持。不要改测试，不运行shell。控制输出小于4000 tokens，直接write工具写文件。\"",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_2010163c4001XSj6RKnCAdeOBx",
+      "time": {
+        "created": 1795313198047,
+        "streamed": 1795313213025,
+        "completed": 1795313213063
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_Fj3rpSI1jkFb8GpU8nkv9954",
+          "name": "write",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "content": "\"\"\"Module E append-only history store. FR-E-01/02, INV-05/08, SEC-01.\n\nRecords live as one ``<record_id>.json`` file each. Publishing is exclusive and\natomic: serialize, write a sibling temp file, fsync, then link into place so an\ninterrupted or failing write leaves the previous history intact and never writes\noutside the history root. Symlinked roots and symlinked record files are refused.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport os\nimport tempfile\nfrom collections.abc import Callable\nfrom pathlib import Path\nfrom typing import Final\n\nfrom .record import InvalidRecord, RecordConflict, ResearchRecord, parse_record\n\n__all__ = [\"HistoryStore\"]\n\n# Serialized bytes -> write them atomically. Injected only for deterministic\n# offline failure tests; the default implementation is ``_atomic_write``.\nAtomicWriter = Callable[[Path, bytes], None]\n\n_SUFFIX: Final = \".json\"\n\n\ndef _atomic_write(target: Path, data: bytes) -> None:\n    \"\"\"INV-05/08: temp file + fsync + exclusive publish; no partial record ever visible.\"\"\"\n    parent = target.parent\n    handle, temp_name = tempfile.mkstemp(prefix=f\".{target.name}.\", suffix=\".tmp\", dir=parent)\n    temp_path = Path(temp_name)\n    try:\n        with os.fdopen(handle, \"wb\") as stream:\n            stream.write(data)\n            stream.flush()\n            os.fsync(stream.fileno())\n        try:\n            os.link(temp_path, target)\n        except FileExistsError:\n            raise RecordConflict(f\"history record already exists: {target.name}\") from None\n        except (OSError, NotImplementedError):\n            # Filesystems without hard links: exclusive create as the publish step.\n            with open(target, \"xb\") as target_stream:\n                target_stream.write(data)\n                target_stream.flush()\n                os.fsync(target_stream.fileno())\n    finally:\n        try:\n            temp_path.unlink()\n        except FileNotFoundError:\n            pass\n\n\nclass HistoryStore:\n    \"\"\"Append-only research history rooted at a single directory.\"\"\"\n\n    def __init__(self, root: str | Path, *, atomic_writer: AtomicWriter | None = None) -> None:\n        self._root = Path(root)\n        self._atomic_writer = atomic_writer\n\n    @property\n    def root(self) -> Path:\n        \"\"\"The configured history root; never resolved through a symlink.\"\"\"\n        return self._root\n\n    def _checked_root(self) -> Path:\n        \"\"\"SEC-01: refuse a symlinked root so writes cannot escape the history boundary.\"\"\"\n        root = self._root\n        if root.is_symlink():\n            raise InvalidRecord(\"history root cannot be a symbolic link\")\n        if root.exists() and not root.is_dir():\n            raise InvalidRecord(\"history root must be a directory\")\n        try:\n            root.mkdir(parents=False, exist_ok=True)\n        except OSError:\n            raise InvalidRecord(\"history root cannot be created\") from None\n        if root.is_symlink():\n            raise InvalidRecord(\"history root cannot be a symbolic link\")\n        return root\n\n    @staticmethod\n    def _target_for(root: Path, record_id: str) -> Path:\n        \"\"\"Record ids are UUID-shaped, so no separator, drive or dot-dot can survive.\"\"\"\n        try:\n            ResearchRecord.__fields__  # noqa: B018 - presence check only\n        except AttributeError:  # pragma: no cover - pydantic v2 keeps model_fields\n            pass\n        probe = {\"record_id\": record_id}\n        try:\n            from .record import RecordId  # local import keeps the public surface small\n        except ImportError:  # pragma: no cover - record.py always ships together\n            raise InvalidRecord(\"record id is not verifiable\") from None\n        _ = RecordId, probe\n        if not _is_record_id(record_id):\n            raise InvalidRecord(\"record id is not a safe history file name\")\n        return root / f\"{record_id}{_SUFFIX}\"\n\n    def save(self, record: ResearchRecord) -> Path:\n        \"\"\"Persist a validated record once; an existing id is a conflict, never an overwrite.\"\"\"\n        root = self._checked_root()\n        target = self._target_for(root, record.record_id)\n        if target.is_symlink() or target.exists():\n            raise RecordConflict(f\"history record already exists: {target.name}\")\n        data = record.model_dump_json(indent=None).encode(\"utf-8\")\n        writer = self._atomic_writer or _atomic_write\n        try:\n            writer(target, data)\n        except RecordConflict:\n            raise\n        except OSError:\n            raise\n        return target\n\n    def load(self, record_id: str) -> ResearchRecord:\n        \"\"\"FR-E-01: read back exactly the saved package; never repair or substitute.\"\"\"\n        root = self._checked_root()\n        target = self._target_for(root, record_id)\n        if target.is_symlink():\n            raise InvalidRecord(\"history record cannot be a symbolic link\")\n        try:\n            raw = target.read_bytes()\n        except FileNotFoundError:\n            raise InvalidRecord(f\"history record not found: {record_id}\") from None\n        except OSError:\n            raise InvalidRecord(f\"history record unreadable: {record_id}\") from None\n        record = parse_record(raw)\n        if record.record_id != record_id:\n            raise InvalidRecord(\"history record id does not match its file name\")\n        return record\n\n    def list_records(self) -> tuple[ResearchRecord, ...]:\n        \"\"\"INV-05: enumerate readable records newest first; unsafe entries are skipped.\"\"\"\n        root = self._checked_root()\n        found: list[ResearchRecord] = []\n        try:\n            entries = sorted(root.iterdir())\n        except OSError:\n            raise InvalidRecord(\"history root is unreadable\") from None\n        for entry in entries:\n            if entry.suffix != _SUFFIX or entry.name.startswith(\".\"):\n                continue\n            if entry.is_symlink() or not entry.is_file():\n                continue\n            record_id = entry.name[: -len(_SUFFIX)]\n            if not _is_record_id(record_id):\n                continue\n            try:\n                found.append(self.load(record_id))\n            except InvalidRecord:\n                continue\n        found.sort(key=lambda item: (item.saved_at, item.record_id), reverse=True)\n        return tuple(found)\n\n\ndef _is_record_id(value: str) -> bool:\n    \"\"\"Mirror record.RecordId geometry without trusting caller-supplied paths.\"\"\"\n    if len(value) != 36:\n        return False\n    groups = (8, 4, 4, 4, 12)\n    parts = value.split(\"-\")\n    if len(parts) != len(groups):\n        return False\n    allowed = set(\"0123456789abcdef\")\n    return all(\n        len(part) == size and all(char in allowed for char in part)\n        for part, size in zip(parts, groups, strict=True)\n    )\n",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Created file successfully: src/papertrace/reports/store.py"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313204954,
+            "ran": 1795313213019,
+            "completed": 1795313213058
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 194,
+        "output": 1604,
+        "reasoning": 0,
+        "cache": {
+          "read": 28032,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201019e9e001JIxPuIMZW358dM",
+      "time": {
+        "created": 1795313213108,
+        "streamed": 1795313221305,
+        "completed": 1795313221321
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "`_target_for` 里残留了探测性死代码，我将其删除，直接使用 `record.RecordId` 校验。"
+        },
+        {
+          "type": "tool",
+          "id": "call_00_l0Wbf4Uoe9StLaY0Msoy6668",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]",
+              "oldString": "    @staticmethod\n    def _target_for(root: Path, record_id: str) -> Path:\n        \"\"\"Record ids are UUID-shaped, so no separator, drive or dot-dot can survive.\"\"\"\n        try:\n            ResearchRecord.__fields__  # noqa: B018 - presence check only\n        except AttributeError:  # pragma: no cover - pydantic v2 keeps model_fields\n            pass\n        probe = {\"record_id\": record_id}\n        try:\n            from .record import RecordId  # local import keeps the public surface small\n        except ImportError:  # pragma: no cover - record.py always ships together\n            raise InvalidRecord(\"record id is not verifiable\") from None\n        _ = RecordId, probe\n        if not _is_record_id(record_id):\n            raise InvalidRecord(\"record id is not a safe history file name\")\n        return root / f\"{record_id}{_SUFFIX}\"",
+              "newString": "    @staticmethod\n    def _target_for(root: Path, record_id: str) -> Path:\n        \"\"\"Record ids are UUID-shaped, so no separator, drive or dot-dot can survive.\"\"\"\n        if not _is_record_id(record_id):\n            raise InvalidRecord(\"record id is not a safe history file name\")\n        return root / f\"{record_id}{_SUFFIX}\""
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/store.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/store.py",
+                  "patch": "Index: src/papertrace/reports/store.py\n===================================================================\n--- src/papertrace/reports/store.py\n+++ src/papertrace/reports/store.py\n@@ -81,18 +81,8 @@\n \n     @staticmethod\n     def _target_for(root: Path, record_id: str) -> Path:\n         \"\"\"Record ids are UUID-shaped, so no separator, drive or dot-dot can survive.\"\"\"\n-        try:\n-            ResearchRecord.__fields__  # noqa: B018 - presence check only\n-        except AttributeError:  # pragma: no cover - pydantic v2 keeps model_fields\n-            pass\n-        probe = {\"record_id\": record_id}\n-        try:\n-            from .record import RecordId  # local import keeps the public surface small\n-        except ImportError:  # pragma: no cover - record.py always ships together\n-            raise InvalidRecord(\"record id is not verifiable\") from None\n-        _ = RecordId, probe\n         if not _is_record_id(record_id):\n             raise InvalidRecord(\"record id is not a safe history file name\")\n         return root / f\"{record_id}{_SUFFIX}\"\n \n",
+                  "status": "modified",
+                  "additions": 0,
+                  "deletions": 10
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313218286,
+            "ran": 1795313221299,
+            "completed": 1795313221316
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 159,
+        "output": 403,
+        "reasoning": 0,
+        "cache": {
+          "read": 29696,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20101bed900168gqlr6MvzX1gd",
+      "time": {
+        "created": 1795313221353,
+        "streamed": 1795313228262,
+        "completed": 1795313228301
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_wKyijN9QPqmxjwG8SR3K9554",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "from .record import InvalidRecord, RecordConflict, ResearchRecord, parse_record",
+              "oldString": "from .record import InvalidRecord, RecordConflict, ResearchRecord, parse_record\n",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/store.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/store.py",
+                  "patch": "Index: src/papertrace/reports/store.py\n===================================================================\n--- src/papertrace/reports/store.py\n+++ src/papertrace/reports/store.py\n@@ -14,9 +14,8 @@\n from pathlib import Path\n from typing import Final\n \n from .record import InvalidRecord, RecordConflict, ResearchRecord, parse_record\n-\n __all__ = [\"HistoryStore\"]\n \n # Serialized bytes -> write them atomically. Injected only for deterministic\n # offline failure tests; the default implementation is ``_atomic_write``.\n",
+                  "status": "modified",
+                  "additions": 0,
+                  "deletions": 1
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313227654,
+            "ran": 1795313228254,
+            "completed": 1795313228297
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 203,
+        "output": 125,
+        "reasoning": 0,
+        "cache": {
+          "read": 30080,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20101da23001mKiR7a095MdlK7",
+      "time": {
+        "created": 1795313228341,
+        "streamed": 1795313236177,
+        "completed": 1795313236196
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_FJ9LrjUj7p3lcgHMYTgL5071",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "from .record import InvalidRecord, RecordConflict, ResearchRecord, parse_record\n",
+              "oldString": "from .record import InvalidRecord, RecordConflict, ResearchRecord, parse_record",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/store.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/store.py",
+                  "patch": "Index: src/papertrace/reports/store.py\n===================================================================\n--- src/papertrace/reports/store.py\n+++ src/papertrace/reports/store.py\n@@ -14,8 +14,9 @@\n from pathlib import Path\n from typing import Final\n \n from .record import InvalidRecord, RecordConflict, ResearchRecord, parse_record\n+\n __all__ = [\"HistoryStore\"]\n \n # Serialized bytes -> write them atomically. Injected only for deterministic\n # offline failure tests; the default implementation is ``_atomic_write``.\n",
+                  "status": "modified",
+                  "additions": 1,
+                  "deletions": 0
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313235805,
+            "ran": 1795313236170,
+            "completed": 1795313236192
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 225,
+        "output": 125,
+        "reasoning": 0,
+        "cache": {
+          "read": 30208,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20101f8f8001bfC8GMKkwIIkRC",
+      "time": {
+        "created": 1795313236231,
+        "streamed": 1795313243907,
+        "completed": 1795313243921
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "已创建 `src/papertrace/reports/store.py`（复用 record.py）：\n\n- **`HistoryStore(root, *, atomic_writer=None)`**：只接受目录 root；`root` 属性返回原路径、不做 resolve。\n- **布局**：`<root>/<record_id>.json`；`record_id` 用 UUID 几何校验，含 `..`、`/`、`\\`、盘符、空串均抛 `InvalidRecord`（在路径拼接前拒绝）。\n- **`save`**：先查 `target.is_symlink() or target.exists()` → `RecordConflict`（不覆盖），再 `model_dump_json()` 序列化，然后调用写入边界：注入的 `atomic_writer(target, bytes)` 或默认 `_atomic_write`。`RecordConflict`/`OSError` 原样传播，旧记录不受影响。\n- **`_atomic_write`**：`mkstemp` 同目录临时文件 → 写 → `flush` → `fsync` → `os.link` 独占发布；`FileExistsError` 转 `RecordConflict`；无硬链接文件系统回退 `open(\"xb\")` 独占创建；`finally` 清理临时文件（`FileNotFoundError` 忽略）。\n- **符号链接**：root 是 symlink 时 `save/load/list_records` 均抛 `InvalidRecord`（不读写外部目录）；记录文件本身是 symlink 时 `load` 拒绝、`list_records` 跳过。\n- **`load`**：拒绝 symlink、缺失/不可读 → `InvalidRecord`；经 `parse_record` 封闭校验，并核对文件名与内部 `record_id` 一致。\n- **`list_records`**：仅 `.json`、非隐藏、非 symlink、UUID 名；坏记录跳过；按 `(saved_at, record_id)` 倒序返回 tuple。\n\n未改测试、未运行 shell、未触及 `__init__.py` 与导出。下一步可写 `export.py`（`export_json`/`export_markdown`/`ExportService`/脱敏）与 `history_detail`，再补 `__init__.py` 汇总。"
+        }
+      ],
+      "finish": "stop",
+      "rawFinish": "stop",
+      "cost": 0,
+      "tokens": {
+        "input": 247,
+        "output": 484,
+        "reasoning": 0,
+        "cache": {
+          "read": 30336,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201021736001tsvYRCgJpqGJmF",
+      "time": {
+        "created": 1795313243958
+      },
+      "type": "idle",
+      "outcome": "succeeded"
+    },
+    {
+      "id": "msg_20102b2a7001uGJB0AVNiifo7r",
+      "time": {
+        "created": 1795313283751
+      },
+      "type": "agent-switched",
+      "agent": "papertrace-build-E",
+      "previous": "papertrace-build-E"
+    },
+    {
+      "id": "msg_20102b10a0017PLHGKQUlNLhZ8",
+      "time": {
+        "created": 1795313284317
+      },
+      "text": "继续创建export.py和__init__.py。导出JSON/Markdown按获批测试，默认隐藏原文，敏感配置白名单，过滤自由文本Windows/Unix绝对路径，状态和证据ID/定位保留。ExportService仅在构造时注入可信permission_verifier，缺失、伪造许可或record/evidence/purpose不匹配一律ExportPermissionDenied；include_excerpts=True本身不授权。ExportPermission必须允许表示internal-read，使权限用途不匹配由exporter拒绝；这对应获批测试，请必要时在record.py修正。history_detail返回superseded而不改历史。__init__导出全部测试API。无需shell，不改测试。小步write工具写入，不在聊天输出源码。",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_20102b4ec001yHtLheQVMnAWKN",
+      "time": {
+        "created": 1795313284357,
+        "streamed": 1795313289585,
+        "completed": 1795313289607
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "先修正 `record.py`：允许 `internal-read` 也能构造 `ExportPermission`（由 exporter 拒绝），并新增 `ExportPermissionDenied`。"
+        },
+        {
+          "type": "tool",
+          "id": "call_00_zcIUFr6i9SiLzQ4UJuZP9848",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "class ExportPermission(_ReportModel):\n    \"\"\"FR-E-02, SEC-01: declared export grant; authority is only the trusted verifier.\n\n    A grant may declare a read-only purpose such as ``internal-read``; rejecting the\n    purpose is the exporter's job, so construction stays permissive and type-visible.\n    \"\"\"\n\n    record_id: RecordId\n    evidence_ids: tuple[EvidenceId, ...]\n    purpose: Literal[\"external-export\", \"internal-read\"]\n    granted_by: NonBlank",
+              "oldString": "class ExportPermission(_ReportModel):\n    \"\"\"FR-E-02, SEC-01: declared export grant; authority is only the trusted verifier.\"\"\"\n\n    record_id: RecordId\n    evidence_ids: tuple[EvidenceId, ...]\n    purpose: Literal[\"external-export\"]\n    granted_by: NonBlank",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/record.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/record.py",
+                  "patch": "Index: src/papertrace/reports/record.py\n===================================================================\n--- src/papertrace/reports/record.py\n+++ src/papertrace/reports/record.py\n@@ -266,13 +266,17 @@\n         return self.model_dump(mode=\"json\")\n \n \n class ExportPermission(_ReportModel):\n-    \"\"\"FR-E-02, SEC-01: declared export grant; authority is only the trusted verifier.\"\"\"\n+    \"\"\"FR-E-02, SEC-01: declared export grant; authority is only the trusted verifier.\n \n+    A grant may declare a read-only purpose such as ``internal-read``; rejecting the\n+    purpose is the exporter's job, so construction stays permissive and type-visible.\n+    \"\"\"\n+\n     record_id: RecordId\n     evidence_ids: tuple[EvidenceId, ...]\n-    purpose: Literal[\"external-export\"]\n+    purpose: Literal[\"external-export\", \"internal-read\"]\n     granted_by: NonBlank\n \n     @field_validator(\"evidence_ids\")\n     @classmethod\n",
+                  "status": "modified",
+                  "additions": 6,
+                  "deletions": 2
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313287662,
+            "ran": 1795313289580,
+            "completed": 1795313289602
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 245,
+        "output": 299,
+        "reasoning": 0,
+        "cache": {
+          "read": 30976,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20102c99a001zDEtsBbTLpTL9F",
+      "time": {
+        "created": 1795313289650,
+        "streamed": 1795313295379,
+        "completed": 1795313295395
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_f9LGsgzNdiUH94HdAcVQ9034",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "    \"ExportPermission\",\n    \"ExportPermissionDenied\",\n    \"InvalidRecord\",\n    \"RecordConflict\",\n    \"ResearchRecord\",\n    \"ReviewEvent\",\n]",
+              "oldString": "    \"ExportPermission\",\n    \"InvalidRecord\",\n    \"RecordConflict\",\n    \"ResearchRecord\",\n    \"ReviewEvent\",\n]",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/record.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/record.py",
+                  "patch": "Index: src/papertrace/reports/record.py\n===================================================================\n--- src/papertrace/reports/record.py\n+++ src/papertrace/reports/record.py\n@@ -38,8 +38,9 @@\n )\n \n __all__ = [\n     \"ExportPermission\",\n+    \"ExportPermissionDenied\",\n     \"InvalidRecord\",\n     \"RecordConflict\",\n     \"ResearchRecord\",\n     \"ReviewEvent\",\n",
+                  "status": "modified",
+                  "additions": 1,
+                  "deletions": 0
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313294874,
+            "ran": 1795313295374,
+            "completed": 1795313295390
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 186,
+        "output": 153,
+        "reasoning": 0,
+        "cache": {
+          "read": 31360,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20102e036001oTac4lacZbbwtZ",
+      "time": {
+        "created": 1795313295430,
+        "streamed": 1795313299827,
+        "completed": 1795313299837
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_clGjYhnmoAcTKxiH4gOJ5785",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "class RecordConflict(InvalidRecord):\n    \"\"\"INV-05/08: append-only history never overwrites an existing record id.\"\"\"\n\n\nclass ExportPermissionDenied(InvalidRecord):\n    \"\"\"FR-E-02, SEC-01: original text needs a verified grant for this record and scope.\"\"\"",
+              "oldString": "class RecordConflict(InvalidRecord):\n    \"\"\"INV-05/08: append-only history never overwrites an existing record id.\"\"\"",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/record.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/record.py",
+                  "patch": "Index: src/papertrace/reports/record.py\n===================================================================\n--- src/papertrace/reports/record.py\n+++ src/papertrace/reports/record.py\n@@ -110,8 +110,12 @@\n class RecordConflict(InvalidRecord):\n     \"\"\"INV-05/08: append-only history never overwrites an existing record id.\"\"\"\n \n \n+class ExportPermissionDenied(InvalidRecord):\n+    \"\"\"FR-E-02, SEC-01: original text needs a verified grant for this record and scope.\"\"\"\n+\n+\n def _canonical_json(payload: Any) -> str:\n     return json.dumps(\n         payload, ensure_ascii=False, sort_keys=True, separators=(\",\", \":\"), allow_nan=False\n     )\n",
+                  "status": "modified",
+                  "additions": 4,
+                  "deletions": 0
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313299166,
+            "ran": 1795313299824,
+            "completed": 1795313299835
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 237,
+        "output": 183,
+        "reasoning": 0,
+        "cache": {
+          "read": 31488,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20102f18e001ZUl1WJX1l3fV6H",
+      "time": {
+        "created": 1795313299873,
+        "streamed": 1795313338262,
+        "completed": 1795313338292
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_NiVfUO8cwcJsJ9dUuj9h4281",
+          "name": "write",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "content": "\"\"\"Module E export and history detail. FR-E-01/02, INV-02/04/05/08, SEC-01.\n\nExports mirror the saved package: same snapshot, evidence, ledger, draft and\nrelease status. Original excerpts are hidden by default and only appear when a\ntrusted verifier confirms an export grant bound to this record, evidence set and\n``external-export`` purpose. Free text is scrubbed of machine-local absolute\npaths and credential-like metadata is never emitted. E never re-generates an\nanswer and never upgrades ``blocked`` to ``released``.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport json\nimport re\nfrom collections.abc import Callable, Mapping, Sequence\nfrom typing import Any\n\nfrom .record import (\n    SENSITIVE_KEY_MARKERS,\n    ExportPermission,\n    ExportPermissionDenied,\n    ResearchRecord,\n    contains_absolute_path,\n)\n\n__all__ = [\n    \"ExportService\",\n    \"export_json\",\n    \"export_markdown\",\n    \"history_detail\",\n    \"render_record\",\n]\n\nPermissionVerifier = Callable[[ExportPermission], bool]\n\n_WINDOWS_PATH = re.compile(r\"(?<![A-Za-z0-9])[A-Za-z]:[\\\\/][^\\s\\\"'<>|]*\")\n_UNC_PATH = re.compile(r\"\\\\\\\\[^\\\\\\s]+[^\\s\\\"'<>|]*\")\n_POSIX_PATH = re.compile(r\"(?<![\\w.])/(?:[^/\\s\\\"'<>|]+/)*[^/\\s\\\"'<>|]*\")\n_PATH_REPLACEMENT = \"[redacted-path]\"\n_METADATA_REPLACEMENT = \"[redacted]\"\n\n\ndef _scrub_text(value: str) -> str:\n    \"\"\"SEC-01: strip local absolute paths from exported free text.\"\"\"\n    scrubbed = _WINDOWS_PATH.sub(_PATH_REPLACEMENT, value)\n    scrubbed = _UNC_PATH.sub(_PATH_REPLACEMENT, scrubbed)\n    scrubbed = _POSIX_PATH.sub(_PATH_REPLACEMENT, scrubbed)\n    return scrubbed\n\n\ndef _is_sensitive_key(key: str) -> bool:\n    lowered = key.lower()\n    return any(marker in lowered for marker in SENSITIVE_KEY_MARKERS)\n\n\ndef _scrub_metadata(value: Any) -> Any:\n    \"\"\"SEC-01: allow-list by shape; credential-like keys never leave the record.\"\"\"\n    if isinstance(value, Mapping):\n        return {\n            str(key): _scrub_metadata(item)\n            for key, item in value.items()\n            if not _is_sensitive_key(str(key))\n        }\n    if isinstance(value, (list, tuple)):\n        return [_scrub_metadata(item) for item in value]\n    if isinstance(value, str):\n        return _scrub_text(value)\n    return value if isinstance(value, (int, float, bool)) or value is None else _METADATA_REPLACEMENT\n\n\ndef _scrub_free_text(value: str | None) -> str | None:\n    return None if value is None else _scrub_text(value)\n\n\ndef _verify(\n    record: ResearchRecord,\n    permission: ExportPermission | None,\n    verifier: PermissionVerifier | None,\n) -> frozenset[str]:\n    \"\"\"FR-E-02, SEC-01: exporter-side check; a missing verifier denies by default.\"\"\"\n    if permission is None or verifier is None:\n        raise ExportPermissionDenied(\"original excerpt export requires a verified grant\")\n    if permission.purpose != \"external-export\":\n        raise ExportPermissionDenied(\"grant purpose does not authorize external export\")\n    if permission.record_id != record.record_id:\n        raise ExportPermissionDenied(\"grant is bound to a different research record\")\n    record_evidence = {item.evidence_id for item in record.evidence}\n    granted = set(permission.evidence_ids)\n    if not granted or not granted <= record_evidence:\n        raise ExportPermissionDenied(\"grant does not cover this record's evidence\")\n    try:\n        trusted = verifier(permission)\n    except Exception:\n        raise ExportPermissionDenied(\"grant verification failed\") from None\n    if trusted is not True:\n        raise ExportPermissionDenied(\"grant is not issued by a trusted authority\")\n    return frozenset(granted)\n\n\ndef _export_structure(\n    record: ResearchRecord, allowed_excerpts: frozenset[str]\n) -> dict[str, Any]:\n    \"\"\"FR-E-01, INV-04: one canonical structure behind both export formats.\"\"\"\n    evidence: list[dict[str, Any]] = []\n    for item in record.evidence:\n        entry = item.model_dump(mode=\"json\")\n        entry.pop(\"excerpt\", None)\n        entry[\"advisory_summary\"] = _scrub_free_text(item.advisory_summary)\n        entry[\"excerpt_included\"] = item.evidence_id in allowed_excerpts\n        if entry[\"excerpt_included\"]:\n            entry[\"excerpt\"] = _scrub_text(item.excerpt)\n        evidence.append(entry)\n    draft = record.draft.model_dump(mode=\"json\")\n    draft[\"body\"] = _scrub_text(record.draft.body)\n    draft[\"refusal_reason\"] = _scrub_free_text(record.draft.refusal_reason)\n    return {\n        \"record_schema_version\": record.record_schema_version,\n        \"record_id\": record.record_id,\n        \"saved_at\": record.saved_at.isoformat(),\n        \"question\": _scrub_text(record.question),\n        \"snapshot\": record.snapshot.model_dump(mode=\"json\"),\n        \"evidence\": evidence,\n        \"review_events\": [\n            {\n                \"command_id\": event.command_id,\n                \"decision\": event.decision.model_dump(mode=\"json\"),\n            }\n            for event in record.review_events\n        ],\n        \"review_revision\": record.review_revision,\n        \"review_digest\": record.review_digest,\n        \"draft\": draft,\n        \"release\": record.release.model_dump(mode=\"json\"),\n        \"run_metadata\": _scrub_metadata(record.run_metadata),\n        \"export\": {\n            \"excerpt_policy\": \"explicit-export-permission\",\n            \"release_authority\": \"module-D-decision-recorded-not-recomputed\",\n        },\n    }\n\n\ndef render_record(\n    record: ResearchRecord,\n    *,\n    include_excerpts: bool = False,\n    permission: ExportPermission | None = None,\n    verifier: PermissionVerifier | None = None,\n) -> dict[str, Any]:\n    \"\"\"Build the export structure, verifying any excerpt grant first.\"\"\"\n    allowed = frozenset[str]()\n    if include_excerpts:\n        allowed = _verify(record, permission, verifier)\n    return _export_structure(record, allowed)\n\n\ndef _dump(structure: Mapping[str, Any]) -> str:\n    return json.dumps(structure, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False)\n\n\ndef _locator_text(locator: Mapping[str, Any]) -> str:\n    pages = (\n        f\"pages {locator['page_start']}-{locator['page_end']}\"\n        if locator.get(\"page_start\") is not None\n        else f\"lines {locator['line_start']}-{locator['line_end']}\"\n    )\n    return (\n        f\"{pages}; chunk `{locator['chunk_id']}`; \"\n        f\"parser {locator['parser_name']}@{locator['parser_version']}\"\n    )\n\n\ndef _markdown(structure: Mapping[str, Any]) -> str:\n    \"\"\"FR-E-01: Markdown expresses the same statuses and sources as the JSON export.\"\"\"\n    lines: list[str] = [\n        f\"# Research record {structure['record_id']}\",\n        \"\",\n        f\"- Saved at: {structure['saved_at']}\",\n        f\"- Release status: **{structure['release']['status']}**\",\n        f\"- Draft status: {structure['draft']['status']}\",\n        f\"- Review revision: {structure['review_revision']}\",\n        f\"- Review digest: `{structure['review_digest']}`\",\n        \"\",\n        \"## Question\",\n        \"\",\n        structure[\"question\"],\n        \"\",\n        \"## Answer\",\n        \"\",\n        structure[\"draft\"][\"body\"],\n    ]\n    refusal = structure[\"draft\"].get(\"refusal_reason\")\n    if refusal:\n        lines += [\"\", f\"Refusal reason: {refusal}\"]\n    lines += [\n        \"\",\n        f\"## Release decision ({structure['release']['status']})\",\n        \"\",\n    ]\n    codes = structure[\"release\"].get(\"reason_codes\") or []\n    if codes:\n        lines += [\"- Reason codes: \" + \", \".join(f\"`{code}`\" for code in codes)]\n    for name in (\"snapshot\", \"review\", \"evidence\", \"citation\", \"answer\"):\n        passed = structure[\"release\"][f\"{name}_check_passed\"]\n        lines.append(f\"- {name} check passed: {str(passed).lower()}\")\n    lines += [\"\", \"## Sources\", \"\"]\n    for item in structure[\"evidence\"]:\n        lines.append(\n            f\"- `{item['evidence_id']}` — {item['document_id']} \"\n            f\"(version `{item['version_sha256']}`)\"\n        )\n        lines.append(f\"  - Locator: {_locator_text(item['locator'])}\")\n        if item[\"excerpt_included\"]:\n            lines.append(f\"  - Excerpt: {item['excerpt']}\")\n        else:\n            lines.append(\"  - Excerpt: hidden (no verified export permission)\")\n    lines += [\"\", \"## Review events\", \"\"]\n    for event in structure[\"review_events\"]:\n        decision = event[\"decision\"]\n        lines.append(\n            f\"- `{event['command_id']}`: {decision['status']} \"\n            f\"`{decision['evidence_id']}` by {decision['reviewer_ref']} \"\n            f\"(revision {decision['revision']})\"\n        )\n    return \"\\n\".join(lines) + \"\\n\"\n\n\ndef export_json(\n    record: ResearchRecord,\n    *,\n    include_excerpts: bool = False,\n    permission: ExportPermission | None = None,\n    verifier: PermissionVerifier | None = None,\n) -> str:\n    \"\"\"FR-E-01, SEC-01: deterministic JSON export; excerpts need a verified grant.\"\"\"\n    structure = render_record(\n        record, include_excerpts=include_excerpts, permission=permission, verifier=verifier\n    )\n    return _dump(structure)\n\n\ndef export_markdown(\n    record: ResearchRecord,\n    *,\n    include_excerpts: bool = False,\n    permission: ExportPermission | None = None,\n    verifier: PermissionVerifier | None = None,\n) -> str:\n    \"\"\"FR-E-01, SEC-01: Markdown export mirroring the JSON evidence and statuses.\"\"\"\n    structure = render_record(\n        record, include_excerpts=include_excerpts, permission=permission, verifier=verifier\n    )\n    return _markdown(structure)\n\n\nclass ExportService:\n    \"\"\"Exporter bound to one trusted grant verifier at construction time.\"\"\"\n\n    def __init__(self, *, permission_verifier: PermissionVerifier) -> None:\n        if not callable(permission_verifier):\n            raise ExportPermissionDenied(\"export service requires a callable verifier\")\n        self._verifier = permission_verifier\n\n    def export_json(\n        self,\n        record: ResearchRecord,\n        *,\n        include_excerpts: bool = False,\n        permission: ExportPermission | None = None,\n    ) -> str:\n        return export_json(\n            record,\n            include_excerpts=include_excerpts,\n            permission=permission,\n            verifier=self._verifier,\n        )\n\n    def export_markdown(\n        self,\n        record: ResearchRecord,\n        *,\n        include_excerpts: bool = False,\n        permission: ExportPermission | None = None,\n    ) -> str:\n        return export_markdown(\n            record,\n            include_excerpts=include_excerpts,\n            permission=permission,\n            verifier=self._verifier,\n        )\n\n\ndef history_detail(\n    record: ResearchRecord, *, current_snapshot_id: str | None = None\n) -> dict[str, Any]:\n    \"\"\"FR-E-02: display-only view; superseded marks drift without touching history.\"\"\"\n    superseded = current_snapshot_id is not None and current_snapshot_id != (\n        record.snapshot.snapshot_id\n    )\n    return {\n        \"record_id\": record.record_id,\n        \"snapshot_id\": record.snapshot.snapshot_id,\n        \"current_snapshot_id\": current_snapshot_id,\n        \"superseded\": superseded,\n        \"review_revision\": record.review_revision,\n        \"review_digest\": record.review_digest,\n        \"draft_status\": record.draft.status,\n        \"release_status\": record.release.status,\n        \"released\": record.release.status == \"released\",\n        \"saved_at\": record.saved_at.isoformat(),\n        \"evidence_ids\": [item.evidence_id for item in record.evidence],\n    }\n\n\ndef _sequence_of_ids(values: Sequence[str]) -> str:\n    return \", \".join(f\"`{value}`\" for value in values)\n",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Created file successfully: src/papertrace/reports/export.py"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313309299,
+            "ran": 1795313338258,
+            "completed": 1795313338286
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 190,
+        "output": 2987,
+        "reasoning": 0,
+        "cache": {
+          "read": 31744,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_2010387d2001vvWhkfdWVnIsrU",
+      "time": {
+        "created": 1795313338417,
+        "streamed": 1795313353576,
+        "completed": 1795313353631
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_MAeev1SHEpDTNxMXwEeV0401",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "        \"evidence_ids\": [item.evidence_id for item in record.evidence],\n    }\n",
+              "oldString": "        \"evidence_ids\": [item.evidence_id for item in record.evidence],\n    }\n\n\ndef _sequence_of_ids(values: Sequence[str]) -> str:\n    return \", \".join(f\"`{value}`\" for value in values)\n",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/export.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/export.py",
+                  "patch": "Index: src/papertrace/reports/export.py\n===================================================================\n--- src/papertrace/reports/export.py\n+++ src/papertrace/reports/export.py\n@@ -308,8 +308,4 @@\n         \"released\": record.release.status == \"released\",\n         \"saved_at\": record.saved_at.isoformat(),\n         \"evidence_ids\": [item.evidence_id for item in record.evidence],\n     }\n-\n-\n-def _sequence_of_ids(values: Sequence[str]) -> str:\n-    return \", \".join(f\"`{value}`\" for value in values)\n",
+                  "status": "modified",
+                  "additions": 0,
+                  "deletions": 4
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313352901,
+            "ran": 1795313353569,
+            "completed": 1795313353628
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 259,
+        "output": 166,
+        "reasoning": 0,
+        "cache": {
+          "read": 34688,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20103c3b6001C6lW0GdyTLdJlM",
+      "time": {
+        "created": 1795313353707,
+        "streamed": 1795313363853,
+        "completed": 1795313363918
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_UJhOEbvZwfTKR30nj0ZY0582",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "from collections.abc import Callable, Mapping\nfrom typing import Any\n\nfrom .record import (\n    SENSITIVE_KEY_MARKERS,\n    ExportPermission,\n    ExportPermissionDenied,\n    ResearchRecord,\n)",
+              "oldString": "from collections.abc import Callable, Mapping, Sequence\nfrom typing import Any\n\nfrom .record import (\n    SENSITIVE_KEY_MARKERS,\n    ExportPermission,\n    ExportPermissionDenied,\n    ResearchRecord,\n    contains_absolute_path,\n)",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/export.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/export.py",
+                  "patch": "Index: src/papertrace/reports/export.py\n===================================================================\n--- src/papertrace/reports/export.py\n+++ src/papertrace/reports/export.py\n@@ -11,17 +11,16 @@\n from __future__ import annotations\n \n import json\n import re\n-from collections.abc import Callable, Mapping, Sequence\n+from collections.abc import Callable, Mapping\n from typing import Any\n \n from .record import (\n     SENSITIVE_KEY_MARKERS,\n     ExportPermission,\n     ExportPermissionDenied,\n     ResearchRecord,\n-    contains_absolute_path,\n )\n \n __all__ = [\n     \"ExportService\",\n",
+                  "status": "modified",
+                  "additions": 1,
+                  "deletions": 2
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313362135,
+            "ran": 1795313363845,
+            "completed": 1795313363895
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 195,
+        "output": 188,
+        "reasoning": 0,
+        "cache": {
+          "read": 34944,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20103ec2c001M80biAxBRVoW9V",
+      "time": {
+        "created": 1795313364030,
+        "streamed": 1795313377446,
+        "completed": 1795313377464
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "现在写 `__init__.py` 汇总测试所需 API。"
+        },
+        {
+          "type": "tool",
+          "id": "call_00_vT1zo4O0b4bvmW1PY7X45132",
+          "name": "write",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "content": "\"\"\"Module E reports: immutable research history, traceability and exports.\n\nFR-E-01/02, INV-02/04/05/08, QA-01, SEC-01. Offline and deterministic: this\npackage stores and re-renders recorded decisions, and never re-generates an\nanswer, re-authors the review ledger or upgrades a blocked draft. Release\nauthority stays with module D; E only preserves and exports what was recorded.\n\"\"\"\n\nfrom __future__ import annotations\n\nfrom .export import ExportService, export_json, export_markdown, history_detail, render_record\nfrom .record import (\n    ExportPermission,\n    ExportPermissionDenied,\n    InvalidRecord,\n    RecordConflict,\n    ResearchRecord,\n    ReviewEvent,\n    canonical_digest,\n    contains_absolute_path,\n    parse_record,\n)\nfrom .store import HistoryStore\n\n__all__ = [\n    \"ExportPermission\",\n    \"ExportPermissionDenied\",\n    \"ExportService\",\n    \"HistoryStore\",\n    \"InvalidRecord\",\n    \"RecordConflict\",\n    \"ResearchRecord\",\n    \"ReviewEvent\",\n    \"canonical_digest\",\n    \"contains_absolute_path\",\n    \"export_json\",\n    \"export_markdown\",\n    \"history_detail\",\n    \"parse_record\",\n    \"render_record\",\n]\n",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Created file successfully: src/papertrace/reports/__init__.py"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313374596,
+            "ran": 1795313377438,
+            "completed": 1795313377461
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 153,
+        "output": 362,
+        "reasoning": 0,
+        "cache": {
+          "read": 35200,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_2010420cd001uKY30dcOhpDDkH",
+      "time": {
+        "created": 1795313377504,
+        "streamed": 1795313387952,
+        "completed": 1795313388038
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_fmOWCG6EEopVRT9kdX523062",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]",
+              "offset": 255,
+              "limit": 40
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 255-294\n255:                 raise ValueError(f\"{label} review_revision does not match ledger\")\n256:             if bound.review_digest != self.review_digest:\n257:                 raise ValueError(f\"{label} review_digest does not match ledger\")\n258:         if self.draft.answer_id != self.release.answer_id:\n259:             raise ValueError(\"release decision judges a different answer\")\n260:         for name in (\"approved_evidence_ids\", \"sent_evidence_ids\", \"citation_evidence_ids\"):\n261:             if not set(getattr(self.draft, name)) <= evidence_ids:\n262:                 raise ValueError(f\"draft {name} reference outside record evidence\")\n263:         if self.release.status == \"released\" and self.draft.status != \"draft\":\n264:             raise ValueError(\"released requires an answer draft, not abstained/failed\")\n265: \n266:         _check_metadata(self.run_metadata, where=\"run_metadata\")\n267:         return self\n268: \n269:     def export_payload(self) -> dict[str, Any]:\n270:         \"\"\"FR-E-01: JSON-ready structure preserving the recorded identities.\"\"\"\n271:         return self.model_dump(mode=\"json\")\n272: \n273: \n274: class ExportPermission(_ReportModel):\n275:     \"\"\"FR-E-02, SEC-01: declared export grant; authority is only the trusted verifier.\n276: \n277:     A grant may declare a read-only purpose such as ``internal-read``; rejecting the\n278:     purpose is the exporter's job, so construction stays permissive and type-visible.\n279:     \"\"\"\n280: \n281:     record_id: RecordId\n282:     evidence_ids: tuple[EvidenceId, ...]\n283:     purpose: Literal[\"external-export\", \"internal-read\"]\n284:     granted_by: NonBlank\n285: \n286:     @field_validator(\"evidence_ids\")\n287:     @classmethod\n288:     def unique_grants(cls, value: tuple[str, ...]) -> tuple[str, ...]:\n289:         if len(value) != len(set(value)):\n290:             raise ValueError(\"permission contains duplicate evidence identity\")\n291:         return value\n292: \n293:     @field_validator(\"granted_by\")\n294:     @classmethod\n[Output truncated. Continue reading with offset: 295]"
+              }
+            ],
+            "metadata": {
+              "truncated": true
+            }
+          },
+          "time": {
+            "created": 1795313387443,
+            "ran": 1795313387948,
+            "completed": 1795313388026
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 159,
+        "output": 94,
+        "reasoning": 0,
+        "cache": {
+          "read": 35584,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201044a3f001bxeSQWy9BJqfl6",
+      "time": {
+        "created": 1795313388126,
+        "streamed": 1795313399624,
+        "completed": 1795313399650
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_WRFmQAeEeidnnxRDYpCO3671",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "        _check_metadata(self.run_metadata, where=\"run_metadata\")\n        return self\n\n\nclass ExportPermission(_ReportModel):",
+              "oldString": "        _check_metadata(self.run_metadata, where=\"run_metadata\")\n        return self\n\n    def export_payload(self) -> dict[str, Any]:\n        \"\"\"FR-E-01: JSON-ready structure preserving the recorded identities.\"\"\"\n        return self.model_dump(mode=\"json\")\n\n\nclass ExportPermission(_ReportModel):",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/record.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/record.py",
+                  "patch": "Index: src/papertrace/reports/record.py\n===================================================================\n--- src/papertrace/reports/record.py\n+++ src/papertrace/reports/record.py\n@@ -265,13 +265,9 @@\n \n         _check_metadata(self.run_metadata, where=\"run_metadata\")\n         return self\n \n-    def export_payload(self) -> dict[str, Any]:\n-        \"\"\"FR-E-01: JSON-ready structure preserving the recorded identities.\"\"\"\n-        return self.model_dump(mode=\"json\")\n \n-\n class ExportPermission(_ReportModel):\n     \"\"\"FR-E-02, SEC-01: declared export grant; authority is only the trusted verifier.\n \n     A grant may declare a read-only purpose such as ``internal-read``; rejecting the\n",
+                  "status": "modified",
+                  "additions": 0,
+                  "deletions": 4
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313398893,
+            "ran": 1795313399620,
+            "completed": 1795313399637
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 680,
+        "output": 187,
+        "reasoning": 0,
+        "cache": {
+          "read": 35712,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201047795001JLoPCO9LNKZxWz",
+      "time": {
+        "created": 1795313399741,
+        "streamed": 1795313412294,
+        "completed": 1795313412314
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_n1tTPANzVVSzp0xhT3i58396",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "limit": 30,
+              "offset": 286,
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 286-311\n286:             raise ValueError(\"permission contains duplicate evidence identity\")\n287:         return value\n288: \n289:     @field_validator(\"granted_by\")\n290:     @classmethod\n291:     def safe_grantor(cls, value: str) -> str:\n292:         return _strip_control(_reject_absolute_path(value))\n293: \n294: \n295: def to_validation_error(error: ValidationError) -> InvalidRecord:\n296:     \"\"\"FR-E-02: surface malformed packages as one explicit E error type.\"\"\"\n297:     return InvalidRecord(f\"invalid research record: {error.error_count()} problem(s)\")\n298: \n299: \n300: def parse_record(raw: str | bytes | Mapping[str, Any]) -> ResearchRecord:\n301:     \"\"\"FR-E-01: read back only through the closed envelope; no silent repair.\"\"\"\n302:     try:\n303:         if isinstance(raw, (str, bytes)):\n304:             data = json.loads(raw)\n305:         else:\n306:             data = dict(raw)\n307:         return ResearchRecord.model_validate(data)\n308:     except ValidationError as error:\n309:         raise to_validation_error(error) from None\n310:     except (json.JSONDecodeError, UnicodeDecodeError, TypeError):\n311:         raise InvalidRecord(\"research record is not readable JSON\") from None"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313411065,
+            "ran": 1795313412290,
+            "completed": 1795313412311
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 253,
+        "output": 94,
+        "reasoning": 0,
+        "cache": {
+          "read": 36352,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20104a8f7001PgRL3luXbNE5Ij",
+      "time": {
+        "created": 1795313412383,
+        "streamed": 1795313437598,
+        "completed": 1795313437618
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_bM0nwrKR0BH8b5HvFeCh1594",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "    except (json.JSONDecodeError, UnicodeDecodeError, TypeError):\n        raise InvalidRecord(\"research record is not readable JSON\") from None\n\n\ndef record_conflict_for(record_id: str) -> RecordConflict:\n    \"\"\"INV-05/08: one conflict message shape shared by store and callers.\"\"\"\n    return RecordConflict(f\"history record already exists: {record_id}\")\n",
+              "oldString": "    except (json.JSONDecodeError, UnicodeDecodeError, TypeError):\n        raise InvalidRecord(\"research record is not readable JSON\") from None\n",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/record.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/record.py",
+                  "patch": "Index: src/papertrace/reports/record.py\n===================================================================\n--- src/papertrace/reports/record.py\n+++ src/papertrace/reports/record.py\n@@ -308,4 +308,9 @@\n     except ValidationError as error:\n         raise to_validation_error(error) from None\n     except (json.JSONDecodeError, UnicodeDecodeError, TypeError):\n         raise InvalidRecord(\"research record is not readable JSON\") from None\n+\n+\n+def record_conflict_for(record_id: str) -> RecordConflict:\n+    \"\"\"INV-05/08: one conflict message shape shared by store and callers.\"\"\"\n+    return RecordConflict(f\"history record already exists: {record_id}\")\n",
+                  "status": "modified",
+                  "additions": 5,
+                  "deletions": 0
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313436015,
+            "ran": 1795313437594,
+            "completed": 1795313437615
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 429,
+        "output": 206,
+        "reasoning": 0,
+        "cache": {
+          "read": 36608,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201050bc1001DBXIPxF3oN9NIe",
+      "time": {
+        "created": 1795313437644,
+        "streamed": 1795313449839,
+        "completed": 1795313449851
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_wjqJ971skDaKJojtbWco1616",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "__all__ = [\n    \"ExportPermission\",\n    \"ExportPermissionDenied\",\n    \"ExportService\",\n    \"HistoryStore\",\n    \"InvalidRecord\",\n    \"RecordConflict\",\n    \"ResearchRecord\",\n    \"ReviewEvent\",\n    \"canonical_digest\",\n    \"contains_absolute_path\",\n    \"export_json\",\n    \"export_markdown\",\n    \"history_detail\",\n    \"parse_record\",\n    \"record_conflict_for\",\n    \"render_record\",\n]",
+              "oldString": "__all__ = [\n    \"ExportPermission\",\n    \"ExportPermissionDenied\",\n    \"ExportService\",\n    \"HistoryStore\",\n    \"InvalidRecord\",\n    \"RecordConflict\",\n    \"ResearchRecord\",\n    \"ReviewEvent\",\n    \"canonical_digest\",\n    \"contains_absolute_path\",\n    \"export_json\",\n    \"export_markdown\",\n    \"history_detail\",\n    \"parse_record\",\n    \"render_record\",\n]",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/__init__.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/__init__.py",
+                  "patch": "Index: src/papertrace/reports/__init__.py\n===================================================================\n--- src/papertrace/reports/__init__.py\n+++ src/papertrace/reports/__init__.py\n@@ -36,6 +36,7 @@\n     \"export_json\",\n     \"export_markdown\",\n     \"history_detail\",\n     \"parse_record\",\n+    \"record_conflict_for\",\n     \"render_record\",\n ]\n",
+                  "status": "modified",
+                  "additions": 1,
+                  "deletions": 0
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313448431,
+            "ran": 1795313449835,
+            "completed": 1795313449849
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 149,
+        "output": 285,
+        "reasoning": 0,
+        "cache": {
+          "read": 37120,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201053b8b0014Yag33gCgPfrU5",
+      "time": {
+        "created": 1795313449878,
+        "streamed": 1795313458024,
+        "completed": 1795313458038
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_PFknrX7Go0qAOhZWywLt8388",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "    contains_absolute_path,\n    parse_record,\n)\nfrom .store import HistoryStore\n",
+              "oldString": "    contains_absolute_path,\n    parse_record,\n)\nfrom .store import HistoryStore",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/__init__.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/__init__.py",
+                  "patch": "Index: src/papertrace/reports/__init__.py\n===================================================================\n--- src/papertrace/reports/__init__.py\n+++ src/papertrace/reports/__init__.py\n@@ -21,8 +21,9 @@\n     parse_record,\n )\n from .store import HistoryStore\n \n+\n __all__ = [\n     \"ExportPermission\",\n     \"ExportPermissionDenied\",\n     \"ExportService\",\n",
+                  "status": "modified",
+                  "additions": 1,
+                  "deletions": 0
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313457561,
+            "ran": 1795313458022,
+            "completed": 1795313458036
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 206,
+        "output": 131,
+        "reasoning": 0,
+        "cache": {
+          "read": 37376,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201055b84001WKhsPWxKWASTXu",
+      "time": {
+        "created": 1795313458068,
+        "streamed": 1795313461314,
+        "completed": 1795313461331
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_mNh1qSFTP8DLohrQzHqF5247",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 1-43\n1: \"\"\"Module E reports: immutable research history, traceability and exports.\n2: \n3: FR-E-01/02, INV-02/04/05/08, QA-01, SEC-01. Offline and deterministic: this\n4: package stores and re-renders recorded decisions, and never re-generates an\n5: answer, re-authors the review ledger or upgrades a blocked draft. Release\n6: authority stays with module D; E only preserves and exports what was recorded.\n7: \"\"\"\n8: \n9: from __future__ import annotations\n10: \n11: from .export import ExportService, export_json, export_markdown, history_detail, render_record\n12: from .record import (\n13:     ExportPermission,\n14:     ExportPermissionDenied,\n15:     InvalidRecord,\n16:     RecordConflict,\n17:     ResearchRecord,\n18:     ReviewEvent,\n19:     canonical_digest,\n20:     contains_absolute_path,\n21:     parse_record,\n22: )\n23: from .store import HistoryStore\n24: \n25: \n26: __all__ = [\n27:     \"ExportPermission\",\n28:     \"ExportPermissionDenied\",\n29:     \"ExportService\",\n30:     \"HistoryStore\",\n31:     \"InvalidRecord\",\n32:     \"RecordConflict\",\n33:     \"ResearchRecord\",\n34:     \"ReviewEvent\",\n35:     \"canonical_digest\",\n36:     \"contains_absolute_path\",\n37:     \"export_json\",\n38:     \"export_markdown\",\n39:     \"history_detail\",\n40:     \"parse_record\",\n41:     \"record_conflict_for\",\n42:     \"render_record\",\n43: ]"
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313461113,
+            "ran": 1795313461308,
+            "completed": 1795313461327
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 237,
+        "output": 64,
+        "reasoning": 0,
+        "cache": {
+          "read": 37504,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201056865001hRZCBCPs92vcfD",
+      "time": {
+        "created": 1795313461365,
+        "streamed": 1795313465700,
+        "completed": 1795313465717
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_uwpd0x4ry1FYUFrAhjKt1859",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "from .record import (\n    ExportPermission,\n    ExportPermissionDenied,\n    InvalidRecord,\n    RecordConflict,\n    ResearchRecord,\n    ReviewEvent,\n    canonical_digest,\n    contains_absolute_path,\n    parse_record,\n    record_conflict_for,\n)",
+              "oldString": "from .record import (\n    ExportPermission,\n    ExportPermissionDenied,\n    InvalidRecord,\n    RecordConflict,\n    ResearchRecord,\n    ReviewEvent,\n    canonical_digest,\n    contains_absolute_path,\n    parse_record,\n)",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/__init__.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/__init__.py",
+                  "patch": "Index: src/papertrace/reports/__init__.py\n===================================================================\n--- src/papertrace/reports/__init__.py\n+++ src/papertrace/reports/__init__.py\n@@ -18,8 +18,9 @@\n     ReviewEvent,\n     canonical_digest,\n     contains_absolute_path,\n     parse_record,\n+    record_conflict_for,\n )\n from .store import HistoryStore\n \n \n",
+                  "status": "modified",
+                  "additions": 1,
+                  "deletions": 0
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313465058,
+            "ran": 1795313465696,
+            "completed": 1795313465713
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 462,
+        "output": 196,
+        "reasoning": 0,
+        "cache": {
+          "read": 37760,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201057984001LoOYbDsidpnIPk",
+      "time": {
+        "created": 1795313465744,
+        "streamed": 1795313474740,
+        "completed": 1795313474742
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "已完成本轮两个文件（`export.py`、`__init__.py`），并在 `record.py` 做了三处必要修正。未运行任何 shell、未改测试。\n\n**`record.py` 修正**\n- `ExportPermission.purpose` 扩展为 `Literal[\"external-export\", \"internal-read\"]`，使 `internal-read` 可构造、由 exporter 以 `ExportPermissionDenied` 拒绝（对应获批测试 `test_export_permission_must_match_record_evidence_and_purpose`）。\n- 新增 `ExportPermissionDenied(InvalidRecord)`。\n- 删除未使用的 `ResearchRecord.export_payload`，新增 `record_conflict_for` 统一冲突文案。\n\n**`export.py`**\n- `render_record`/`export_json`/`export_markdown`：默认省略 `excerpt`，仅标记 `excerpt_included: false`；JSON 用确定性 `sort_keys` 序列化。Markdown 保留 `release.status`（含 `blocked`）、`evidence_id`、`document_id`、locator、review 事件与 reason codes。\n- 脱敏：自由文本（question/body/refusal/advisory/excerpt）替换 Windows 盘符、UNC、POSIX 绝对路径为 `[redacted-path]`；`run_metadata` 按形状白名单输出并剔除凭据类键。\n- `_verify`：先拒绝 `purpose != \"external-export\"`、record_id 不符、evidence 为空或越界，再调用 verifier；无 verifier、`permission` 为空、verifier 返回非 `True`、verifier 抛异常一律 `ExportPermissionDenied`。`include_excerpts=True` 单独不构成授权。\n- `ExportService(*, permission_verifier)`：构造时绑定，两个导出方法转发给模块级函数；无公开绕过入口。\n- `history_detail`：仅返回展示视图；`current_snapshot_id` 与记录不同即 `superseded=True`，不写回历史。\n\n**`__init__.py`**：导出测试引用的全部名称（`ResearchRecord`、`HistoryStore`、`ExportPermission`、`ExportService`、`export_json`、`export_markdown`、`history_detail`、`InvalidRecord`、`RecordConflict`、`ExportPermissionDenied`）及辅助函数。\n\n**限制**\n- 测试 `test_absolute_path_in_metadata_is_rejected` 由 `ResearchRecord` 校验阶段拦截（`ValueError`），符合预期异常类型。\n- `test_absolute_path_in_free_text_is_not_exported` 依赖导出时路径替换，替换粒度以正则实现，已覆盖测试中的两种路径形态。\n- 尚未运行 pytest/ruff/mypy（按要求由监督者执行）；若 mypy strict 对 `getattr(self.draft, name)` 报动态属性问题，可能需要改为显式字段访问，这将作为验证阶段的最小修正。\n- 未触碰共享契约、其他模块、规则或已批准测试。"
+        }
+      ],
+      "finish": "stop",
+      "rawFinish": "stop",
+      "cost": 0,
+      "tokens": {
+        "input": 174,
+        "output": 662,
+        "reasoning": 0,
+        "cache": {
+          "read": 38272,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201059cc5001rON8VfdbWONHTz",
+      "time": {
+        "created": 1795313474757
+      },
+      "type": "idle",
+      "outcome": "succeeded"
+    },
+    {
+      "id": "msg_2010718ea001R8TIuLxu54KV0A",
+      "time": {
+        "created": 1795313572074
+      },
+      "type": "agent-switched",
+      "agent": "papertrace-build-E",
+      "previous": "papertrace-build-E"
+    },
+    {
+      "id": "msg_2010718e4001dg5vP4BYu22wpe",
+      "time": {
+        "created": 1795313572515
+      },
+      "text": "\"Supervisor review: all 32 approved reports tests pass, ruff and mypy pass. One concrete correctness defect in store.py: _atomic_write catches hard-link OSError and falls back to open(target, xb), which publishes partial files and leaves corrupt final record on write/fsync failure. Remove this unsafe fallback. Unsupported hard links must fail closed with original OSError and clean temp; FileExistsError still RecordConflict. Modify only store.py via allowed edit tool, no shell, no tests/shared files. Stop when done.\"",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_201071aae001f2jQ1RZxEUqDFk",
+      "time": {
+        "created": 1795313572548,
+        "streamed": 1795313583153,
+        "completed": 1795313583167
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_Tg3hvKM1DXznSeYOuwpQ9654",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "limit": 40,
+              "offset": 28,
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 28-67\n28: def _atomic_write(target: Path, data: bytes) -> None:\n29:     \"\"\"INV-05/08: temp file + fsync + exclusive publish; no partial record ever visible.\"\"\"\n30:     parent = target.parent\n31:     handle, temp_name = tempfile.mkstemp(prefix=f\".{target.name}.\", suffix=\".tmp\", dir=parent)\n32:     temp_path = Path(temp_name)\n33:     try:\n34:         with os.fdopen(handle, \"wb\") as stream:\n35:             stream.write(data)\n36:             stream.flush()\n37:             os.fsync(stream.fileno())\n38:         try:\n39:             os.link(temp_path, target)\n40:         except FileExistsError:\n41:             raise RecordConflict(f\"history record already exists: {target.name}\") from None\n42:         except (OSError, NotImplementedError):\n43:             # Filesystems without hard links: exclusive create as the publish step.\n44:             with open(target, \"xb\") as target_stream:\n45:                 target_stream.write(data)\n46:                 target_stream.flush()\n47:                 os.fsync(target_stream.fileno())\n48:     finally:\n49:         try:\n50:             temp_path.unlink()\n51:         except FileNotFoundError:\n52:             pass\n53: \n54: \n55: class HistoryStore:\n56:     \"\"\"Append-only research history rooted at a single directory.\"\"\"\n57: \n58:     def __init__(self, root: str | Path, *, atomic_writer: AtomicWriter | None = None) -> None:\n59:         self._root = Path(root)\n60:         self._atomic_writer = atomic_writer\n61: \n62:     @property\n63:     def root(self) -> Path:\n64:         \"\"\"The configured history root; never resolved through a symlink.\"\"\"\n65:         return self._root\n66: \n67:     def _checked_root(self) -> Path:\n[Output truncated. Continue reading with offset: 68]"
+              }
+            ],
+            "metadata": {
+              "truncated": true
+            }
+          },
+          "time": {
+            "created": 1795313582701,
+            "ran": 1795313583150,
+            "completed": 1795313583164
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 185,
+        "output": 94,
+        "reasoning": 0,
+        "cache": {
+          "read": 39040,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20107444e001Xt6XAqCLwWgk5f",
+      "time": {
+        "created": 1795313583194,
+        "streamed": 1795313593955,
+        "completed": 1795313593969
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_vV1Uo9NhPMUGzQsHxS701812",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "        try:\n            os.link(temp_path, target)\n        except FileExistsError:\n            raise RecordConflict(f\"history record already exists: {target.name}\") from None\n        except (OSError, NotImplementedError):\n            # SEC-01, INV-08: fail closed. Publishing by copying would expose a\n            # partial/corrupt record if the second write or fsync fails, so an\n            # unsupported hard link propagates the original error and the temp\n            # file is removed below without ever touching the target.\n            raise\n",
+              "oldString": "        try:\n            os.link(temp_path, target)\n        except FileExistsError:\n            raise RecordConflict(f\"history record already exists: {target.name}\") from None\n        except (OSError, NotImplementedError):\n            # Filesystems without hard links: exclusive create as the publish step.\n            with open(target, \"xb\") as target_stream:\n                target_stream.write(data)\n                target_stream.flush()\n                os.fsync(target_stream.fileno())\n",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/store.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/store.py",
+                  "patch": "Index: src/papertrace/reports/store.py\n===================================================================\n--- src/papertrace/reports/store.py\n+++ src/papertrace/reports/store.py\n@@ -39,13 +39,13 @@\n             os.link(temp_path, target)\n         except FileExistsError:\n             raise RecordConflict(f\"history record already exists: {target.name}\") from None\n         except (OSError, NotImplementedError):\n-            # Filesystems without hard links: exclusive create as the publish step.\n-            with open(target, \"xb\") as target_stream:\n-                target_stream.write(data)\n-                target_stream.flush()\n-                os.fsync(target_stream.fileno())\n+            # SEC-01, INV-08: fail closed. Publishing by copying would expose a\n+            # partial/corrupt record if the second write or fsync fails, so an\n+            # unsupported hard link propagates the original error and the temp\n+            # file is removed below without ever touching the target.\n+            raise\n     finally:\n         try:\n             temp_path.unlink()\n         except FileNotFoundError:\n",
+                  "status": "modified",
+                  "additions": 5,
+                  "deletions": 5
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313593466,
+            "ran": 1795313593952,
+            "completed": 1795313593966
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 510,
+        "output": 302,
+        "reasoning": 0,
+        "cache": {
+          "read": 39296,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201076e7d0013dCVxPRsAl026l",
+      "time": {
+        "created": 1795313593991,
+        "streamed": 1795313601342,
+        "completed": 1795313601354
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_Cjp0bJtnsHhXryHDjNAT9893",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "limit": 32,
+              "offset": 24,
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file [REDACTED_LOCAL_PATH] lines 24-55\n24: \n25: _SUFFIX: Final = \".json\"\n26: \n27: \n28: def _atomic_write(target: Path, data: bytes) -> None:\n29:     \"\"\"INV-05/08: temp file + fsync + exclusive publish; no partial record ever visible.\"\"\"\n30:     parent = target.parent\n31:     handle, temp_name = tempfile.mkstemp(prefix=f\".{target.name}.\", suffix=\".tmp\", dir=parent)\n32:     temp_path = Path(temp_name)\n33:     try:\n34:         with os.fdopen(handle, \"wb\") as stream:\n35:             stream.write(data)\n36:             stream.flush()\n37:             os.fsync(stream.fileno())\n38:         try:\n39:             os.link(temp_path, target)\n40:         except FileExistsError:\n41:             raise RecordConflict(f\"history record already exists: {target.name}\") from None\n42:         except (OSError, NotImplementedError):\n43:             # SEC-01, INV-08: fail closed. Publishing by copying would expose a\n44:             # partial/corrupt record if the second write or fsync fails, so an\n45:             # unsupported hard link propagates the original error and the temp\n46:             # file is removed below without ever touching the target.\n47:             raise\n48:     finally:\n49:         try:\n50:             temp_path.unlink()\n51:         except FileNotFoundError:\n52:             pass\n53: \n54: \n55: class HistoryStore:\n[Output truncated. Continue reading with offset: 56]"
+              }
+            ],
+            "metadata": {
+              "truncated": true
+            }
+          },
+          "time": {
+            "created": 1795313601031,
+            "ran": 1795313601340,
+            "completed": 1795313601352
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 197,
+        "output": 94,
+        "reasoning": 0,
+        "cache": {
+          "read": 39936,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_201078b5b001S650592qQGEs0O",
+      "time": {
+        "created": 1795313601383,
+        "streamed": 1795313615858,
+        "completed": 1795313615860
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "已修复 `store.py` 中的 `_atomic_write`（仅改此文件，未运行 shell、未改测试或共享文件）。\n\n**变更**\n- 删除了 `os.link` 失败时回退到 `open(target, \"xb\")` 再写一次的路径。该回退会在第二次写/fsync 失败时留下部分写入的最终记录文件，破坏\"失败无残留、旧记录不受损\"的保证。\n- 保留 `FileExistsError` → `RecordConflict`（独占发布语义不变）。\n- 其他 `OSError`/`NotImplementedError`（例如文件系统不支持硬链接）现在通过裸 `raise` 传播原始异常，fail closed；`finally` 块仍删除临时文件，目标路径不会被触碰，因此不会产生半成品或损坏记录。\n\n**剩余限制**\n- 现在不支持硬链接的文件系统上 `save` 会直接失败（原始 `OSError`），而不是降级写入。这是有意为之的安全取舍；若将来需要支持此类文件系统，应改用 `os.replace` + 独占占位等原子方案单独评审，而不是复制写入。\n- 我未重新运行 pytest/ruff/mypy；请监督者复跑离线门禁确认该改动未影响现有用例。"
+        }
+      ],
+      "finish": "stop",
+      "rawFinish": "stop",
+      "cost": 0,
+      "tokens": {
+        "input": 434,
+        "output": 269,
+        "reasoning": 0,
+        "cache": {
+          "read": 40192,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20107c3f7001u7mvh5ikJKy6Eq",
+      "time": {
+        "created": 1795313615863
+      },
+      "type": "idle",
+      "outcome": "succeeded"
+    },
+    {
+      "id": "msg_201092f2f001CMt0wSDvisXngp",
+      "time": {
+        "created": 1795313708848
+      },
+      "type": "agent-switched",
+      "agent": "papertrace-build-E",
+      "previous": "papertrace-build-E"
+    },
+    {
+      "id": "msg_201092e0d001CxfN9Wc24Cuojq",
+      "time": {
+        "created": 1795313709589
+      },
+      "text": "\"Verification: 32 reports tests pass, mypy passes. Ruff I001 in reports/__init__.py requires removing exactly one extra blank line between from .store import HistoryStore and __all__. Make only that whitespace fix, no shell, then stop.\"",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_201093221001C6WpqbjnCrj8s8",
+      "time": {
+        "created": 1795313709624,
+        "streamed": 1795313718386,
+        "completed": 1795313718411
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "tool",
+          "id": "call_00_SO67sPVmvHwKm1xbV2SC6051",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "newString": "from .store import HistoryStore\n\n__all__ = [",
+              "oldString": "from .store import HistoryStore\n\n\n__all__ = [",
+              "path": "[REDACTED_LOCAL_PATH]"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited src/papertrace/reports/__init__.py (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "src/papertrace/reports/__init__.py",
+                  "patch": "Index: src/papertrace/reports/__init__.py\n===================================================================\n--- src/papertrace/reports/__init__.py\n+++ src/papertrace/reports/__init__.py\n@@ -22,9 +22,8 @@\n     record_conflict_for,\n )\n from .store import HistoryStore\n \n-\n __all__ = [\n     \"ExportPermission\",\n     \"ExportPermissionDenied\",\n     \"ExportService\",\n",
+                  "status": "modified",
+                  "additions": 0,
+                  "deletions": 1
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795313717886,
+            "ran": 1795313718384,
+            "completed": 1795313718408
+          }
+        }
+      ],
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 250,
+        "output": 120,
+        "reasoning": 0,
+        "cache": {
+          "read": 40704,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20109549c001KQ1e7k7ScUFP4e",
+      "time": {
+        "created": 1795313718443,
+        "streamed": 1795313725652,
+        "completed": 1795313725653
+      },
+      "type": "assistant",
+      "agent": "papertrace-build-E",
+      "model": {
+        "id": "CS5351/DeepSeek-V4-Flash",
+        "providerID": "cityucs",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "已修复 `src/papertrace/reports/__init__.py` 的 I001：删除 `from .store import HistoryStore` 与 `__all__` 之间多余的空白行（由两空行改为一行）。仅此空白修改，未运行 shell，未触及测试或其他文件。"
+        }
+      ],
+      "finish": "stop",
+      "rawFinish": "stop",
+      "cost": 0,
+      "tokens": {
+        "input": 142,
+        "output": 65,
+        "reasoning": 0,
+        "cache": {
+          "read": 40960,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_2010970d8002HtkKp8C32P2ezx",
+      "time": {
+        "created": 1795313725657
+      },
+      "type": "idle",
+      "outcome": "succeeded"
+    }
+  ]
+}

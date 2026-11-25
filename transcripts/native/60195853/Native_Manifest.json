@@ -1,0 +1,22 @@
+[
+  {
+    "session": "ses_df7c7c083ffenVDR4zsgPomRg5",
+    "messages": 68,
+    "source_raw_sha256": "a1e241628b740042ffa9c0b8ffa298100e0b7015b0d7aab4255adc494853edec",
+    "redacted_export_sha256": "275c4d6067ef593998a86d2f6d363dfeb10b615fdc90d0281310d98c2b75a984",
+    "message_order_and_ids_match_native_export": true,
+    "language": "Original source dialogue, including Chinese, retained with student confirmation; English annotations separate",
+    "private_reasoning": "Any private reasoning redacted, not republished as evidence",
+    "redactions": "Existing declared path/credential redactions only; no reconstructed approval or dialogue"
+  },
+  {
+    "session": "ses_dff02f043ffep3PJYXRMy43zJA",
+    "messages": 66,
+    "source_raw_sha256": "443c44d37576d2ebec5c81901f8c910e76c243cc9496892885f995fb73a6fc11",
+    "redacted_export_sha256": "43db4992cee56a9d8423b8f85dd4003addd062b611c205619e6e9faf78859fd5",
+    "message_order_and_ids_match_native_export": true,
+    "language": "Original source dialogue, including Chinese, retained with student confirmation; English annotations separate",
+    "private_reasoning": "Any private reasoning redacted, not republished as evidence",
+    "redactions": "Existing declared path/credential redactions only; no reconstructed approval or dialogue"
+  }
+]

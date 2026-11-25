@@ -1,0 +1,10 @@
+{
+  "tested_main": "d893cefe162eb687fbd2854ee63b29569e087b2e",
+  "material_base": "38db05423956ac4b03b9f9c6ede8208b33e71e5e",
+  "D_E_source_and_contract_blobs_identical": true,
+  "tests": 195,
+  "failures": 0,
+  "errors": 0,
+  "provider_calls": 0,
+  "scope": "Component and injected-entrypoint tests, not full default App or live quality"
+}

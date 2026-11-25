@@ -2593,3 +2593,31 @@ entries:
   - The production pre-dispatch count uses cl100k_base via locked tiktoken as a deterministic framed BPE counter. Actual provider billing tokens are verified separately from each live CityU response usage.
   - Live verification remains pending for runner access to cl100k_base assets, protected GitHub environments and deployments, server visibility under concurrent dispatches and rerun rejection, project credential and CityU entitlement, tariff and response usage reconciliation, and independent raw and final report adoption.
   - Codex assisted with implementation. No live provider calls or remote workflow dispatch were performed. Independent adversarial review is pending.
+- entry_id: E-REPOSITORY-DELIVERY-20261125-01
+  timestamp: '2026-11-25T09:31:29.118254+00:00'
+  tool: Codex Desktop
+  model: Codex runtime; model identifier not independently attested
+  purpose: Integrate the contributor-confirmed English E report, original redacted native transcripts
+    and truthful component acceptance evidence into repository delivery paths.
+  scope:
+  - Report.md
+  - transcripts/
+  - docs/reviews/module-E/
+  - docs/ai-use-log.yaml
+  status: documentation-and-evidence-awaiting-independent-review
+  approvals:
+  - LIN ZIQI confirmed identity 60195853, 40 retrospective hours split 10/15/15, individual reflection,
+    and full redacted original JSON with English annotations. Student instructed immediate completion
+    of authorized E delivery material.
+  verification:
+  - Native exports match the previous manifest hashes byte-for-byte. D/E component blobs match the independently
+    tested d893cefe snapshot. 195 component tests and separate actual Streamlit save/reopen/export/immutability
+    replay passed.
+  - All 18 rating rows remain unscored; no live output, budget approval or human score fabricated.
+  limitations:
+  - Only E contribution is supplied, not other members report/reflections or a completed group report.
+    No model call, source/configuration change or permission change.
+  - Original Chinese in native exports is deliberately preserved under contributor authorization; newly
+    authored report prose is English.
+  - Final App assembly, real model quality, release transaction, full CI and final separate video remain
+    independently accountable.
