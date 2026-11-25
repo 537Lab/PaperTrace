@@ -66,6 +66,7 @@ REVIEW_DIGEST = 'd' * 64
 GENERATED_AT = datetime(2026, 11, 25, tzinfo=timezone.utc)
 QUESTION_ID = 'q-eval-1'
 QUESTION_TEXT = 'What does the synthetic resonance cell store?'
+UNKNOWN_ALIAS = 'b-unknown'
 
 
 def _accounting(attempts):
@@ -80,7 +81,7 @@ def _accounting(attempts):
 def _draft(*, sent, citations, status='draft'):
     """Build the real AnswerDraft with an explicit schema version.
 
-    sent_evidence_ids records what B actually sent; citation_evidence_ids
+    sent_evidence_ids records what B actually sent and citation_evidence_ids
     records only what the draft cites, so the two sets stay distinguishable.
     """
     accepted = status == 'draft'
@@ -101,14 +102,14 @@ def _draft(*, sent, citations, status='draft'):
     )
 
 
-def _result(*, sent, citations):
+def _result(*, sent, citations=(), unknown_keys=()):
     """Build the real GenerationCallResult, which carries alias mappings only."""
     return GenerationCallResult(
-        status='SUCCESS',
+        status='SUCCESS' if not unknown_keys else 'AMBIGUOUS_CITATIONS',
         raw_output='Synthetic answer (b1).',
         sent_evidence_ids=tuple(sent),
         citation_aliases=(('b1', citations[0]),) if citations else (),
-        unknown_citation_keys=(),
+        unknown_citation_keys=tuple(unknown_keys),
         ambiguous_citation_keys=(),
         refusal_reason=None,
     )
@@ -137,12 +138,12 @@ class OfflineBoundary:
 
     It returns the actual AnswerGenerationOutcome, AnswerDraft and
     GenerationCallResult models, so a collector cannot pass on a synthetic-only
-    shape: citations are read from draft.citation_evidence_ids and result only
-    supplies alias mappings.
+    shape. sent_evidence_ids always carries the pinned send set; citations only
+    ever appear on an accepted draft, and an out-of-scope or unknown citation is
+    expressed as a failed draft plus a result that reports the rejected key.
 
-    Modes mirror the real boundary outcomes: success (validated draft), stale
-    (post-call review change keeps result while the draft fails) and dropped
-    (D keeps accounting while discarding the result).
+    Modes: success, dropped (D keeps accounting, discards result), stale
+    (post-call review change), out-of-scope-citation and unknown-citation.
     """
 
     def __init__(
@@ -185,6 +186,19 @@ class OfflineBoundary:
         self.events.append('model')
         if self.mode == 'dropped':
             return _outcome(accounting=_accounting(self.attempts)), None
+        if self.mode == 'unknown-citation':
+            result = _result(sent=self.sent, unknown_keys=(UNKNOWN_ALIAS,))
+            draft = _draft(sent=self.sent, citations=(), status='failed')
+            return _outcome(
+                draft=draft, result=result, accounting=_accounting(self.attempts)
+            ), self.response
+        if self.mode == 'out-of-scope-citation':
+            # A real citation that was never sent: the draft fails, the result records it.
+            result = _result(sent=self.sent, citations=self.citations)
+            draft = _draft(sent=self.sent, citations=(), status='failed')
+            return _outcome(
+                draft=draft, result=result, accounting=_accounting(self.attempts)
+            ), self.response
         draft = _draft(
             sent=self.sent,
             citations=self.citations,
@@ -247,6 +261,39 @@ def test_boundary_rejection_keeps_zero_attempts(fixed_case):
     assert outcome.draft is None and outcome.result is None and response is None
     assert outcome.accounting is not None
     assert outcome.accounting.answer_model_attempts == 0
+
+def test_boundary_repeat_fixtures_pin_the_send_set(fixed_case):
+    """P1: both repeat calls must pin the real send set, not an empty one."""
+    _, case, system = fixed_case
+    for indent, repeat in ((2, 1), (None, 2)):
+        driver = OfflineBoundary(
+            request_messages(case, system, ("ev-b",), indent=indent),
+            sent=(RUNTIME_B,),
+            repeat=repeat,
+        )
+        outcome, _ = driver.generate(request_observer=lambda _: None)
+        assert outcome.draft is not None
+        assert outcome.draft.sent_evidence_ids == (RUNTIME_B,)
+        assert outcome.draft.citation_evidence_ids == ()
+
+
+@pytest.mark.parametrize("mode", ["out-of-scope-citation", "unknown-citation"])
+def test_boundary_rejected_citation_keeps_accounting_without_report(fixed_case, mode):
+    """P1: out-of-scope and unknown citations fail the draft, not the contract."""
+    _, case, system = fixed_case
+    driver = OfflineBoundary(
+        request_messages(case, system, ("ev-b",)),
+        (RUNTIME_A,),
+        sent=(RUNTIME_B,),
+        mode=mode,
+    )
+    outcome, _ = driver.generate(request_observer=lambda _: None)
+    assert outcome.draft is not None and outcome.draft.status == "failed"
+    assert outcome.draft.sent_evidence_ids == (RUNTIME_B,)
+    assert outcome.draft.citation_evidence_ids == ()
+    assert outcome.result is not None
+    assert outcome.accounting is not None
+    assert outcome.accounting.answer_model_attempts == 1
 
 @pytest.mark.parametrize("sent", [("ev-a", "ev-b"), ("ev-b", "ev-a"), ("ev-b",)])
 def test_qual02_fixture_passes_existing_request_gate(fixed_case, sent):
@@ -352,10 +399,21 @@ def test_invalid_binding_fails_before_driver(collect_attempt, fixed_case, fault)
     assert driver.events == []
 
 
-@pytest.mark.parametrize("citation", [RUNTIME_A, "ev-" + "c" * 64], ids=("cropped", "unknown"))
-def test_out_of_scope_citation_cannot_produce_report_row(collect_attempt, fixed_case, citation):
+@pytest.mark.parametrize(
+    ("citation", "mode"),
+    [(RUNTIME_A, "out-of-scope-citation"), ("ev-" + "c" * 64, "unknown-citation")],
+    ids=("cropped", "unknown"),
+)
+def test_out_of_scope_citation_cannot_produce_report_row(
+    collect_attempt, fixed_case, citation, mode
+):
     _, case, system = fixed_case
-    driver = OfflineBoundary(request_messages(case, system, ("ev-b",)), (citation,))
+    driver = OfflineBoundary(
+        request_messages(case, system, ("ev-b",)),
+        (citation,),
+        sent=(RUNTIME_B,),
+        mode=mode,
+    )
     outcome = run(collect_attempt, fixed_case, driver)
     assert driver.events == ["driver", "capture", "model"]
     assert outcome["record"] is None
@@ -377,8 +435,16 @@ def test_preserves_d_outcome_accounting_when_drops_result(
 
 def test_repeat_never_reuses_prior_capture(collect_attempt, fixed_case):
     _, case, system = fixed_case
-    first = OfflineBoundary(request_messages(case, system, ("ev-b",), indent=2), repeat=1)
-    second = OfflineBoundary(request_messages(case, system, ("ev-b",), indent=None), repeat=2)
+    first = OfflineBoundary(
+        request_messages(case, system, ("ev-b",), indent=2),
+        sent=(RUNTIME_B,),
+        repeat=1,
+    )
+    second = OfflineBoundary(
+        request_messages(case, system, ("ev-b",), indent=None),
+        sent=(RUNTIME_B,),
+        repeat=2,
+    )
     empty = OfflineBoundary(None)
     first_row = run(collect_attempt, fixed_case, first, repeat=1)["record"]
     second_row = run(collect_attempt, fixed_case, second, repeat=2)["record"]
