@@ -957,7 +957,12 @@ class ProviderCapture:
                     "POST",
                     self.config["endpoint"],
                     headers={"Authorization": f"Bearer {self.api_key}"},
-                    json={"model": MODEL, "messages": request, "max_tokens": max_tokens},
+                    json={
+                        "model": MODEL,
+                        "messages": request,
+                        "max_tokens": max_tokens,
+                        "cache": {"no-cache": True},
+                    },
                 ) as reply,
             ):
                 reply.raise_for_status()

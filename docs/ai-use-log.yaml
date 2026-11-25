@@ -2613,3 +2613,23 @@ entries:
   - Verified schema gate PASS, ai-log gate PASS against main 0ede7519, and semantic gate NOT_REQUIRED.
   limitations:
   - Actual GitHub Actions runner provisioning and live 18-call execution remain pending until merge and dispatch with a fresh independent authorization review.
+
+- entry_id: SHARED-EVAL-NOCACHE-FIX-20261125-01
+  timestamp: '2026-11-25T19:27:00+08:00'
+  tool: Supervising student direct 1-field provider request fix after live run 45602103348
+  model: human-directed
+  purpose: Pass LiteLLM request-level cache bypass ("cache": {"no-cache": true}) in ProviderCapture.complete so repeated identical fixed-set calls (3 repeats per QUAL-01..06) execute as 18 independent provider inferences with distinct request_id values instead of returning gateway-cached duplicate request_id responses
+  scope:
+  - test/evaluation/evaluator.py
+  - docs/ai-use-log.yaml
+  status: verified offline against all 225 approved evaluation tests and live 6/6 CityU probe
+  student_decisions:
+  - Preserved all gate checks in scripts/semantic_evidence.py (including strict duplicate-provider-request-id rejection) and kept system/user messages and prompt_sha256 byte-identical.
+  - Verified against the CityU LiteLLM endpoint that HTTP Cache-Control headers are ignored while LiteLLM body cache.no-cache=true yields 6/6 distinct request_id responses with no x-litellm-cache-key header.
+  approvals:
+  - 'Follow-up evaluator transport fix under approved test anchor PR #55 (f0048fdd09c14e3800fa2017ea27c26f49483272); awaits independent non-author review on this PR.'
+  verification:
+  - Replayed all 225 tests across test_semantic_workflow_proposal.py, test_semantic_execution_proposal.py, test_semantic_capture_proposal.py, test_semantic_evidence.py, and test_evaluation_control_paths.py under --disable-socket.
+  - Verified ruff, mypy, schema gate PASS, and ai-log gate PASS against main 1a7babfa.
+  limitations:
+  - Live 18-call GitHub Actions collection and independent blind rating remain pending until merge, #85 sync, and fresh authorized dispatch.
