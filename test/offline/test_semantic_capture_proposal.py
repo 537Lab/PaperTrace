@@ -184,7 +184,14 @@ class OfflineBoundary:
             # B refuses before call_single; D still exposes validated zero attempts.
             return _outcome(accounting=_accounting(0)), None
         self.events.append('model')
-        if self.mode == 'dropped':
+        if self.mode == "no-accounting":
+            draft = _draft(sent=self.sent, citations=self.citations)
+            return _outcome(
+                draft=draft,
+                result=_result(sent=self.sent, citations=self.citations),
+                accounting=None,
+            ), self.response
+        if self.mode == "dropped":
             return _outcome(accounting=_accounting(self.attempts)), None
         if self.mode == 'unknown-citation':
             result = _result(sent=self.sent, unknown_keys=(UNKNOWN_ALIAS,))
@@ -349,7 +356,9 @@ def test_empty_approved_set_has_no_report_or_model_call(collect_attempt, fixed_c
     assert outcome["answer_model_attempts"] is None
 
 
-@pytest.mark.parametrize("fault", ["system", "malformed-user", "unknown-fixed-id"])
+@pytest.mark.parametrize(
+    "fault", ["system", "malformed-user", "unknown-fixed-id", "evidence-text"]
+)
 def test_rejected_capture_prevents_model_call(collect_attempt, fixed_case, fault):
     _, case, system = fixed_case
     system_entry, user_entry = request_messages(case, system, ("ev-b",))
@@ -357,6 +366,12 @@ def test_rejected_capture_prevents_model_call(collect_attempt, fixed_case, fault
         system_entry = ("system", system + "\n")
     if fault == "malformed-user":
         user_entry = ("user", "unexpected question template")
+    if fault == "evidence-text":
+        payload = json.loads(user_entry[1])
+        payload["approved_evidence"][0]["text"] = (
+            payload["approved_evidence"][0]["text"] + " amended"
+        )
+        user_entry = ("user", json.dumps(payload))
     if fault == "unknown-fixed-id":
         payload = json.loads(user_entry[1])
         payload["approved_evidence"][0]["id"] = "ev-pending"
@@ -385,7 +400,39 @@ def test_post_call_stale_review_keeps_result_but_never_yields_a_report_row(
     assert outcome["answer_model_attempts"] == 1
 
 
+def test_capture_send_set_must_match_draft_send_set(collect_attempt, fixed_case):
+    """P1: the row send set comes from the capture, not from the draft."""
+    _, case, system = fixed_case
+    driver = OfflineBoundary(
+        request_messages(case, system, ("ev-b",)),
+        (RUNTIME_A,),
+        sent=(RUNTIME_A,),
+    )
+    outcome = run(collect_attempt, fixed_case, driver)
+    assert driver.events == ["driver", "capture", "model"]
+    assert outcome["record"] is None
+    assert outcome["accounting_present"] is True
+    assert outcome["answer_model_attempts"] == 1
+
+
+def test_missing_accounting_never_yields_a_report_row(collect_attempt, fixed_case):
+    """P2: no accounting means no row, and absence is not invented as zero."""
+    _, case, system = fixed_case
+    driver = OfflineBoundary(
+        request_messages(case, system, ("ev-b",)),
+        (RUNTIME_B,),
+        sent=(RUNTIME_B,),
+        mode="no-accounting",
+    )
+    outcome = run(collect_attempt, fixed_case, driver)
+    assert driver.events == ["driver", "capture", "model"]
+    assert outcome["record"] is None
+    assert outcome["accounting_present"] is False
+    assert outcome["answer_model_attempts"] is None
+
+
 @pytest.mark.parametrize("fault", ["different-case", "different-dataset", "non-bijective"])
+
 def test_invalid_binding_fails_before_driver(collect_attempt, fixed_case, fault):
     dataset_sha256, case, system = fixed_case
     wrong_bindings = {
