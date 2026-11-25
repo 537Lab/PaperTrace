@@ -308,7 +308,13 @@ def _verify(ctx, client, number):
     schema = _json(ctx.read("test/evaluation/report-schema.json", ref=ctx.base).encode())
     if list(Draft202012Validator(schema).iter_errors(report)):
         raise control._EvidenceInvalid("report-schema-violation")
-    if report["provenance"] != {"repository": control.REPOSITORY, "run_id": run_id, "artifact_id": artifact_id}:
+    provenance = report["provenance"]
+    # The server assigns the immutable artifact ID only after upload.
+    # Legacy reports may include it, but must agree with the bound server ID.
+    expected_provenance = {"repository": control.REPOSITORY, "run_id": run_id}
+    if "artifact_id" in provenance:
+        expected_provenance["artifact_id"] = artifact_id
+    if provenance != expected_provenance:
         raise control._EvidenceInvalid("report-run-or-artifact-binding-mismatch")
     dataset_raw = ctx.read("test/evaluation/cases.json", ref=ctx.base).encode()
     if _blob(ctx, ctx.base, "test/evaluation/cases.json") != _blob(ctx, head, "test/evaluation/cases.json"):

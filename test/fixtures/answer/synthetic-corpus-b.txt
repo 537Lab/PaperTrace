@@ -1,0 +1,2 @@
+SYNTHETIC FIXTURE B -- written for offline tests; not a real publication.
+The synthetic resonance cell releases 3 units of daylight energy per cycle.
