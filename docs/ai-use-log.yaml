@@ -2410,3 +2410,25 @@ entries:
     rating, artifact or semantic PASS.
   - Separate preflight, budget and human intake tests and protected implementation
     review required before live workflow adoption.
+- entry_id: SHARED-EVAL-TRANSPORT-OPENCODE-ADOPTION-20261125-01
+  timestamp: '2026-11-25T05:50:04Z'
+  tool: OpenCode v2.0.12 (papertrace-verify)
+  model: openai/gpt-6.2-sol
+  purpose: Student-supervised OpenCode read-only verification and bounded adoption of PR #53 artifact transport and offline evaluation planning on main 2b4b5822
+  scope:
+  - scripts/semantic_evidence.py
+  - test/evaluation/evaluator.py
+  - test/evaluation/report-schema.json
+  - docs/ai-use-log.yaml
+  status: supervised-opencode-verified-awaiting-independent-review
+  approvals:
+  - PR #51 exact test anchor c3e40aaa12dbc2ab7b5398ca3a989758a4fb641a approved by Y15BeTa and ziqilin669.
+  - Student (537Lab) authorized this supervised read-only OpenCode verification without relaxing opencode.jsonc write protection on protected verifier and evaluation control paths.
+  verification:
+  - 'OpenCode session ses_deebf886effeUKxtaPghUPqda4 (agent: papertrace-verify, read-only) verified merged HEAD 5eb9df7a12cae94bf6eeb395c079653d1982c564 on main 2b4b5822.'
+  - 'PR #51 approved test/plan files remain byte-identical to c3e40aaa.'
+  - 'pytest test/offline/test_semantic_evidence.py test/offline/test_semantic_changes.py test/offline/test_semantic_execution_proposal.py -> exit 0 (86 passed).'
+  - 'Full-scope ruff, mypy, schema, and ai-log gates all exit 0.'
+  limitations:
+  - opencode.jsonc intentionally denies editing protected scripts/semantic_evidence.py and test/evaluation/*; OpenCode executed in read-only papertrace-verify mode rather than rewriting protected files directly.
+  - Requires independent non-author GitHub approval on final head SHA before squash merge.
