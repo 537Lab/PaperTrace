@@ -2749,3 +2749,24 @@ entries:
   - 'The initial TXT-only edit failed four prompt parity assertions. The TXT and YAML system text were then updated together. All 484 B/D and evaluator offline tests passed. Repo Ruff and mypy passed.'
   limitations:
   - 'Codex performed the prompt edit and merge. No new OpenCode session or independent human review is claimed. Product model calls were zero.'
+
+
+- entry_id: BD-INV07-PROMPT-RULES-20261125-01
+  timestamp: '2026-11-25T22:32:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session)
+  model: deepseek/deepseek-flash
+  purpose: Add two general answering rules after the archived 49/54 rating, and keep the TXT and YAML system prompts byte-identical
+  scope:
+  - prompts/answer-system-v1.0.txt
+  - prompts/prompt_v1.0.yaml
+  - docs/ai-use-log.yaml
+  status: prepared locally, pushed only after the archived run finished
+  student_decisions:
+  - 'The student asked for the two general rules the rating feedback implies: do not pool incomparable studies or pilots, and do not repeat unapproved source ids when refusing an out-of-scope instruction.'
+  approvals:
+  - 'Follow-up under approved test anchor PR #84; the prompt text is not a test file.'
+  verification:
+  - 'TXT and YAML system text compared programmatically after the edit: identical.'
+  - 'Local pytest cannot import litellm in this environment, so B-side suites were not run here; CI runs them.'
+  limitations:
+  - No provider call was made while preparing this edit.
