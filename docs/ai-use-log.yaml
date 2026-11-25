@@ -2477,3 +2477,139 @@ entries:
   limitations:
   - 'No regression suite was rerun for a registry-only edit; the change carries no executable behaviour.'
   - 'The status value is implemented, not verified: independent verification of each fit criterion is still recorded separately.'
+- entry_id: SHARED-REGRESSION-TEST-20261123-01
+  timestamp: '2026-11-23T01:32:48.182945+00:00'
+  tool: OpenCode papertrace-build-D; locally restricted shared-diagnostics test-preparation
+    session
+  model: Self-reported deepseek/deepseek-flash, runtime label DeepSeek V4.1 Flash
+    1017; not independently verified
+  purpose: Prepare and revise bounded advisory full-regression diagnostics tests and
+    an English design; no runner or workflow implementation.
+  scope:
+  - test/offline/test_full_regression_diagnostics.py
+  - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
+  status: test-proposal-awaiting-independent-exact-commit-approval
+  approvals:
+  - The student authorized this exact two-file local test-preparation scope on 2026-11-23
+    HKT. This is not an independent GitHub test approval.
+  verification:
+  - 'Author post-correction: 71 new tests, 39 passed and 32 feature-availability failures,
+    no skips; existing runner/events50 passed.'
+  - 'Author full offline: 389 passed, 36 failed, 2 skipped; paired excluding new file:350
+    passed,4 failed,2 skipped. Four failures are local narrowed-setup contract expectations.'
+  - Target/new Ruff, mypy5, schema and static preflight passed. Full Ruff retains
+    only unchanged scripts/paperqa_smoke.py:37 I001.
+  limitations:
+  - No src, runner, workflow, old tests, ADR, dependencies or permission files authored
+    in this scope. No actual diagnostic collector/qualification/CLI/Actions behavior
+    is claimed behind absent markers.
+  - No exact human GitHub approval yet; PR21 review does not cover these tests. Protected-path
+    implementation, ADR/owner safety review and trusted-base adoption remain separate.
+  - Assistant model/provider identity is self-reported; no session ID, token count,
+    cost or human review is invented. Product offline checks do not measure assistant-provider
+    inference.
+  - No PaperTrace product-model, live/network test, real semantic evaluation or full
+    upstream regression was invoked.
+- entry_id: SHARED-REGRESSION-SUPERVISION-20261123-01
+  timestamp: '2026-11-23T01:32:48.182945+00:00'
+  tool: 'Codex desktop supervisor: independent verification and clean test-publication
+    preparation'
+  model: OpenAI Codex assistant; exact runtime model identity not independently verified
+    in project evidence
+  purpose: Review student-authored tests, independently verify deltas and prepare
+    a clean three-file test proposal. No production source authored.
+  scope:
+  - test/offline/test_full_regression_diagnostics.py
+  - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
+  - docs/ai-use-log.yaml
+  status: local-verified-test-publication-candidate-not-human-github-approval
+  approvals:
+  - The student authorized local supervision and the existing test-preparation scope.
+    No independent test-commit or protected-source approval is claimed.
+  verification:
+  - 'Restricted authoring snapshot: new71=39passed/32availability failures/0skip;
+    existing50=49passed/1sandbox ps PermissionError; full427=388passed/37failed/2skipped;
+    paired356=349passed/5failed/2skipped.'
+  - All356 old full/paired node states match. The71-node difference is exactly the
+    new file. Five paired failures comprise4 local restricted-setup contract assertions
+    plus1 ps sandbox failure. Author ps-pass is retained as a different environment
+    observation.
+  - Independent probes reject previous comment-only/wrong-root/pre-gate-upload/skipped-gate
+    mutants, old outcome-only guards and hidden-file opt-out; corrected explicit guard
+    and hidden opt-in are accepted. These are static checks, not Actions E2E.
+  - Target/new Ruff, mypy5, schema, static preflight and whitespace pass. Full Ruff
+    only unchanged shared I001. Student drafts,331 protected tracked files and both
+    setup byte identities remain unchanged; original index empty.
+  - Clean candidate excludes local setup; exact author bytes preserved. Candidate-specific
+    results are reported separately in the PR validation section.
+  limitations:
+  - AI supervision is not independent student approval, course acceptance or a remote
+    check. Local schema does not prove remote enforcement.
+  - No source/workflow/permissions implementation, model/live/upstream-full run, GitHub
+    Review or merge. No new commit or PR exists at this preparation checkpoint.
+  - Existing AI-use entries are retained with identical parsed values; only these
+    two truthful records are appended. No private host paths or synthetic approvals
+    added.
+- entry_id: SHARED-REGRESSION-PRIVACY-TEST-20261123-01
+  timestamp: '2026-11-23T12:26:15+08:00'
+  tool: OpenCode, papertrace-build-D
+  model: deepseek/deepseek-flash (API-reported), max
+  purpose: Extend the shared diagnostic artifact privacy negatives with portable packaging
+    faults
+  scope:
+  - test/offline/test_full_regression_diagnostics.py
+  - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
+  status: local test revision for PR 22
+  approvals:
+  - The supervising student authorized local test and design preparation.
+  verification:
+  - The final authoring prompt and session were retained privately. The supervisor
+    scoped the synthetic fault and independently replayed the candidate.
+  limitations:
+  - Verification used a local offline interpreter. Collector behavior and native Windows
+    execution remain pending.
+- entry_id: SHARED-REGRESSION-PRIVACY-CANDIDATE-20261123-01
+  timestamp: '2026-11-23T13:34:06+08:00'
+  tool: OpenAI Codex desktop
+  model: GPT-6 (session-reported family)
+  purpose: Verify and package the PR 22 privacy test revision
+  scope:
+  - test/offline/test_full_regression_diagnostics.py
+  - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
+  - docs/ai-use-log.yaml
+  status: local test revision candidate
+  approvals: []
+  verification:
+  - The diagnostics file has 39 passing cases and 37 missing-collector availability
+    failures. All 427 prior node outcomes match the paired replay. Configured Ruff
+    passed for the test file.
+  limitations:
+  - All five newly added cases stop at the missing collector prerequisite. The runner
+    and workflow implementation remain a separate stage.
+- entry_id: SHARED-CI-DIAGNOSTICS-INHERIT-20261125-E-01
+  timestamp: '2026-11-25T06:57:42.448147+00:00'
+  tool: Codex Desktop
+  model: Codex runtime; model identifier not independently attested
+  purpose: Take ownership of CI triage and inherit unchanged historical PR22 diagnostic tests onto current
+    main for independent approval.
+  scope:
+  - test/offline/test_full_regression_diagnostics.py
+  - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
+  - docs/team/designs/shared/20261125-ci-closeout-inheritance.md
+  - docs/ai-use-log.yaml
+  status: test-only-proposal-awaiting-new-non-implementer-approval
+  approvals:
+  - The student explicitly assigned shared CI ownership and instructed completion. Earlier PR22 approvals
+    by the future implementation owner are not used as independent authorization.
+  verification:
+  - Read completed main run 45559243816 and retained its actual gate JSON and cleaned log.
+  - Found 12 conflicting initialization/runtime dependency pins; no install or lock changes made.
+  - Original PR22 test and plan Git blobs retained; current main source, workflow, original tests and
+    configurations unchanged.
+  limitations:
+  - No runner or workflow implementation, failure suppression, environment mixing, frozen upstream edit,
+    credential read or live call.
+  - Historical OpenCode-authored test preparation is reused with truthful provenance; this synchronization
+    and triage use Codex, not a newly claimed OpenCode generation session.
+  - Full regression remains failed. Local Windows verification is not the supported macOS/Python 3.14.6
+    CI runtime.
