@@ -16,7 +16,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-A-02
   type: functional
   owner: A
@@ -30,7 +30,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-B-01
   type: functional
   owner: B
@@ -45,7 +45,7 @@ requirements:
   sources:
   - paperqa:src/paperqa/docs.py:156-169,492-500
   - paperqa:src/paperqa/types.py:238-316
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-B-02
   type: functional
   owner: B
@@ -59,7 +59,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-C-01
   type: functional
   owner: C
@@ -73,7 +73,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-C-02
   type: functional
   owner: C
@@ -87,7 +87,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-D-01
   type: functional
   owner: D
@@ -144,7 +144,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-E-02
   type: functional
   owner: E
@@ -158,7 +158,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: INV-01
   type: invariant
   owner: D
@@ -186,7 +186,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: INV-03
   type: invariant
   owner: C
@@ -200,7 +200,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: INV-04
   type: invariant
   owner: D
@@ -228,7 +228,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: INV-06
   type: invariant
   owner: governance
@@ -270,7 +270,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: QA-01
   type: quality
   owner: all
@@ -284,7 +284,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: PERF-01
   type: performance
   owner: all
@@ -298,7 +298,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: COST-01
   type: cost
   owner: all

@@ -2478,6 +2478,78 @@ entries:
   - 'No regression suite was rerun for a registry-only edit; the change carries no executable behaviour.'
   - 'The status value is implemented, not verified: independent verification of each fit criterion is still recorded separately.'
 
+- entry_id: REQ-STATUS-20261125-01
+  timestamp: '2026-11-25T15:28:13+08:00'
+  tool: OpenAI Codex (registry-only edit requested by the user)
+  model: GPT-6
+  purpose: Record the implementation status of 14 A-, B-, C-, E-owned and shared requirements from merged main evidence
+  scope:
+  - docs/req/requirements.yaml
+  - docs/ai-use-log.yaml
+  status: registry statuses updated from merged evidence
+  student_decisions:
+  - The user requested the 14 status updates and specified which rows must remain planned.
+  approvals:
+  - 'Evidence: The user identified merged main d893cefe as containing the implementations and offline tests for FR-A-01, FR-A-02, INV-02, FR-B-01, FR-B-02, INV-08, FR-C-01, FR-C-02, INV-03, FR-E-01, FR-E-02, INV-05, QA-01 and PERF-01.'
+  verification:
+  - Only the 14 listed rows change from planned to implemented. The five implemented D rows retain their status.
+  - INV-07, INV-06, COST-01, SEC-01, GOV-01, GOV-02, GOV-03 and GOV-04 stay planned while live evaluation, full verification or submission-package closeout evidence remains pending.
+  limitations:
+  - 'Verification for this registry-only edit is limited to the schema, AI-use log and semantic gates and the Git diff.'
+  - 'Independent verification of each fit criterion is recorded separately.'
+- entry_id: "SHARED-EVAL-CAPTURE-TEST-DRAFT-20261125-01"
+  timestamp: "2026-11-25T05:18:01+00:00"
+  tool: "Codex desktop"
+  model: "not retrievable"
+  purpose: "Prepare offline tests for using the checked B request capture as evaluator evidence."
+  scope: ["test/offline/test_semantic_capture_proposal.py", "docs/team/designs/shared-evaluation/request-capture-plan-v1.md", "docs/ai-use-log.yaml"]
+  status: "preparation-assistance-not-human-approval"
+  student_decisions: ["The supervising student instructed Codex to proceed with the previously presented offline test plan."]
+  approvals: []
+  verification: ["On main, all 19 cases ran, with 3 verifier controls passing and 16 expected failures at the missing evaluator file.", "In separate snapshots with the evaluator files from PR #53 and PR #58, each run had 3 passing controls and 16 expected failures at the missing collect_attempt entry point.", "Scoped Ruff passed. The tests use synthetic fixtures and issue zero product model calls."]
+  limitations: ["Codex prepared this draft. A supervised OpenCode session and independent test approval are pending."]
+- entry_id: SHARED-EVAL-CAPTURE-TEST-REVISION-20261125-01
+  timestamp: '2026-11-25T14:12:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session); no OpenCode role may edit this path
+  model: deepseek/deepseek-flash
+  purpose: Revise the checked-request capture test proposal for the two P1 contract mismatches raised in review
+  scope:
+  - test/offline/test_semantic_capture_proposal.py
+  - docs/ai-use-log.yaml
+  status: revised test proposal awaiting re-review
+  student_decisions:
+  - The student asked the supervising runner to apply the two P1 corrections after confirming no OpenCode role holds write access to this shared-evaluation test path.
+  approvals:
+  - 'The two P1 items come from reviews by ziqilin669 and ldk13856478627-cell on head afa6a2b3.'
+  verification:
+  - 'The branch now merges main 2b4b5822, so the reviewer-requested real D contracts exist in the tree.'
+  - 'Targeted run: 3 control cases pass and 17 cases fail at the pending evaluator capture entry point, which is the expected RED state.'
+  - Scoped Ruff passed.
+  limitations:
+  - 'The test double now uses the real AnswerGenerationOutcome, AnswerDraft and GenerationCallResult models instead of simple namespaces.'
+  - 'No OpenCode role may edit test/offline/test_semantic_capture_proposal.py, so this revision was not produced by a supervised OpenCode session and must be reviewed as a runner-authored edit.'
+  - No product model calls were made.
+- entry_id: SHARED-EVAL-CAPTURE-IMPL-20261125-01
+  timestamp: '2026-11-25T15:15:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session); no OpenCode role may edit test/evaluation
+  model: deepseek/deepseek-flash
+  purpose: Implement the approved request-capture intake so the fixed-set evaluator can assemble real attempt rows
+  scope:
+  - test/evaluation/evaluator.py
+  - docs/ai-use-log.yaml
+  status: implementation of the approved tests; awaiting independent source review
+  student_decisions:
+  - The student asked the supervising runner to implement the approved capture tests after the exact test head ce9b716 was independently approved.
+  approvals:
+  - 'Test approval PR: #73, approved test head ce9b716. The approved tests and plan are carried forward unchanged.'
+  verification:
+  - 'test/offline/test_semantic_capture_proposal.py: 25 passed, covering all 17 previously RED cases plus the eight controls.'
+  - The request row is assembled only from the observer callback, so an expected envelope cannot produce a row.
+  - Invalid bindings raise before the driver runs; rejected capture raises inside the observer before any model call.
+  limitations:
+  - 'No OpenCode role holds write access to test/evaluation, so this implementation was written by the supervising runner and must be reviewed as runner-authored work.'
+  - 'No product model call was made; the real 18-run evaluation remains a separate authorized run.'
+
 - entry_id: BD-INV07-COMPACTION-TEST-20261125-01
   timestamp: '2026-11-25T14:11:15+08:00'
   tool: Codex desktop
