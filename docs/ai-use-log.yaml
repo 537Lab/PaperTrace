@@ -2586,3 +2586,30 @@ entries:
   limitations:
   - All five newly added cases stop at the missing collector prerequisite. The runner
     and workflow implementation remain a separate stage.
+- entry_id: SHARED-CI-DIAGNOSTICS-INHERIT-20261125-E-01
+  timestamp: '2026-11-25T06:57:42.448147+00:00'
+  tool: Codex Desktop
+  model: Codex runtime; model identifier not independently attested
+  purpose: Take ownership of CI triage and inherit unchanged historical PR22 diagnostic tests onto current
+    main for independent approval.
+  scope:
+  - test/offline/test_full_regression_diagnostics.py
+  - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
+  - docs/team/designs/shared/20261125-ci-closeout-inheritance.md
+  - docs/ai-use-log.yaml
+  status: test-only-proposal-awaiting-new-non-implementer-approval
+  approvals:
+  - The student explicitly assigned shared CI ownership and instructed completion. Earlier PR22 approvals
+    by the future implementation owner are not used as independent authorization.
+  verification:
+  - Read completed main run 45559243816 and retained its actual gate JSON and cleaned log.
+  - Found 12 conflicting initialization/runtime dependency pins; no install or lock changes made.
+  - Original PR22 test and plan Git blobs retained; current main source, workflow, original tests and
+    configurations unchanged.
+  limitations:
+  - No runner or workflow implementation, failure suppression, environment mixing, frozen upstream edit,
+    credential read or live call.
+  - Historical OpenCode-authored test preparation is reused with truthful provenance; this synchronization
+    and triage use Codex, not a newly claimed OpenCode generation session.
+  - Full regression remains failed. Local Windows verification is not the supported macOS/Python 3.14.6
+    CI runtime.
