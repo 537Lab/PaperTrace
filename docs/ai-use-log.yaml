@@ -1193,6 +1193,423 @@ entries:
   - Complete regression is not confirmed passing. No real model evaluation, final
     publication transaction or full real B/C/D E2E acceptance claimed. Independent
     source review remains required.
+- entry_id: B-TEST-SCOPE-CLEANUP-20261122-01
+  timestamp: '2026-11-22T10:19:14+08:00'
+  tool: Codex desktop
+  model: session model identifier not independently verified
+  purpose: 按PR9独立审查结果清理测试提案文件范围并澄清测试函数与参数化用例计数
+  scope:
+  - artifacts/verification/module-B-b0-blocked-2026-11-19.json
+  - artifacts/verification/module-B-b0-blocked-2026-11-19.md
+  - artifacts/verification/module-B-b1-opencode-blocked-2026-11-19.md
+  - artifacts/verification/module-B-paperqa-smoke-recovered-2026-11-19.json
+  - artifacts/verification/module-B-pr12-review-test-remediation-2026-11-21.md
+  - artifacts/verification/module-B-recovery-and-pr5-review-2026-11-19.md
+  - docs/team/designs/module-B/plan-v2.1.md
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-cleaned-awaiting-independent-review
+  approvals:
+  - 学生转述PR9独立审查结果并明确要求据此修改、验证及推进下一步
+  verification:
+  - 不修改test/offline/test_retrieval.py或四个synthetic fixtures
+  - 删除门禁不允许的六个artifacts/verification文件
+  - 明确41个测试函数、61个collected cases及最新8个函数展开为11个用例
+  limitations:
+  - 本次不构成对新精确提交的独立Approve
+  - 仓库规则禁止代理push或merge，最终提交仍须由学生推送并由非作者队友审核
+- entry_id: B-TEST-20261120-01
+  timestamp: '2026-11-20T22:45:44+08:00'
+  tool: OpenCode agent papertrace-build-B with Codex Desktop orchestration and verification
+  model: cityu/CS5351/DeepSeek-V4-Flash for OpenCode sessions; Codex runtime model
+    not independently attested
+  purpose: 按已批准的模块 B v2.1 计划准备离线 RED 测试、合成 fixtures、测试设计和真实验证记录，不实现业务源码
+  scope:
+  - test/offline/test_retrieval.py
+  - test/fixtures/retrieval
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - artifacts/verification/module-B-b1-opencode-blocked-2026-11-19.md
+  - docs/ai-use-log.yaml
+  status: test-preparation-awaiting-non-author-approval
+  approvals:
+  - 学生于 2026-11-20 明确授权按已批准 Plan v2.1 进行受控 OpenCode B1 测试准备，并逐次授权受限会话；这些授权不是非作者对精确测试提交的
+    GitHub Approve
+  - 学生授权创建本地提交、单次推送并创建 PR
+  verification:
+  - OpenCode 会话 ses_e0b52e19cffeKNNWGvabD35xQ7 创建四个 synthetic fixtures；会话 ses_e075ae192ffeqS0IgLofyGjpFw
+    创建测试并修正 fake 动态加载登记
+  - OpenCode 会话 ses_e0745d58fffei0NNwkEjinDmtc 回写实际 B1 API 提案、RED 结果和未批准边界；Codex 随后仅修正四处事实一致性表述
+  - 精确提交 4e88d04d7c35b92cf665e1f5be025e9d5584a1db 的模块测试收集 48 项，3 passed、45 个预期 RED，失败均明确指向
+    papertrace.retrieval.gateway 尚未实现
+  - schema gate 通过；Ruff 0.17.5 检查两个新增 Python 文件通过；全仓 Ruff 唯一报错为本 PR 未修改的 scripts/paperqa_smoke.py:37
+    I001
+  - test/offline 全量为 353 passed、51 failed，其中 45 个是 B1 预期 RED，另外 6 个既有或环境失败没有通过修改 B
+    测试掩盖
+  - PR
+  limitations:
+  - CityU provider 多次返回 reasoning_text HTTP 400；没有切换 provider、没有使用 --auto，也没有自动循环重试
+  - 恢复设计会话做事实更正时，本机 opencode 在模型调用前拒绝 V2 权限配置且 opencode2 不存在；因此由 Codex 做四处机械文档修正，没有发生新的模型请求
+  - 批准 runtime 缺少 Ruff 和 mypy 模块，未下载依赖或修改锁；补充 Ruff 来自已有只读本地环境
+  - 未创建 src/papertrace/retrieval，未修改共享契约、其他模块、依赖、CI 或冻结上游；B2 仍为 NOT_STARTED
+  - 本条披露会产生新的 PR head；必须由未参与 B1 测试编写的学生重新审核并批准新的精确提交后才能进入 B2
+- entry_id: B-TEST-20261121-02
+  timestamp: '2026-11-21T18:41:15+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按 PR
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/team/designs/module-B/plan-v2.1.md
+  - artifacts/verification/module-B-pr12-review-test-remediation-2026-11-21.md
+  - docs/ai-use-log.yaml
+  status: test-remediation-awaiting-non-author-approval
+  approvals:
+  - PR
+  - 旧 PR
+  verification:
+  - 新增两项定向测试在无 B2 源码的测试分支得到 2 failed、48 deselected，失败明确指向 gateway 尚未实现
+  - Python 语法编译通过；Ruff 检查 test/offline/test_retrieval.py 通过；git diff --check 通过
+  limitations:
+  - 本轮尚未修改任何 src 文件，也未声称真实 PaperQA2 bridge 已完成
+  - 新测试必须由未参与测试编写的同学在 PR
+- entry_id: B-TEST-20261122-03
+  timestamp: '2026-11-22T09:10:55+08:00'
+  tool: Codex Desktop review-regression preparation and local RED verification
+  model: Codex runtime model not independently attested
+  purpose: 将 PR
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/ai-use-log.yaml
+  status: test-remediation-awaiting-non-author-approval
+  approvals:
+  - 监督学生于 2026-11-22 要求继续完成前面未完成的 B 模块工作；这授权本轮测试准备，不是对新测试 head 的独立 Approve、实现批准或合并授权
+  - PR
+  verification:
+  - Ruff 0.17.5 检查 test/offline/test_retrieval.py 通过
+  - 新增参数化用例共 11 项，对 PR
+  - 失败分别覆盖 upstream Context.id/summary 改变 identity、serializer 后 sent 不实、model/output/input
+    policy 未绑定，以及 concrete timeout/parse/stage 分类丢失
+  limitations:
+  - 本轮没有修改 src、shared contracts、CI、依赖、锁、冻结上游、其他模块或远端权限
+  - 组合 RED 使用现有本地 pytest 且未加载 pytest-socket；全部 collaborator 为 synthetic recorder，没有真实网络、provider、凭据或论文
+  - PR
+  - 不合并 PR
+- entry_id: B-SRC-20261122-01
+  timestamp: '2026-11-22T11:19:59+08:00'
+  tool: OpenCode single-turn patch generation followed by Codex Desktop application,
+    review remediation, and offline verification
+  model: cityu/CS5351/DeepSeek-V4-Flash for the previously authorized source patch;
+    Codex runtime model not independently attested
+  purpose: 基于已独立批准的 PR
+  scope:
+  - src/papertrace/retrieval/__init__.py
+  - src/papertrace/retrieval/gateway.py
+  - src/papertrace/retrieval/service.py
+  - src/papertrace/retrieval/view.py
+  - artifacts/verification/module-B-b2-implementation-2026-11-22.md
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-human-push-and-independent-review
+  approvals:
+  - PR
+  - 用户确认 PR
+  verification:
+  - test/offline/test_retrieval.py 使用禁用插件自动加载的现有解释器运行，61 passed；未调用真实模型、provider 或网络
+  - Ruff 检查 src/papertrace/retrieval 通过；mypy 检查 src/papertrace 9 个文件通过；schema gate
+    27 项要求通过；compileall 与 git diff --check 通过
+  - 修复覆盖固定来源定位生成稳定 chunk identity、最终 serializer 实际发送集合、provider/model 与输出上限绑定、最终输入预算拒绝，以及
+    aadd/aget/source decode 的阶段和重试分类
+  limitations:
+  - 全量 offline collection 因现有解释器缺少 pytest_socket 在 test_initialization_edges.py 停止；未下载依赖、未跳过或放宽测试来冒充通过
+  - 全仓 Ruff 唯一仍报既有 scripts/paperqa_smoke.py:37 I001；本轮未修改该无关文件
+  - 没有修改测试、fixtures、共享 contracts、其他模块、依赖、锁、CI、冻结上游或远端权限；没有代理 push 或 merge
+  - 后续须由用户推送本地实现分支，创建正文含 Test approval PR: null
+- entry_id: B-TEST-20261123-SENT
+  timestamp: '2026-11-23T11:26:39+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为 PR
+  scope:
+  - test/offline/test_retrieval.py
+  - test/fixtures/retrieval/fake_adapter.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户要求推进 B 测试、创建 PR
+  - 用户提供的复核反馈称 8a4d5004 的测试设计无新增修改意见，正式批准待披露补齐后复核
+  verification:
+  - Codex 在禁用插件自动加载并启用 pytest-socket 的环境中运行 B 离线测试，62 项通过、3 项预期失败
+  - 三项预期失败覆盖混入未知 ID、混入已批准但未选中的 ID，以及全部越界
+  - 引用回归通过受控适配器与 fake 上游验证 b1 映射，以及 b999 在原文和未知引用诊断中的保留
+  limitations:
+  - 使用合成数据和 fake 上游，真实模型调用为零
+  - 本次披露提交仅追加日志，源码实现待独立审核批准后推进
+- entry_id: B-SRC-20261123-SENT
+  timestamp: '2026-11-23T12:00:26+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 实现已获独立批准的 B 生成端口越界 sent 拒绝契约
+  scope:
+  - src/papertrace/retrieval/service.py
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-independent-review
+  approvals:
+  - GitHub 审核人 ziqilin669 正式批准 PR 23 的精确测试提交 8411f8b2a74e71b1c4fe93ab5f4f5a453664f944
+  - 用户在获得测试审批后要求继续实现
+  verification:
+  - B 模块离线测试 65 项通过，包含三项原预期失败
+  - B 目录和对应测试的 Ruff 检查通过，src/papertrace 的 mypy 检查通过
+  limitations:
+  - 本轮未修改获批测试、共享契约或 D 模块
+  - 使用合成数据，真实模型调用为零，本轮未重跑完整团队回归
+- entry_id: B-TEST-20261123-ACCOUNTING
+  timestamp: '2026-11-23T13:30:00+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按用户已确认计划准备 B 生成调用账目四项离线测试
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/generation-accounting-plan.txt
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户明确确认本轮调用账目计划，并要求提交可审核测试
+  verification:
+  - 在 B 越界 sent 修复源码上运行，65 项通过、4 项预期失败；Ruff 通过
+  - fake 回答模型分别验证未调用、未知、调用一次、调用后异常的账目要求
+  limitations:
+  - 本轮仅准备测试与计划，未实现调用账目源码
+  - 真实产品模型调用为零；测试基于尚待实现审查的 PR 25
+- entry_id: B-TEST-20261123-ACCOUNTING-ZERO-CONTROL
+  timestamp: '2026-11-23T13:42:27+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 根据 PR 27 的审查反馈补充真实 B 适配器进入 aquery 后的零次回答模型调用对照
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/generation-accounting-plan.txt
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户提供队友对 10ef7a82 的审查反馈，要求补对照后复核
+  verification:
+  - aquery 执行一次，独立 call_single 探针记录零次；新增用例在缺少 accounting 字段处按预期失败
+  - B 离线测试 65 项通过、5 项预期失败；Ruff 与 git diff --check 通过
+  limitations:
+  - 使用真实 B 适配器和合成上游，真实产品模型调用为零
+  - 仅追加测试、计划与披露，等待本次测试提交的正式独立审批
+- entry_id: B-OPENCODE-20261123-PR25
+  timestamp: '2026-11-23T18:45:45+08:00'
+  tool: OpenCode v2.0.12 + Codex Desktop supervisor
+  model: cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 实现获批的越界 sent 拒绝
+  scope:
+  - src/papertrace/retrieval/service.py
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-independent-review
+  approvals:
+  - 用户明确授权该模型、所需仓库上下文和两个临时工作副本内的 B 源码修改。
+  - 沿用本会话此前已核实的精确测试批准 PR23 / 8411f8b2；本轮未新增真人批准。
+  verification:
+  - B 离线测试 65 项通过；模块 Ruff 和 mypy 通过。
+  - 获批测试未修改。
+  limitations:
+  - OpenCode 会话 ses_df871cff5ffeqg0GEOYJctn7Vf
+  - 多轮尝试因 reasoning_text HTTP400 中断，改用同模型附件单轮输出补丁。
+  - Codex 将新增字段放在既有字段之后以保留位置参数兼容性，并将 reported sent 只物化一次。
+  - 流以 ECONNRESET 结束，但输出有完整补丁；Codex 提取、检查并应用补丁。
+  - 开发助手模型实际已调用；产品模型与论文质量评估未运行。
+  - 全量离线回归 414 passed、7 failed，退出码 1。失败节点涉及 contracts、full_regression、gates、opencode_workflow、semantic_evidence，未判定其因果归属。
+  - 对获批测试提交重放这 7 个失败节点，7 项均复现；证据与全量回归在相同本地验证环境运行。
+  - 复审准备时将越界校验放在引用读取前，阻断结果仅返回诊断 ID；核对最终源码 blob 与既有 PR 25 源码完全相同。
+  - 远端门禁、本次实现独立人审和最终合并待完成。
+- entry_id: B-OPENCODE-20261123-PR27
+  timestamp: '2026-11-23T18:45:45+08:00'
+  tool: OpenCode v2.0.12 + Codex Desktop supervisor
+  model: cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 实现获批的回答模型调用账目
+  scope:
+  - src/papertrace/retrieval/service.py
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-independent-review
+  approvals:
+  - 用户明确授权该模型、所需仓库上下文和两个临时工作副本内的 B 源码修改。
+  - 沿用本会话此前已核实的精确测试批准 PR27 / 0d08f14f；本轮未新增真人批准。
+  verification:
+  - B 离线测试 70 项通过；模块 Ruff 和 mypy 通过。
+  - 获批测试未修改。
+  limitations:
+  - OpenCode 会话 ses_df858eafaffem3Ps1cja7T2b9e
+  - 多轮尝试因 reasoning_text HTTP400 中断，改用同模型附件单轮输出补丁。
+  - Codex 按唯一旧文本匹配应用模型补丁，修正无上下文 hunk 的行号问题。
+  - Codex 修正静态规则、移除静默恢复失败，并让可观测模型在私有副本上计数，避免修改复用模型。
+  - 开发助手模型实际已调用；产品模型与论文质量评估未运行。
+  - 全量离线回归 419 passed、7 failed，退出码 1。失败节点涉及 contracts、full_regression、gates、opencode_workflow、semantic_evidence，未判定其因果归属。
+  - 对获批测试提交重放这 7 个失败节点，7 项均复现；证据与全量回归在相同本地验证环境运行。
+  - 远端门禁、本次实现独立人审和最终合并待完成。
+  - 在 f74c2e8f 获独立批准后复用已披露实现，计划内容及获批测试保持一致。
+- entry_id: B-TEST-20261124-TXT-INGEST
+  timestamp: '2026-11-24T01:34:00+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model identifier not independently attested
+  purpose: 按 A 在 Issue 29 确认的首轮 UTF-8 TXT 契约准备 B 摄取回执测试提案
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/a-b-txt-ingest-receipt-plan.md
+  - docs/ai-use-log.yaml
+  status: local-test-proposal-awaiting-independent-approval
+  approvals:
+  - A 负责人在 Issue 29 评论 7108692559 书面确认请求、回执和 TXT 首轮范围。
+  - 测试提案待非作者对精确提交独立批准。
+  verification:
+  - 使用初始化锁定依赖和 pytest-socket，70 项既有 B 用例通过，新增 7 项均在 Gateway.ingest 缺失处按预期失败。
+  - 测试 Ruff 和工作树差异检查通过。
+  limitations:
+  - Codex 起草测试和计划，本次未发起 OpenCode 或产品模型请求。
+  - 这批结果只证明测试收集和入口缺失，新增行为断言尚未执行。
+- entry_id: B-TEST-20261124-TXT-INGEST-REVIEW
+  timestamp: '2026-11-24T10:30:42+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model identifier not independently attested
+  purpose: 补齐 PR 47 独立复审要求的空 metadata、大写 TXT 和失败诊断脱敏测试
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/a-b-txt-ingest-receipt-plan.md
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 537Lab 在 PR 47 的 review 6032581502 对 0c1e8475 提出修改要求。
+  verification:
+  - 锁定环境 70 项既有 B 用例通过，8 项新增用例均在 Gateway.ingest 缺失处预期失败。
+  - 临时测试替身通过 8 项新用例，向回执、标准输出、标准错误和日志逐一注入合成路径时，均触发脱敏断言。
+  - Ruff、Schema、AI 使用披露和差异检查通过。
+  limitations:
+  - 临时替身不属于提交，生产摄取端口尚未实现。本轮未调用 OpenCode 或产品模型。
+- entry_id: B-OPENCODE-20261125-TXT-INGEST
+  timestamp: 2026-11-25T00:19:04+0800
+  tool: OpenCode v2.0.12 and Codex Desktop
+  model: cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 实现已获批的 A→B UTF-8 TXT 摄取预检回执
+  scope:
+  - src/papertrace/retrieval/gateway.py
+  - docs/ai-use-log.yaml
+  status: implementation-local-awaiting-independent-review
+  approvals:
+  - GitHub 非作者 537Lab 正式批准 PR 47 精确提交 886e4d6578a1140b162f3c8506737dbfe6295af9
+  - 用户明确授权本轮开发模型及
+  verification:
+  - B 定向 78 项通过，合成材料 A→B CorpusService 接线复跑 1 项通过
+  - B Ruff、src/papertrace mypy、git diff 检查通过
+  - 全量离线 428 通过、6 失败，失败节点与共有 B 基线相同
+  limitations:
+  - OpenCode 会话 ses_df1b745c3ffecES4mT8qc7xdX6，EOS 期间 ECONNRESET，已输出完整补丁
+  - Codex 应用补丁，收紧文件名校验使其与共享文档 basename 约束一致，并运行离线验证
+  - 保留获批测试不变，真实产品模型调用为零
+- entry_id: B-TEST-20261124-QUAL02-ANSWER-REQUEST
+  timestamp: '2026-11-24T22:28:08+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为 B 侧最终回答请求序列化准备可独立审阅的 QUAL-02 离线测试
+  scope:
+  - test/offline/test_b_answer_request.py
+  - docs/team/designs/module-B/qual02-answer-request-test-plan.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户要求推进 B 侧可完成的工作，独立测试审批仍待队友在 GitHub 完成
+  - D 侧确认版本化 system 提示词路径及正文来源
+  verification:
+  - 以 PR 34 的 a9440e6767e9ba90642dbe5cf2bb46a526125540 为基线，B 定向离线复跑 73 项通过、4 项预期失败
+  - 三项在 Gate 4 的结构化 user 正文校验失败，一项确认版本化 system 文件缺失
+  - 新增测试通过 Ruff，真实产品模型调用为零
+  limitations:
+  - 评估版本的固定集 ID 绑定另由 B、D 和 evaluator 负责人协调
+  - 本次为 Codex 准备的测试提案，未修改源码或提示词
+- entry_id: B-TEST-20261124-QUAL02-SYSTEM-BINDING
+  timestamp: 2026-11-24T23:15:53+0800
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按 PR 57 的独立复审意见加固版本化 system 提示词绑定
+  scope:
+  - test/offline/test_b_answer_request.py
+  - docs/team/designs/module-B/qual02-answer-request-test-plan.md
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 队友对 df6bea5293b04113315b5ebcd91bb6dfa1f38e5a 提出 system 绑定修改意见
+  verification:
+  - 保留原测试节点。定向复跑 73 通过、4 项预期失败。Ruff 通过。
+  - 三组正负对照验证错误的捕获 system 均被拒绝；改写 TXT 或删除末尾换行均被拒绝。
+  limitations:
+  - 本次只修改测试和记录，真实模型调用为零。新 head 需独立复审。
+- entry_id: B-CODEX-20261125-QUAL02-IMPLEMENTATION-CANDIDATE
+  timestamp: 2026-11-25T00:49:12+0800
+  tool: Codex Desktop and OpenCode v2.0.12
+  model: Codex runtime model not independently attested; OpenCode used cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 为已获测试批准的 B→D JSON 出站路径验证本地实现候选
+  scope:
+  - src/papertrace/retrieval/service.py
+  - prompts/answer-system-v1.0.txt
+  - docs/ai-use-log.yaml
+  status: supervised-local-implementation-candidate
+  approvals:
+  - GitHub 非作者 537Lab 和 ziqilin669 对 PR 57 精确提交 70b16bb14ad24220985a2f562197cd56c1c71785
+    给出 Approve
+  - 用户明确授权两条 B 切片的本轮开发模型及源码范围
+  verification:
+  - B 定向 77 项通过，累计联调快照 B/D 定向 206 项通过
+  - 合成 QUAL-02 真正经过 D、B 与 PaperQA2，正序、逆序和裁剪均进入回答模型替身一次，空集零次
+  - B Ruff、src/papertrace mypy、schema 和 git diff 检查通过
+  - 全量离线 427 通过、6 失败，现存失败节点与基线一致
+  limitations:
+  - OpenCode 源码构建尝试因审批证据未被角色接受、权限中断和供应商 reasoning_text 错误未生成可用源码补丁。此候选源码由 Codex 编写，不能记为
+    OpenCode 生成的源码实现。
+  - OpenCode Verify 会话 ses_df18bb603ffeNUQ7AaNrsoumYG 建议在模型边界校验实际消息。Codex 落地此建议，经临时负对照验证
+    system 或 user 被替换时报拒绝且零模型调用。
+  - 保留获批测试和计划。固定评估集 ID 映射仍需 B/D/evaluator 协调，实际捕获使用规范 ID。
+  - 校验使用替身，真实产品模型调用为零，候选仅保存在本地。
+- entry_id: B-TEST-20261125-FIXED-EVALUATION-BOUNDARY
+  timestamp: 2026-11-25T02:57:43+0800
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为已对齐的固定出站 ID 和原始消息捕获准备 B 测试候选
+  scope:
+  - test/offline/test_b_evaluation_boundary.py
+  - docs/team/designs/module-B/fixed-evaluation-boundary-test-plan.md
+  - docs/ai-use-log.yaml
+  status: local-evaluation-interface-test-proposal
+  approvals:
+  - 用户要求继续完成 B 侧可独立推进工作，团队已确认固定出站 ID 和捕获口径
+  - 测试提交尚待接口负责人和独立复审者确认
+  verification:
+  - B 定向复跑 86 通过、14 项预期入口缺失失败，新增文件 Ruff 通过
+  - 全量离线复跑 436 通过、20 失败，新增失败仅为 14 项预期入口缺失
+  limitations:
+  - 只新增测试、设计和记录。真实产品模型调用为零。共享 evaluator 尚未合体。
+- entry_id: B-OPENCODE-20261125-EVALUATION-BOUNDARY
+  timestamp: 2026-11-25T10:52:53+0800
+  tool: OpenCode v2.0.12 and Codex Desktop
+  model: cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 实现获批的固定证据 ID、出站消息观察器和规范引用回映射接口
+  scope:
+  - src/papertrace/retrieval/gateway.py
+  - src/papertrace/retrieval/service.py
+  - docs/ai-use-log.yaml
+  status: implementation-awaiting-independent-source-review
+  approvals:
+  - 537Lab 正式批准测试 PR 61 的精准 head 1d0263b208c28cba7a5c20e719540d78f8cc2c15，审查记录 6045847733
+  - 用户明确授权本次 OpenCode 模型及
+  verification:
+  - B 定向 100 项通过，A/B/D 累计联调快照定向 230 项通过
+  - QUAL-02 三组固定 ID 实际消息通过现有请求校验，D 引用回到规范 ID且账目为 1。空集 B 和模型入口均为 0，D 账目对象为空。
+  - 六种无效绑定在模型入口前拒绝，裁剪后的无效引用由 D 拒绝并保留一次调用账目
+  - B Ruff、mypy、schema 和 Git diff 检查通过，全量离线 450 通过、6 失败，六个失败节点与原 B 基线一致
+  limitations:
+  - OpenCode 源码会话 ses_def6b05e4ffeQXo25V068VC687 生成 Gateway 补丁。Codex 按原始输出补齐 diff
+    上下文并应用，编写 service 的绑定校验、组装与捕获逻辑，运行离线复验。
+  - 前两次 OpenCode 构建因复合 shell 权限中断，原始尝试另有记录
+  - 保留精确获批测试、Gate 4、数据集和提示词。未调用真实产品模型。共享 evaluator 的实际接线仍待累计集成。
 - entry_id: SHARED-CI-GATE5-IMPORTLIB-TEST-20261125-01
   timestamp: '2026-11-25T04:19:48+00:00'
   tool: Codex

@@ -1,0 +1,11 @@
+SYNTHETIC SOURCE A — not a real paper, no scientific claim.
+
+This first synthetic paragraph exists only to exercise line-range retrieval
+locators. Alpha statement one: the widget expands by five units under test
+conditions. Alpha statement two: the widget contracts by two units when cold.
+This closing synthetic sentence is filler so the paragraph has a stable end.
+
+A second synthetic paragraph follows one blank line after the first. Beta
+statement one: the gadget samples its input every ten seconds. Beta statement
+two: the gadget reports a synthetic mean of zero. This text contains no real
+finding, citation, patient datum, or empirical measurement of any kind.
