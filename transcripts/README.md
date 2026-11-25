@@ -1,5 +1,5 @@
-# 真实OpenCode会话（D5待成员完成）
+# OpenCode transcript evidence
 
-这里目前没有任何学生会话。本轮初始化记录在AI-use log与验收文件，不能改名成学生transcript。按较充分口径，每位功能负责人保留一次完整raw OpenCode session，并在副本标注真实学生中断/重定向/批准/拒绝与理由；raw与annotated分开，hash互相索引。第一次实现前保存提示词、测试批准版本与计划批准时点；不要事后重建为“逐字原记录”。
+- LIN ZIQI (60195853), Module E: [English annotated index](60195853-LIN_ZIQI.md), with complete previously redacted native session exports and their manifest under native/60195853/.
 
-课程最终文件名中的真实姓名/学号由学生本人提供，不在共享初始化文件里预填。Project p2概述五份与p6 D5一份/from scratch的口径，仍需教师确认；保存五份完整原始记录可避免遗漏个人责任，但不能擅称教师已确认。
+The contributor explicitly approved retaining original-language JSON with English annotations. Do not replace full native evidence with a summary, fabricate user interventions, or count Codex recording helpers as new OpenCode implementation. The existing redactions and original/export hashes remain visible. Other members must supply their own confirmed full-session evidence and annotations; absence here is not evidence that their work never occurred.

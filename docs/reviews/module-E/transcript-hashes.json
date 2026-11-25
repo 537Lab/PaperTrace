@@ -1,0 +1,27 @@
+[
+  {
+    "path": "transcripts/60195853-LIN_ZIQI.md",
+    "bytes": 93257,
+    "sha256": "50221d5020f2f8a4832f32d38ffd21496466b2e1e9cccf0d9584eb5802870fd2"
+  },
+  {
+    "path": "transcripts/native/60195853/Native_Manifest.json",
+    "bytes": 1323,
+    "sha256": "5cb18384c1cfa725714e0765484201a11bb0849d7e4b36ba535781105b5db2d2"
+  },
+  {
+    "path": "transcripts/native/60195853/ses_df7c7c083ffenVDR4zsgPomRg5.json",
+    "bytes": 389265,
+    "sha256": "275c4d6067ef593998a86d2f6d363dfeb10b615fdc90d0281310d98c2b75a984"
+  },
+  {
+    "path": "transcripts/native/60195853/ses_dff02f043ffep3PJYXRMy43zJA.json",
+    "bytes": 212689,
+    "sha256": "43db4992cee56a9d8423b8f85dd4003addd062b611c205619e6e9faf78859fd5"
+  },
+  {
+    "path": "transcripts/README.md",
+    "bytes": 675,
+    "sha256": "8aff69176b68099d7c3a9a39a77296fad91344d5612143e413c802ab4b9a0f54"
+  }
+]

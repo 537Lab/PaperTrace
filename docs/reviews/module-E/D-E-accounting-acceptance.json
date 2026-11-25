@@ -1,0 +1,62 @@
+{
+  "main_sha": "d893cefe162eb687fbd2854ee63b29569e087b2e",
+  "cases": [
+    {
+      "case": "one",
+      "draft": "failed",
+      "release": "blocked",
+      "accounting_present": true,
+      "attempts": 1,
+      "generation_boundary_calls": 1,
+      "reopen_equal": true,
+      "duplicate_immutable": true,
+      "default_excerpts_hidden": true,
+      "stored_sha256": "71fd3949a0a631ca1270920577434cfe3404713b4ee1ab34bd9eeac60947c386"
+    },
+    {
+      "case": "zero",
+      "draft": "failed",
+      "release": "blocked",
+      "accounting_present": true,
+      "attempts": 0,
+      "generation_boundary_calls": 1,
+      "reopen_equal": true,
+      "duplicate_immutable": true,
+      "default_excerpts_hidden": true,
+      "stored_sha256": "ac759ac79660cfd24d9739a6289ae799a7c7e83fe4dc6f63714f2ff4870efd51"
+    },
+    {
+      "case": "unknown",
+      "draft": "failed",
+      "release": "blocked",
+      "accounting_present": true,
+      "attempts": null,
+      "generation_boundary_calls": 1,
+      "reopen_equal": true,
+      "duplicate_immutable": true,
+      "default_excerpts_hidden": true,
+      "stored_sha256": "a0fcdf2ffa56a3a98b764d032ab9a5fbc1b40eb7bec9bbcf85efc7e25209304d"
+    },
+    {
+      "case": "absent",
+      "draft": "failed",
+      "release": "blocked",
+      "accounting_present": false,
+      "attempts": null,
+      "generation_boundary_calls": 1,
+      "reopen_equal": true,
+      "duplicate_immutable": true,
+      "default_excerpts_hidden": true,
+      "stored_sha256": "1957b092f557a4ae58cfd8a072e3515932c71958e6d7d06cf8250233e52f0935"
+    }
+  ],
+  "provider_model_calls": 0,
+  "actual_paperqa2_calls": 0,
+  "scope": "Real D coordinator/release and real E models/store/exporters; synthetic generation/projection ports",
+  "not_certified": [
+    "Full default App assembly",
+    "Real C ledger I/O on Windows",
+    "Real model quality",
+    "Publication transaction"
+  ]
+}
