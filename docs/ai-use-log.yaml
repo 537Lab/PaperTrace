@@ -2511,3 +2511,24 @@ entries:
   - 'The test double now uses the real AnswerGenerationOutcome, AnswerDraft and GenerationCallResult models instead of simple namespaces.'
   - 'No OpenCode role may edit test/offline/test_semantic_capture_proposal.py, so this revision was not produced by a supervised OpenCode session and must be reviewed as a runner-authored edit.'
   - No product model calls were made.
+
+- entry_id: SHARED-EVAL-CAPTURE-IMPL-20261125-01
+  timestamp: '2026-11-25T15:15:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session); no OpenCode role may edit test/evaluation
+  model: deepseek/deepseek-flash
+  purpose: Implement the approved request-capture intake so the fixed-set evaluator can assemble real attempt rows
+  scope:
+  - test/evaluation/evaluator.py
+  - docs/ai-use-log.yaml
+  status: implementation of the approved tests; awaiting independent source review
+  student_decisions:
+  - The student asked the supervising runner to implement the approved capture tests after the exact test head ce9b716 was independently approved.
+  approvals:
+  - 'Test approval PR: #73, approved test head ce9b716. The approved tests and plan are carried forward unchanged.'
+  verification:
+  - 'test/offline/test_semantic_capture_proposal.py: 25 passed, covering all 17 previously RED cases plus the eight controls.'
+  - The request row is assembled only from the observer callback, so an expected envelope cannot produce a row.
+  - Invalid bindings raise before the driver runs; rejected capture raises inside the observer before any model call.
+  limitations:
+  - 'No OpenCode role holds write access to test/evaluation, so this implementation was written by the supervising runner and must be reviewed as runner-authored work.'
+  - 'No product model call was made; the real 18-run evaluation remains a separate authorized run.'
