@@ -73,6 +73,21 @@ def prepare_requests(dataset: dict[str, Any], system_prompt: str) -> list[dict[s
     return result
 
 
+def _strict_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Reject duplicate keys, mirroring the Gate 4 report parser."""
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate-json-key")
+        result[key] = value
+    return result
+
+
+def _invalid_constant(value: str) -> Any:
+    """Reject NaN and Infinity, mirroring the Gate 4 report parser."""
+    raise ValueError("invalid-json-constant")
+
+
 def _digest_json(value: Any) -> str:
     """Hash a value exactly as the report row records it."""
     encoded = json.dumps(
@@ -128,13 +143,15 @@ def collect_attempt(
         if system_text != system_prompt:
             raise ValueError("Captured system message is not the approved version.")
         try:
-            payload = json.loads(user_text)
+            payload = json.loads(
+                user_text,
+                object_pairs_hook=_strict_object,
+                parse_constant=_invalid_constant,
+            )
         except (TypeError, json.JSONDecodeError) as error:
             raise ValueError("Captured user message is not approved JSON.") from error
         if not isinstance(payload, dict):
             raise ValueError("Captured user message is not an object.")
-        if payload.get("question") != expected_question:
-            raise ValueError("Captured question is not the approved question.")
         evidence = payload.get("approved_evidence")
         if not isinstance(evidence, list) or not evidence:
             raise ValueError("Captured evidence list is empty or malformed.")
@@ -149,6 +166,17 @@ def collect_attempt(
             sent.append(item["id"])
         if len(set(sent)) != len(sent):
             raise ValueError("Captured evidence ids repeat.")
+        expected_payload = {
+            "question": expected_question,
+            "approved_evidence": [
+                {"id": item, "text": expected_text[item]}
+                for item in sent
+            ],
+        }
+        if payload != expected_payload:
+            raise ValueError(
+                "Captured user message is not exactly the approved payload."
+            )
         captured[:] = [("system", system_text), ("user", user_text)]
         captured_sent[:] = sent
 
@@ -957,7 +985,12 @@ class ProviderCapture:
                     "POST",
                     self.config["endpoint"],
                     headers={"Authorization": f"Bearer {self.api_key}"},
-                    json={"model": MODEL, "messages": request, "max_tokens": max_tokens},
+                    json={
+                        "model": MODEL,
+                        "messages": request,
+                        "max_tokens": max_tokens,
+                        "cache": {"no-cache": True},
+                    },
                 ) as reply,
             ):
                 reply.raise_for_status()
