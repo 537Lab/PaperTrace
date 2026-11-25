@@ -917,3 +917,91 @@ entries:
   - Historical restricted OpenCode source reused; no new OpenCode generation session.
   - No independent source approval, merge, live evaluation, publication transaction
     or final end-to-end acceptance claimed.
+- entry_id: E-TEST-20261123-PAGE-LOAD-ISOLATION
+  timestamp: '2026-11-23T11:55:05+00:00'
+  tool: Codex supervisor
+  model: Codex session model; runtime identifier not independently verified
+  purpose: Correct the selected-record load failure test setup without weakening assertions
+  scope:
+  - test/offline/test_reports.py
+  - docs/ai-use-log.yaml
+  status: corrected-test-head-awaiting-independent-approval
+  approvals:
+  - Student approved E page plan and continued implementation; 537Lab approved prior
+    test head f64986ed667082d5df8bbb2eefe9c445274ef7d5, review 6018715777
+  - Prior approval does not cover this correction; a new exact-head independent review
+    is required
+  verification:
+  - Supervisor discovered real list_records calls load internally and skips InvalidRecord;
+    patching load before listing made the original test exercise an empty list rather
+    than selected-load failure
+  - Capture the real list before injection and reuse it only for the load-boundary
+    variant; retain both variants and every original failure, no-success and no-leak
+    assertion
+  limitations:
+  - This is a test harness correction, not a source fix; original page source first
+    check was 113 passed and 4 failed
+  - Existing storage skip semantics and approved plan remain unchanged; no directory
+    scanning or test-specific source workaround added
+- entry_id: E-TEST-20261123-PAGE-WIRING
+  timestamp: '2026-11-23T16:10:59+08:00'
+  tool: OpenCode 2.0.12 papertrace-build-E; Codex supervision
+  model: cityucs/CS5351/DeepSeek-V4-Flash; Codex supervisor
+  purpose: Prepare independently reviewable E page-wiring tests after student plan
+    approval
+  scope:
+  - test/offline/test_reports.py
+  - docs/team/designs/module-E/page-wiring-plan.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-exact-head-approval
+  approvals:
+  - Student explicitly approved the E page-wiring plan in the Codex chat on 2026-11-23;
+    tests only at this stage
+  - No independent approval of this new test head has been obtained; source implementation
+    remains gated
+  verification:
+  - OpenCode test session ses_df899ed5dffe2ma62m7qLGxRLR; raw output retained as Team/E-opencode-page-tests.jsonl
+  - Supervisor required valid fixture construction independent of missing view, exact
+    download-body assertions, and actual save/reopen checks
+  - Existing E source mypy passed with no issues in four files
+  - Final E run collected 117 cases; 88 original cases and one fixture-sanity case
+    passed, 28 page cases failed at missing-view availability assertions
+  - Ruff for test_reports.py, schema gate and ai-log gate passed; ai-log reported
+    new_entries=1
+  - Remaining team offline suite ran separately with 280 passed, 74 failed and 2 skipped;
+    these failures are not page expected RED
+  limitations:
+  - OpenCode shell attempts were denied; resumed with read/edit tools only, without
+    widening tool permissions
+  - Supervisor stopped the final OpenCode verification deliberation after edits, ran
+    local checks, removed an unused f-string, strengthened byte/sentinel capture and
+    checked history bytes remain unchanged
+  - Page implementation, local clickable preview, shared application wiring and real
+    pipeline acceptance are not supplied by this test proposal
+  - Synthetic inputs and an explicit UI double do not prove real model quality, human
+    authorization or browser behavior
+  - No source, shared contracts, dependency locks, CI or governance rules changed;
+    PRs remain open and unmerged
+- entry_id: E-PAGE-TEST-MAIN-SYNC-20261125-01
+  timestamp: '2026-11-25T01:53:46.042391+00:00'
+  tool: Codex Desktop
+  model: Runtime model not independently attested
+  purpose: Synchronize the existing page test proposal after protected squash adoption
+    of E core; remove inherited source from the PR diff.
+  scope:
+  - docs/team/designs/module-E/page-wiring-plan.md
+  - test/offline/test_reports.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval-of-new-head
+  approvals:
+  - User authorized protected E integration and subsequent page delivery; previous
+    exact test-head approval remains historical and does not cover this new synchronization
+    commit.
+  verification:
+  - All 117 E tests and the page plan retain their exact approved Git blobs from 7e70e139048f17cdcf5b04b95974ec360fa19552.
+  - The tree starts from main f90db298fd6f2f550c2ae4bfa3a37631cc9c6ae0 and changes
+    only test, plan and disclosure; no page source is added.
+  limitations:
+  - No new OpenCode generation or independent approval is claimed. Keep the test proposal
+    open and unmerged. A subsequent source inheritance candidate must be published
+    after independent approval of this new exact head.
