@@ -263,7 +263,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: INV-08
   type: invariant
   owner: B
@@ -363,7 +363,7 @@ requirements:
   sources:
   - course-project:p6:D4
   - course-project:p10:gates2-5
-  implementation_status: planned
+  implementation_status: implemented
 - id: GOV-03
   type: governance
   owner: all

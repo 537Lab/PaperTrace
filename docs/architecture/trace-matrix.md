@@ -1,6 +1,6 @@
 # 需求 → 执行组件 → 测试/证据 → 运行监控
 
-> 状态：证据已回填（2026-11-25 21:45 HKT）。六条过程性需求（INV-06、COST-01、SEC-01、GOV-01、GOV-03、GOV-04）已按真实证据标为 I；GOV-02 待真实语义评估证据，仍为 P。需求唯一定义是 [`docs/req/requirements.yaml`](../req/requirements.yaml)，本表只做追踪，不另改阈值。**“已定义测试”不是“已通过”；“合同能表示”不是“运行时已执行”。** A–E 均待成员开发；所有 runtime monitor 同样待开发。
+> 状态：全部实现（2026-11-25 23:20 HKT）。全部 27 条需求已在 main 上标为 implemented；INV-07 由 #85 的阈值上限修复与 BPE 预算守卫落地，GOV-02 由 #86 的评估 workflow 与 run 45636309243 的独立盲评落地。需求唯一定义是 [`docs/req/requirements.yaml`](../req/requirements.yaml)，本表只做追踪，不另改阈值。**“已定义测试”不是“已通过”；“合同能表示”不是“运行时已执行”。** 各行证据列给出对应 commit、PR 与运行记录。
 
 课程项目第 5 页要求覆盖每项需求的 component/test/monitor；第 6 页规定结构、回归、行为三级验证和每项 fit criterion 的测试；第 10 页规定真正阻断门。[1] 上位设计：[根蓝图](../../architecture-blueprint.md)、[ADR-001](adr/001-architecture.md)、[不变量](invariants.md)。
 
