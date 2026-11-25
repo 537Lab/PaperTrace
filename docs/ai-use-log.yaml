@@ -2432,3 +2432,27 @@ entries:
   limitations:
   - opencode.jsonc intentionally denies editing protected scripts/semantic_evidence.py and test/evaluation/*; OpenCode executed in read-only papertrace-verify mode rather than rewriting protected files directly.
   - Requires independent non-author GitHub approval on final head SHA before squash merge.
+
+- entry_id: D-PANEL-IMPL-20261125-01
+  timestamp: '2026-11-25T12:51:57+08:00'
+  tool: OpenCode CLI v2.3.0 with papertrace-build-D, supervised by the student through the DeepSeek Harness runner
+  model: deepseek/deepseek-flash
+  purpose: Implement the standalone Module D answer panel and its synthetic Streamlit preview
+  scope:
+  - src/papertrace/answer/view.py
+  - src/papertrace/answer/preview.py
+  status: implemented and verified offline; awaiting independent review
+  student_decisions:
+  - Approved one supervised implementation session on deepseek/deepseek-flash with the write scope limited to the two panel files.
+  - Approved shell use limited to the listed offline verification commands; commits, pushes and pull requests stayed with the supervisor.
+  approvals:
+  - 'PR #67 independent test approval, review 6051367953 (PRR_kwDOVtJ17M8AAAABaLCMEQ), reviewer ziqilin669, test head 563dcd3bd7cb6c0d34801b03c10689cb585668a4, 2026-11-25T03:20:32Z.'
+  verification:
+  - 'Targeted file: 46 collected, 46 passed.'
+  - 'Full team offline suite: 598 passed, 2 skipped, 4 failed. Three failures need the missing lmi module; one subprocess ps test is blocked by the supervisor sandbox. Neither group imports these two files.'
+  - 'Scoped Ruff on src/papertrace/answer passed; mypy reported no issues in 20 files; the schema gate reported PASS; git diff --check was clean.'
+  - 'Streamlit AppTest replay: first load made zero generation-boundary calls, one Generate click made exactly one call and rendered a draft with canonical citation ids plus a blocked PUBLICATION_COMMIT_UNAVAILABLE decision, and a plain rerun kept the draft with no additional call.'
+  limitations:
+  - The session first stopped for authorization because no shell command could be approved; the supervisor supplied the reviewed PR #67 approval, the bounded shell list and re-authorized the same session.
+  - Repo-wide Ruff still reports the pre-existing I001 in scripts/paperqa_smoke.py, which this slice does not touch.
+  - Real semantic evaluation, independent source review and the final publication transaction remain pending.
