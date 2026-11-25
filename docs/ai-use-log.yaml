@@ -2549,3 +2549,28 @@ entries:
   limitations:
   - 'No OpenCode role holds write access to test/evaluation, so this implementation was written by the supervising runner and must be reviewed as runner-authored work.'
   - 'No product model call was made; the real 18-run evaluation remains a separate authorized run.'
+- entry_id: SHARED-EVAL-WORKFLOW-IMPL-20261125-01
+  timestamp: '2026-11-25T09:25:00+00:00'
+  tool: Codex desktop
+  model: openai/gpt-6.2-sol
+  purpose: Implement first-attempt, dispatch-history, artifact and tokenizer controls for the authorized semantic evaluation workflow.
+  scope:
+  - test/evaluation/evaluator.py
+  - .github/workflows/semantic-evaluation.yml
+  - docs/ai-use-log.yaml
+  status: Implementation awaiting independent review.
+  student_decisions:
+  - The supervising student approved implementation, required the approved test and plan bytes to be preserved, and authorized a second tokenizer mapping for the OpenAI offline fixture while keeping live execution CityU-only.
+  approvals:
+  - 'Test approval PR: #55, approved head f0048fdd09c14e3800fa2017ea27c26f49483272, approved by ldk13856478627-cell (Li Yafei), as reported by the supervising student.'
+  verification:
+  - All four protected tests and plans are byte-identical to their designated refs.
+  - The explicit mappings select cl100k_base for CityU and o200k_base for the approved OpenAI fixture. A local probe confirmed that an unknown pair is rejected before loading and that OpenAI is rejected by the live deployment configuration.
+  - "Four offline suites with sockets disabled: 225 of 225 passed, with zero failures."
+  - Scoped Ruff, mypy and schema checks passed. The semantic gate returned NOT_REQUIRED.
+  - 'Offline HTTP replay: 4 deterministic results matched, 18 quality requests traversed real B/D with run_attempt=1, both raw artifact listing formats passed, and the final report passed v3 schema and semantic runtime, run and score validation with 18 synthetic ratings.'
+  - The replay used a deterministic offline encoding constructed with locked tiktoken 0.12.0 and mocked CityU HTTP. The production cl100k_base encoding data was unavailable with sockets disabled.
+  limitations:
+  - The production pre-dispatch count uses cl100k_base via locked tiktoken as a deterministic framed BPE counter. Actual provider billing tokens are verified separately from each live CityU response usage.
+  - Live verification remains pending for runner access to cl100k_base assets, protected GitHub environments and deployments, server visibility under concurrent dispatches and rerun rejection, project credential and CityU entitlement, tariff and response usage reconciliation, and independent raw and final report adoption.
+  - Codex assisted with implementation. No live provider calls or remote workflow dispatch were performed. Independent adversarial review is pending.
