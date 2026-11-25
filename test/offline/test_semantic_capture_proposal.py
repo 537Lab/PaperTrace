@@ -24,6 +24,7 @@ EVALUATOR_PATH = ROOT / "test/evaluation/evaluator.py"
 CASE_ID = "QUAL-02"
 RUNTIME_A = "ev-" + "a" * 64
 RUNTIME_B = "ev-" + "b" * 64
+FIXED_TO_RUNTIME = {"ev-a": RUNTIME_A, "ev-b": RUNTIME_B}
 
 
 def digest(value):
@@ -76,17 +77,22 @@ def _accounting(attempts):
     )
 
 
-def _draft(*, citations, status='draft'):
-    """Build the real AnswerDraft; citations live only on this draft."""
+def _draft(*, sent, citations, status='draft'):
+    """Build the real AnswerDraft with an explicit schema version.
+
+    sent_evidence_ids records what B actually sent; citation_evidence_ids
+    records only what the draft cites, so the two sets stay distinguishable.
+    """
     accepted = status == 'draft'
     return AnswerDraft(
+        schema_version=1,
         answer_id='ans-eval-1',
         snapshot_id=SNAPSHOT_ID,
         question_id=QUESTION_ID,
         review_revision=1,
         review_digest=REVIEW_DIGEST,
         approved_evidence_ids=(RUNTIME_A, RUNTIME_B),
-        sent_evidence_ids=tuple(citations),
+        sent_evidence_ids=tuple(sent),
         citation_evidence_ids=tuple(citations) if accepted else (),
         status=status,
         body='Synthetic answer (b1).' if accepted else '',
@@ -95,12 +101,12 @@ def _draft(*, citations, status='draft'):
     )
 
 
-def _result(*, citations):
+def _result(*, sent, citations):
     """Build the real GenerationCallResult, which carries alias mappings only."""
     return GenerationCallResult(
         status='SUCCESS',
         raw_output='Synthetic answer (b1).',
-        sent_evidence_ids=tuple(citations),
+        sent_evidence_ids=tuple(sent),
         citation_aliases=(('b1', citations[0]),) if citations else (),
         unknown_citation_keys=(),
         ambiguous_citation_keys=(),
@@ -144,6 +150,7 @@ class OfflineBoundary:
         messages,
         citations=(),
         *,
+        sent=None,
         attempts=1,
         rejected=False,
         mode='success',
@@ -154,6 +161,7 @@ class OfflineBoundary:
         self.attempts = attempts
         self.mode = 'dropped' if rejected else mode
         self.citations = tuple(citations)
+        self.sent = tuple(sent) if sent is not None else self.citations
         self.response = {
             'request_id': f'offline-{repeat}',
             'model': 'offline-model',
@@ -178,12 +186,13 @@ class OfflineBoundary:
         if self.mode == 'dropped':
             return _outcome(accounting=_accounting(self.attempts)), None
         draft = _draft(
+            sent=self.sent,
             citations=self.citations,
             status='failed' if self.mode == 'stale' else 'draft',
         )
         outcome = _outcome(
             draft=draft,
-            result=_result(citations=self.citations),
+            result=_result(sent=self.sent, citations=self.citations),
             accounting=_accounting(self.attempts),
         )
         return outcome, self.response
@@ -202,6 +211,42 @@ def run(collect_attempt, fixed_case, driver, *, repeat=1, bindings=None):
         drive=driver.generate,
     )
 
+
+def test_boundary_fixture_builds_real_contract_models(fixed_case):
+    """Control: the double must construct the real contracts directly."""
+    _, case, system = fixed_case
+    messages = request_messages(case, system, ("ev-a", "ev-b"))
+    sent_ids = (RUNTIME_A, RUNTIME_B)
+    driver = OfflineBoundary(messages, (RUNTIME_A,), **{"sent": sent_ids})
+    outcome, response = driver.generate(request_observer=lambda _: None)
+    assert driver.events == ["driver", "capture", "model"]
+    assert isinstance(outcome, AnswerGenerationOutcome)
+    draft = outcome.draft
+    assert draft is not None and draft.schema_version == 1
+    assert draft.sent_evidence_ids == (RUNTIME_A, RUNTIME_B)
+    assert draft.citation_evidence_ids == (RUNTIME_A,)
+    result = outcome.result
+    assert result is not None
+    assert result.sent_evidence_ids == (RUNTIME_A, RUNTIME_B)
+    assert result.citation_aliases == (("b1", RUNTIME_A),)
+    assert outcome.accounting is not None
+    assert outcome.accounting.answer_model_attempts == 1
+    assert response == driver.response
+
+
+def test_boundary_rejection_keeps_zero_attempts(fixed_case):
+    """Control: observer rejection yields validated zero-attempt accounting."""
+    _, case, system = fixed_case
+    driver = OfflineBoundary(request_messages(case, system, ("ev-b",)))
+
+    def reject(_messages):
+        raise ValueError("capture rejected")
+
+    outcome, response = driver.generate(request_observer=reject)
+    assert driver.events == ["driver", "capture"]
+    assert outcome.draft is None and outcome.result is None and response is None
+    assert outcome.accounting is not None
+    assert outcome.accounting.answer_model_attempts == 0
 
 @pytest.mark.parametrize("sent", [("ev-a", "ev-b"), ("ev-b", "ev-a"), ("ev-b",)])
 def test_qual02_fixture_passes_existing_request_gate(fixed_case, sent):
@@ -228,7 +273,11 @@ def test_record_uses_actual_request_and_mapped_citations(
 ):
     _, case, system = fixed_case
     messages = request_messages(case, system, sent)
-    driver = OfflineBoundary(messages, (runtime_citation,))
+    driver = OfflineBoundary(
+        messages,
+        (runtime_citation,),
+        sent=tuple(FIXED_TO_RUNTIME[item] for item in sent),
+    )
     outcome = run(collect_attempt, fixed_case, driver)
     assert driver.events == ["driver", "capture", "model"]
     row = outcome["record"]
