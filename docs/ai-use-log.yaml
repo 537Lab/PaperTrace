@@ -2694,3 +2694,32 @@ entries:
     and triage use Codex, not a newly claimed OpenCode generation session.
   - Full regression remains failed. Local Windows verification is not the supported macOS/Python 3.14.6
     CI runtime.
+- entry_id: CI-BOUNDED-DIAGNOSTICS-IMPLEMENTATION-20261125-01
+  timestamp: '2026-11-25T09:57:17.319832+00:00'
+  tool: Codex Desktop
+  model: Codex runtime; identifier not independently attested
+  purpose: 'Implement independently approved #79 bounded advisory diagnostics and failure-only qualified
+    six-file artifact transport.'
+  scope:
+  - scripts/full_regression.py
+  - .github/workflows/ci.yml
+  - docs/team/designs/shared/20261125-ci-diagnostics-implementation.md
+  - docs/ai-use-log.yaml
+  approvals:
+  - 'Student explicitly assigned CI ownership and requested immediate completion. #79 exact 13d2051 independently
+    approved by 537Lab before this implementation. New fixture proposal #89 is not adopted pending its
+    independent approval.'
+  verification:
+  - 'Original approved 76-node replay: 64 passed, 12 failed (10 duplicate-workflow-fixture controls, 2
+    native-Windows shebang fixtures).'
+  - 'Separate diagnostic overlay using proposed #89 test correction plus original runner regression: 91
+    passed, 4 failed; remaining failures are native-Windows shebang, cross-drive path and POSIX ps fixture
+    limitations. This overlay is diagnostic only, not a new approval or full CI PASS.'
+  - 'Ruff passed. All other workflow jobs and original regression gate command unchanged; original #79
+    tests/plans unchanged. No provider call, secret, permission, dependency or failure-verdict override.'
+  limitations:
+  - Codex runner-authored source/workflow work under student CI scope. No OpenCode implementation session
+    is claimed and no role permissions were widened.
+  - 'Keep Draft. Requires independent #89 test approval before adopting revised tests, supported POSIX
+    replay, independent source review and normal protected adoption. Current trusted base verifier lacks
+    diagnostic API before adoption.'

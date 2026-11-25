@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tarfile
@@ -43,6 +44,231 @@ class Suite:
 
 _STATE = {}
 
+DIAGNOSTICS_SCHEMA_VERSION = 1
+DIAGNOSTICS_TRANSPORT_SCHEMA_VERSION = 1
+_EVENT_LIMIT = 1_228_800
+_MANIFEST_LIMIT = 65_536
+_BUNDLE_LIMIT = 7_766_016
+_DIAGNOSTICS = {}
+
+
+def _safe_text(value, limit=512):
+    """Bound untrusted display text; remove host paths and control characters."""
+    text = str(value)
+    text = re.sub(r"[A-Za-z]:[\\/][^\s'\"<>]*", "[path]", text)
+    text = re.sub(r"\\\\[^\s'\"<>]+", "[path]", text)
+    text = re.sub(r"(?<![\w:])/(?:[^\s'\"<>]+)", "[path]", text)
+    text = re.sub(r"(?:gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,})", "[credential]", text)
+    text = " ".join("".join(c if c >= " " and c != "\x7f" else " " for c in text).split())
+    return text.encode("utf-8")[:limit].decode("utf-8", errors="ignore")
+
+
+def _diagnostic_error(error):
+    # Deliberately omit arbitrary exception bodies. Pytest errors use only its
+    # concise crash message, never captured streams, locals or full tracebacks.
+    return {"type": _safe_text(type(error).__name__, 100),
+            "detail_state": "unavailable", "detail": None}
+
+
+def _report_error(report):
+    crash = getattr(getattr(report, "longrepr", None), "reprcrash", None)
+    message = getattr(crash, "message", None)
+    if not isinstance(message, str):
+        return {"type": "PytestFailure", "detail_state": "unavailable", "detail": None}
+    # Exception messages can contain credentials or document text without any
+    # recognizable syntax. Export only the exception class; raw local logs stay
+    # local. Missing bodies are explicit rather than a claim of full redaction.
+    match = re.match(r"(?:E\s+)?([A-Za-z][A-Za-z0-9_]*(?:Error|Exception))\b", message)
+    return {"type": match.group(1) if match else "PytestFailure", "detail_state": "unavailable", "detail": None}
+
+
+def _emit_diagnostic(event, **fields):
+    """Child-only append. Diagnostics errors never change the legacy outcome."""
+    destination = os.environ.get("PAPERTRACE_DIAGNOSTIC_PATH")
+    if not destination:
+        return
+    try:
+        path = Path(destination)
+        if path.is_symlink() or not path.is_file():
+            return
+        if not _DIAGNOSTICS:
+            seed = path.with_name("manifest.json")
+            if seed.is_symlink() or seed.stat().st_size > _MANIFEST_LIMIT:
+                return
+            suite = json.loads(seed.read_text(encoding="utf-8"))["suite"]
+            _DIAGNOSTICS.update(suite=_safe_text(suite, 100), truncated=False)
+        data = {"schema_version": 1, "suite": _DIAGNOSTICS["suite"], "event": event, **fields}
+        if event == "terminal":
+            data["truncated"] = _DIAGNOSTICS["truncated"]
+        raw = (json.dumps(data, ensure_ascii=True, separators=(",", ":")) + "\n").encode()
+        bound = _EVENT_LIMIT if event == "terminal" else _EVENT_LIMIT - 2048
+        if path.stat().st_size + len(raw) > bound:
+            _DIAGNOSTICS["truncated"] = True
+            return
+        flags = os.O_WRONLY | os.O_APPEND | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(path, flags)
+        try:
+            if stat.S_ISREG(os.fstat(descriptor).st_mode):
+                os.write(descriptor, raw)
+        finally:
+            os.close(descriptor)
+    except (OSError, ValueError, KeyError, TypeError):
+        return
+
+
+def _prepare_diagnostics(output, suite):
+    directory = output / "diagnostics"
+    try:
+        if directory.is_symlink() or (directory.exists() and not directory.is_dir()):
+            directory.unlink()
+        directory.mkdir(exist_ok=True)
+        problem = None
+        for name in ("events.jsonl", "manifest.json"):
+            path = directory / name
+            if path.is_symlink() or path.is_file():
+                path.unlink()
+            elif path.exists():
+                problem = ValueError("Non-regular diagnostics entry")
+        if problem is None:
+            (directory / "events.jsonl").write_bytes(b"")
+        # The seed carries only an advisory suite name, no trusted provenance.
+        path = directory / "manifest.json"
+        if not path.exists():
+            path.write_text(json.dumps({"suite": _safe_text(suite, 100)}), encoding="utf-8")
+        return problem
+    except (OSError, ValueError) as error:
+        return error
+
+
+def _package_diagnostics(output, suite, report, mode, error=None, identity=None):
+    directory = output / "diagnostics"
+    if directory.is_symlink() or not directory.is_dir():
+        raise ValueError("Unsafe diagnostics directory")
+    path = directory / "events.jsonl"
+    events, size, torn, truncated, terminal = [], 0, False, False, False
+    try:
+        # Explicit post-child stat seam; bounds are checked before reading.
+        metadata = path.stat()
+        if path.is_symlink() or not stat.S_ISREG(metadata.st_mode) or metadata.st_size > _EVENT_LIMIT:
+            raise ValueError("Unsafe or oversized events artifact")
+        size = metadata.st_size
+        lines = path.read_bytes().splitlines()
+        for index, raw in enumerate(lines):
+            if not raw.strip():
+                continue
+            try:
+                item = json.loads(raw)
+                if not isinstance(item, dict):
+                    raise ValueError("Non-object event")
+                events.append(item)
+            except (ValueError, UnicodeError):
+                if index != len(lines) - 1:
+                    raise ValueError("Malformed diagnostic event") from None
+                torn = True
+        terminal = bool(events and events[-1].get("event") == "terminal" and not torn)
+        truncated = any(e.get("truncated") is True for e in events)
+    except (OSError, ValueError) as problem:
+        error = error or problem
+        # A failed inspection cannot certify bytes. Omit only a regular file,
+        # never recursively remove an unexpected directory or follow a link.
+        if path.is_symlink() or path.is_file():
+            path.unlink(missing_ok=True)
+        events, size, terminal = [], 0, False
+    legacy = output / "pytest-report.json"
+    try:
+        if "returncode" not in report:
+            classification = "not_started"
+        elif not legacy.is_file():
+            classification = "missing"
+        elif legacy.stat().st_size > 20_000_000:
+            classification = "oversized"
+        else:
+            json.loads(legacy.read_text(encoding="utf-8"))
+            classification = "present"
+    except (OSError, ValueError):
+        classification = "malformed"
+    if classification != "present":
+        error = error or ValueError("Legacy report unavailable")
+    nodes = {e.get("nodeid") for e in events if isinstance(e.get("nodeid"), str)}
+    complete = terminal and not error and not torn and not truncated
+    state = "complete" if complete else "partial" if events else "unavailable"
+    identity = {key: (identity or {}).get(key) for key in ("target_sha", "control_sha", "base_sha", "source_tree_sha256", "job_key")}
+    manifest = {
+        "schema_version": 1, "suite": _safe_text(suite, 100), "mode": mode,
+        "advisory": True, "trusted": False, "status": state, "identity": identity,
+        "legacy": {"status": report["status"], "report": classification},
+        "events": {"bytes": size, "terminal_present": terminal, "torn_tail_ignored": torn, "truncated": truncated, "sampled": False},
+        "counts": {"unique_nodes_retained": len(nodes), "unique_nodes_exact": complete,
+                   "pending_live": len(report.get("pending_live", [])), "collection_errors": len(report.get("collection_errors", []))},
+        "limits": {"events_bytes": _EVENT_LIMIT, "manifest_bytes": _MANIFEST_LIMIT, "bundle_bytes": _BUNDLE_LIMIT},
+        "error": _diagnostic_error(error) if error else None,
+    }
+    destination = directory / "manifest.json"
+    if directory.is_symlink() or destination.is_symlink() or (destination.exists() and not destination.is_file()):
+        raise ValueError("Unsafe diagnostics manifest path")
+    raw = json.dumps(manifest, sort_keys=True).encode()
+    if len(raw) > _MANIFEST_LIMIT:
+        raise ValueError("Manifest budget exceeded")
+    destination.write_bytes(raw)
+    return {"status": state, "trusted": False, "bundle_bytes": size + len(raw)}
+
+
+def run_suite(root, suite, output, timeout=300, run_live=False, collect_only=False, prior_live=(), diagnostic_identity=None):
+    """Keep legacy certification authoritative; diagnostics are advisory only."""
+    output = Path(output).resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    problem = _prepare_diagnostics(output, suite.name)
+    report = _run_suite_legacy(root, suite, output, timeout, run_live, collect_only, prior_live,
+                               diagnostic_path=None if problem else output / "diagnostics/events.jsonl")
+    try:
+        report["diagnostics"] = _package_diagnostics(output, suite.name, report,
+                                                    "inventory-only" if collect_only else "execution", problem, diagnostic_identity)
+    except (OSError, ValueError, KeyError, TypeError):
+        report["diagnostics"] = {"status": "unavailable", "trusted": False, "reason": "Diagnostic packaging unavailable"}
+    return report
+
+
+def qualify_diagnostics_artifacts(root, output, *, expected_identity, suites=("team-offline", "team-runtime", "upstream")):
+    """Withhold unsafe, oversized or stale artifacts; never certify test success."""
+    root, output = Path(root).resolve(), Path(output)
+    if (output.is_symlink() or not output.absolute().is_relative_to(root)
+            or not output.resolve().is_relative_to(root)
+            or any(parent.is_symlink() for parent in output.absolute().parents if parent.is_relative_to(root))):
+        return {"status": "withheld", "files": [], "reasons": ["Unsafe artifact root"]}
+    expected = dict(expected_identity)
+    for key in ("target_sha", "control_sha", "base_sha"):
+        if key not in expected or not (expected[key] in (None, "unknown") or isinstance(expected[key], str) and re.fullmatch(r"[0-9a-f]{40}", expected[key])):
+            raise ValueError("Independent diagnostics identity required")
+    actual_tree = tree_digest(root)
+    if expected.get("source_tree_sha256", actual_tree) != actual_tree:
+        return {"status": "withheld", "files": [], "reasons": ["Source tree provenance mismatch"]}
+    expected["source_tree_sha256"] = actual_tree
+    files, total = [], 0
+    try:
+        for suite in suites:
+            if suite not in {"team-offline", "team-runtime", "upstream"}:
+                raise ValueError("Unknown diagnostics suite")
+            directory = output / suite / "diagnostics"
+            if any(p.is_symlink() for p in (output / suite, directory)):
+                raise ValueError("Unsafe diagnostic path")
+            for name, limit in (("events.jsonl", _EVENT_LIMIT), ("manifest.json", _MANIFEST_LIMIT)):
+                path = directory / name
+                metadata = path.stat()
+                if path.is_symlink() or not stat.S_ISREG(metadata.st_mode) or metadata.st_size > limit or not path.resolve().is_relative_to(output.resolve()):
+                    raise ValueError("Unsafe or oversized diagnostics")
+                total += metadata.st_size
+                files.append(path.relative_to(output).as_posix())
+            manifest = json.loads((directory / "manifest.json").read_bytes())
+            if not all(manifest.get("identity", {}).get(key) == value for key, value in expected.items()):
+                raise ValueError("Diagnostics provenance mismatch")
+            if manifest.get("schema_version") != 1 or manifest.get("suite") != suite or manifest.get("advisory") is not True or manifest.get("trusted") is not False or manifest.get("status") not in {"complete", "partial"}:
+                raise ValueError("Invalid advisory manifest")
+        if total > _BUNDLE_LIMIT:
+            raise ValueError("Diagnostics bundle budget exceeded")
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"status": "withheld", "files": [], "reasons": ["Diagnostics provenance, path or budget validation failed"]}
+    return {"status": "qualified", "files": files, "reasons": []}
+
 
 def _save_state():
     destination = os.environ.get("PAPERTRACE_SUITE_REPORT")
@@ -57,6 +283,7 @@ def pytest_configure(config):
     if os.environ.get("PAPERTRACE_RUN_LIVE") != "1":
         disable_socket(allow_unix_socket=True)
     _STATE.clear()
+    _DIAGNOSTICS.clear()
     _STATE.update(collected=[], pending_live=[], selected=[], deselected=[], configuration_errors=[],
                   outcomes={"passed": 0, "failed": 0, "skipped": 0, "xfailed": 0, "xpassed": 0}, collection_errors=[])
     if config.getoption("runxfail", default=False):
@@ -67,6 +294,8 @@ def pytest_configure(config):
 def pytest_collection_modifyitems(session, config, items):
     """GOV-02: inventory includes unmarked and parametrized cases."""
     _STATE["collected"] = [item.nodeid for item in items]
+    for item in items:
+        _emit_diagnostic("collection", nodeid=_safe_text(item.nodeid, 1024))
     if os.environ.get("PAPERTRACE_RUN_LIVE") != "1":
         prior_live = set(json.loads(os.environ.get("PAPERTRACE_PRIOR_LIVE", "[]")))
         pending = [item for item in items if item.nodeid in prior_live or any(item.get_closest_marker(mark) for mark in ("live", "live_api"))]
@@ -88,10 +317,18 @@ def pytest_collectreport(report):
     if report.failed or report.skipped:
         kind = "missing-dependency" if "ModuleNotFoundError" in str(report.longrepr) else "collection-failure"
         _STATE["collection_errors"].append({"nodeid": report.nodeid, "outcome": report.outcome, "kind": kind})
+        _emit_diagnostic("collection_error", nodeid=_safe_text(report.nodeid, 1024), kind=kind, error=_report_error(report))
 
 
 def pytest_runtest_logreport(report):
     """GOV-02: setup/teardown errors also block the gate."""
+    outcome = ("xfailed" if report.skipped else "xpassed") if getattr(report, "wasxfail", None) else report.outcome
+    fields = {"nodeid": _safe_text(report.nodeid, 1024), "when": report.when,
+              "outcome": outcome, "error": _report_error(report) if report.failed else None}
+    context = getattr(report, "context", None)
+    if context is not None:
+        fields["subtest"] = _safe_text(getattr(context, "msg", None) or str(context))
+    _emit_diagnostic("report", **fields)
     if getattr(report, "wasxfail", None):
         _STATE["outcomes"]["xfailed" if report.skipped else "xpassed"] += 1
     elif report.failed:
@@ -105,6 +342,7 @@ def pytest_runtest_logreport(report):
 
 def pytest_sessionfinish(session, exitstatus):
     """GOV-02: the parent consumes a freshly written bounded child report."""
+    _emit_diagnostic("terminal")
     destination = os.environ.get("PAPERTRACE_SUITE_REPORT")
     if destination:
         Path(destination).write_text(json.dumps(_STATE, sort_keys=True), encoding="utf-8")
@@ -135,7 +373,7 @@ def isolated_environment(root, output):
     return environment
 
 
-def run_suite(root, suite, output, timeout=300, run_live=False, collect_only=False, prior_live=()):
+def _run_suite_legacy(root, suite, output, timeout=300, run_live=False, collect_only=False, prior_live=(), diagnostic_path=None):
     """GOV-02: run a whole origin, preserving exact collection and all failures."""
     root, output = Path(root).resolve(), Path(output).resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -151,6 +389,8 @@ def run_suite(root, suite, output, timeout=300, run_live=False, collect_only=Fal
     command += [f"--ignore={path}" for path in suite.ignore]
     command += list(suite.paths)
     environment = isolated_environment(root, output)
+    if diagnostic_path is not None:
+        environment["PAPERTRACE_DIAGNOSTIC_PATH"] = str(diagnostic_path)
     environment["PATH"] = str(Path(suite.python).absolute().parent) + os.pathsep + os.defpath
     if run_live:
         # Explicit operator action only, after human plan/data/budget approval.
@@ -321,6 +561,12 @@ def run_full(root, base, output, suites=None, timeout=300, run_live=False,
                    (shutil.which(suite.python) or suite.python) if not any(char in suite.python for char in ("/", "\\")) else
                    os.path.abspath(root / suite.python))) for suite in suites)
     before = tree_digest(root)
+    target = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True, check=False)
+    target_sha = target.stdout.decode(errors="replace").strip()
+    control_sha = os.environ.get("PAPERTRACE_CONTROL_SHA")
+    identity = dict(target_sha=target_sha if re.fullmatch(r"[0-9a-f]{40}", target_sha) else None,
+                    control_sha=control_sha if control_sha and re.fullmatch(r"[0-9a-f]{40}", control_sha) else None,
+                    base_sha=base, source_tree_sha256=before, job_key=None)
     reports, prior, missing = [], [], []
     with tempfile.TemporaryDirectory(prefix="prior-", dir=output) as temporary:
         baseline = Path(temporary)
@@ -336,13 +582,14 @@ def run_full(root, base, output, suites=None, timeout=300, run_live=False,
                 reports.append({"suite": suite.name, "status": "NOT_REQUIRED", "collected": [], "reason": "No test files in either tree"})
                 continue
             if prior_files:
-                inventory = run_suite(baseline, suite, output / (suite.name + "-prior"), timeout, collect_only=True)
+                inventory = run_suite(baseline, suite, output / (suite.name + "-prior"), timeout, collect_only=True,
+                                      diagnostic_identity=identity)
                 prior.append(inventory)
             else:
                 inventory = {"status": "PASS", "collected": []}
             if current_files:
                 current = run_suite(root, suite, output / suite.name, timeout, run_live,
-                                    prior_live=inventory.get("pending_live", []))
+                                    prior_live=inventory.get("pending_live", []), diagnostic_identity=identity)
             else:
                 current = {"suite": suite.name, "status": "FAIL", "collected": [], "reason": "Prior test files removed"}
             if not current.get("collection_errors") and current["status"] != "BLOCKED":
@@ -361,6 +608,13 @@ def run_full(root, base, output, suites=None, timeout=300, run_live=False,
                "suites": reports, "prior_inventories": prior, "live_authorized_by_operator": run_live,
                "limits": ["Offline socket guard is not an OS sandbox", "Collection-only is not a passed prior suite",
                           "--run-live is an explicit operator action, requiring prior data/model/budget approval"]}
+    diagnostics = {}
+    bundle_bytes = 0
+    for item, suffix in [(item, "") for item in reports] + [(item, "-prior") for item in prior]:
+        name = item["suite"] + suffix
+        diagnostics[name] = item.get("diagnostics", {"status": "unavailable", "trusted": False})
+        bundle_bytes += diagnostics[name].get("bundle_bytes", 0)
+    summary["diagnostics"] = {"bundle_bytes": bundle_bytes, "suites": diagnostics}
     (output / "full-regression.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return summary
 
@@ -371,7 +625,11 @@ def main(argv=None):
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--base", required=True, help="Exact full SHA of the prior accepted round")
+    parser.add_argument("--base", help="Exact full SHA of the prior accepted round")
+    parser.add_argument("--qualify-diagnostics", action="store_true")
+    parser.add_argument("--expected-target-sha")
+    parser.add_argument("--expected-control-sha")
+    parser.add_argument("--expected-base-sha")
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--team-python", default=sys.executable)
     parser.add_argument("--runtime-python", default=None)
@@ -379,8 +637,23 @@ def main(argv=None):
     parser.add_argument("--timeout", type=float, default=300)
     parser.add_argument("--run-live", action="store_true", help="Explicit operator action AFTER real human approval of data, model, budget and calls; may incur charges")
     args = parser.parse_args(argv)
+    if args.qualify_diagnostics:
+        try:
+            expected = {"target_sha": args.expected_target_sha, "control_sha": args.expected_control_sha,
+                        "base_sha": args.expected_base_sha}
+            if not all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value) for value in expected.values()) or args.output is None:
+                raise ValueError("Missing independent provenance")
+            plan = qualify_diagnostics_artifacts(args.root.resolve(), args.output.absolute(), expected_identity=expected,
+                                                 suites=("team-offline", "team-runtime", "upstream"))
+            if plan.get("status") not in {"qualified", "withheld"}:
+                raise ValueError("Unknown qualification result")
+            code = 0 if plan["status"] == "qualified" else 1
+        except (OSError, ValueError, KeyError, TypeError):
+            plan, code = {"status": "withheld", "files": [], "reasons": ["Qualification validation unavailable"]}, 2
+        print(json.dumps(plan, sort_keys=True))
+        return code
     try:
-        if not re.fullmatch(r"[0-9a-f]{40}", args.base) or not 0 < args.timeout <= 1800:
+        if not isinstance(args.base, str) or not re.fullmatch(r"[0-9a-f]{40}", args.base) or not 0 < args.timeout <= 1800:
             raise ValueError("invalid literal SHA or timeout")
         root = args.root.resolve()
         output = (args.output or root / ".local/full-regression").resolve()
