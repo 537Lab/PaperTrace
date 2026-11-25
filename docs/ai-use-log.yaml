@@ -2652,3 +2652,121 @@ entries:
   limitations:
   - 'No OpenCode role may edit test/evaluation, so this hardening was written by the supervising runner and must be reviewed as runner-authored work.'
   - No product model call was made.
+- entry_id: BD-INV07-COMPACTION-TEST-20261125-01
+  timestamp: '2026-11-25T14:11:15+08:00'
+  tool: Codex desktop
+  model: GPT-6
+  purpose: Draft offline tests and a plan for INV-07 answer-context compaction at the B model boundary
+  scope:
+  - test/offline/test_inv07_answer_compaction.py
+  - docs/team/designs/module-B/inv07-answer-compaction-plan.md
+  status: test-proposal-awaiting-independent-review
+  student_decisions:
+  - The student authorized publication of in-scope PRs and supplied the agreed B/D test scope from the group discussion.
+  approvals: []
+  verification:
+  - 'On main 6fbf37d1ccb9ad70caee3f49f730f2daec10e10c, pytest in importlib mode across retrieval, B evaluation boundary, two D generation-accounting files, and the new test file gave 118 passes and 10 expected failures. All failures are new cases covering missing reduction or budget records.'
+  - The same five-file run gave 118 passes and 10 expected failures after rebasing onto main c5b657293a7953714911319fc61b925975aedf0c. Scoped Ruff and the requirements-schema gate passed.
+  limitations:
+  - 'The test uses controlled counts and an offline model. Real tokenizer and provider model-window discovery were not verified. No real model calls or complete upstream regression.'
+  - 'Codex prepared the proposal. No supervised OpenCode implementation or independent GitHub approval is claimed.'
+- entry_id: B-INV07-THRESHOLD-POLICY-TEST-20261125-01
+  timestamp: '2026-11-25T16:35:49+08:00'
+  tool: Codex desktop
+  model: not retrievable
+  purpose: Propose offline regression coverage for the public INV-07 generation policy threshold ceiling.
+  scope:
+  - test/offline/test_inv07_threshold_policy.py
+  - docs/team/designs/module-B/inv07-threshold-policy-plan.md
+  - docs/ai-use-log.yaml
+  status: preparation-assistance-not-human-approval
+  student_decisions:
+  - 'The student asked Codex to continue the scoped 9,001-token regression proposal following the review finding on #78.'
+  approvals: []
+  verification:
+  - 'On main 38db054, 14 passed and 12 failed as expected: ten cases exercise the pending compaction implementation and
+    two exercise the 9,001 threshold.'
+  - 'On the existing #78 implementation dfb85bb, 24 passed and only the two new 9,001 cases failed at the intended refusal
+    assertion.'
+  - 'The inherited tests and plan match the approved #76 blobs. Scoped Ruff passed. Product model calls were zero.'
+  limitations:
+  - Codex prepared the tests and plan. An OpenCode session was not used for this test proposal.
+  - The supplemental tests require a new independent GitHub approval before the implementation is revised.
+- entry_id: BD-INV07-COMPACTION-IMPL-20261125-01
+  timestamp: '2026-11-25T15:04:22+08:00'
+  tool: OpenCode CLI v2.3.0 (papertrace-build-B), with Codex desktop verification and publication
+  model: deepseek/deepseek-flash
+  purpose: Implement deterministic answer context compaction at the B model boundary
+  scope:
+  - src/papertrace/retrieval/service.py
+  status: implemented-offline-awaiting-independent-source-review
+  student_decisions:
+  - The student authorized the OpenCode implementation and in-scope PR workflow. The implementation scope follows the approved test and design for B request assembly.
+  approvals:
+  - 'GitHub PR #76 stayed open. 537Lab approved 0b68c392442cf069f3dbfaf0c0ba3685221364d7 in review 6053010862 at 2026-11-25T06:42:59Z.'
+  - 'ldk13856478627-cell also approved that exact test head in review 6053017811 at 2026-11-25T06:43:47Z.'
+  verification:
+  - 'OpenCode session ses_dee879502ffeA6FnP7EgQQObdj ran from 2026-11-25T06:50:34Z to 2026-11-25T06:57:16Z. The original export was retained privately. SHA-256: 24154dda45113bc3447c3e8691c4d9d811e364ed24f0659584d8f042b919fb42.'
+  - 'The approved #76 test and plan are byte-identical. The five-file B/D offline suite passed 128 tests, including all 18 INV-07 cases. Ruff, mypy (33 files), schema, and diff checks passed.'
+  - 'The full team offline run with isolated tooling reported 944 passed, 3 failed, and 2 skipped. The same three failure nodes reproduced on main d893cefe162eb687fbd2854ee63b29569e087b2e. The workflow tests skipped because this runtime did not locate an OpenCode executable.'
+  limitations:
+  - The offline tests use controlled counts and the configured effective request cap. Live tokenizer and provider window behavior were not verified. Real product-model calls were zero.
+  - Independent implementation review, remote review gates, and full upstream regression remain outstanding.
+- entry_id: BD-INV07-THRESHOLD-IMPL-20261125-01
+  timestamp: '2026-11-25T16:59:20+08:00'
+  tool: OpenCode CLI v2.3.0 (papertrace-build-B), with Codex desktop verification and publication
+  model: deepseek/deepseek-flash (requested by the OpenCode CLI)
+  purpose: Enforce the approved INV-07 compaction threshold ceiling at the B boundary
+  scope:
+  - src/papertrace/retrieval/service.py
+  status: implemented-offline-awaiting-independent-source-review
+  student_decisions:
+  - The student authorized the scoped INV-07 implementation and implementation PR workflow.
+  approvals:
+  - 'Independent GitHub reviews 6054358309 and 6054380589 approved test PR #84 at 6fcf3b8ceb6dd490b1a7ca36ed994615f6e2ea21.'
+  verification:
+  - 'OpenCode session ses_dee11adddffeqYRlktXr1Zxjjo ran from 16:59:20 to 16:59:39 HKT on November 25, 2026. The raw export is held privately. SHA-256: cd4e278889a88e39c0dcc01a8179f7cf9338b41c7c982001f393b52b5b19008d.'
+  - '244 B/D offline tests passed across six files. Ruff, mypy and diff checks passed.'
+  - 'Full team offline verification reported 980 passed, 3 failed and 2 skipped. The same three failed test nodes reproduced on main 38db05423956ac4b03b9f9c6ede8208b33e71e5e.'
+  limitations:
+  - 'OpenCode denied one shell request and one read before the source edit succeeded. The isolated offline test runtime could not locate OpenCode for two workflow tests.'
+  - 'Product model calls were zero. Live tokenizer and provider window behavior and independent implementation approval remain unverified.'
+- entry_id: BD-INV07-EVALUATION-PROMPT-SYNC-20261125-01
+  timestamp: '2026-11-25T18:19:35+08:00'
+  tool: Codex desktop
+  model: not retrievable
+  purpose: Sync the INV-07 candidate with main and reserve ASCII parentheses for citations to evidence actually sent
+  scope:
+  - prompts/answer-system-v1.0.txt
+  - prompts/prompt_v1.0.yaml
+  - docs/ai-use-log.yaml
+  status: preparation-assistance-not-human-approval
+  student_decisions:
+  - The student authorized the main sync, citation format instruction, offline replay and PR update.
+  approvals: []
+  verification:
+  - 'Main 0ede751918aaf1fb08e4f122e070a289b6202d6c was merged. The AI-use log preserves the main log bytes and appends the existing PR entries and this entry.'
+  - 'The initial TXT-only edit failed four prompt parity assertions. The TXT and YAML system text were then updated together. All 484 B/D and evaluator offline tests passed. Repo Ruff and mypy passed.'
+  limitations:
+  - 'Codex performed the prompt edit and merge. No new OpenCode session or independent human review is claimed. Product model calls were zero.'
+
+
+- entry_id: BD-INV07-PROMPT-RULES-20261125-01
+  timestamp: '2026-11-25T22:32:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session)
+  model: deepseek/deepseek-flash
+  purpose: Add two general answering rules after the archived 49/54 rating, and keep the TXT and YAML system prompts byte-identical
+  scope:
+  - prompts/answer-system-v1.0.txt
+  - prompts/prompt_v1.0.yaml
+  - docs/ai-use-log.yaml
+  status: prepared locally, pushed only after the archived run finished
+  student_decisions:
+  - 'The student asked for the two general rules the rating feedback implies: do not pool incomparable studies or pilots, and do not repeat unapproved source ids when refusing an out-of-scope instruction.'
+  approvals:
+  - 'Follow-up under approved test anchor PR #84; the prompt text is not a test file.'
+  verification:
+  - 'TXT and YAML system text compared programmatically after the edit: identical.'
+  - 'Local pytest cannot import litellm in this environment, so B-side suites were not run here; CI runs them.'
+  limitations:
+  - No provider call was made while preparing this edit.
