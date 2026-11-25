@@ -251,7 +251,14 @@ requirements:
     metric: context_budget_or_reinjection_violations
     operator: ==
     threshold: 0
-    verification: 不变量破坏负例必须导致测试失败；具体运行测试见架构追踪矩阵
+    verification: >-
+      不变量破坏负例必须导致测试失败，具体运行测试见架构追踪矩阵。
+      按 ADR-001 修订，CityU LiteLLM 网关未公开部署的 DeepSeek-V4-Flash 修订版本或官方聊天编码器资产时，
+      验收须确认最终请求使用锁定的 tiktoken==0.12.0、cl100k_base 和确定性消息封装开销进行可复现的发送前 BPE 预算估算。
+      该估算无法证明是供应商精确计数的上界。验证分词器或编码不可用、加载或计数失败、计数无效或输入计数超过
+      12,000 tokens 时拒绝发送且模型调用为零，禁止回退到 UTF-8 字节数或字符数。
+      独立核验每个真实响应的 usage.prompt_tokens、usage.completion_tokens 和 usage.total_tokens，
+      并将实际用量记入不可变的 v3 评测报告。
   priority: Must
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:

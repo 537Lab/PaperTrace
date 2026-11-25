@@ -2556,10 +2556,13 @@ entries:
   purpose: Document Li Yafei's ADR-001 requirement for the locked CityU pre-dispatch BPE counter before live evaluation version lock
   scope:
   - docs/architecture/adr/001-architecture.md
+  - docs/architecture/memory-design.md
+  - docs/req/requirements.yaml
   - docs/ai-use-log.yaml
   status: documentation amendment appended
   student_decisions:
   - The user explicitly approved the plan and directed Codex to append the ADR amendment and this log entry.
+  - The user approved aligning the memory design and INV-07 acceptance criteria with the ADR amendment before re-review.
   approvals: []
   verification:
   - Validation scope is the schema, AI-use log and semantic gates against base 38db05423956ac4b03b9f9c6ede8208b33e71e5e where applicable, plus an append-only diff check.
