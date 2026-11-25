@@ -2477,3 +2477,25 @@ entries:
   limitations:
   - 'No regression suite was rerun for a registry-only edit; the change carries no executable behaviour.'
   - 'The status value is implemented, not verified: independent verification of each fit criterion is still recorded separately.'
+
+- entry_id: SEMANTIC-WORKFLOW-BUDGET-TESTS-20261125-01
+  timestamp: '2026-11-25T15:29:20+08:00'
+  tool: Codex
+  model: GPT-6
+  purpose: Add tests to PR #55 for both P1 budget-guard findings from Lin Ziqi's review of PR #58 (4da418fb).
+  scope:
+  - test/offline/test_semantic_workflow_proposal.py
+  - docs/team/designs/shared-evaluation/workflow-plan-v1.md
+  - docs/ai-use-log.yaml
+  status: offline test proposal awaiting independent review
+  student_decisions:
+  - The supervising student approved the bounded test proposal plan in this session.
+  contributions:
+  - Added offline preflight scenarios for explicit tariffs and single-use authorization, plus synthetic controls and actual workflow wiring assertions.
+  limitations:
+  - Dispatches and reviews are synthetic fixtures. No implementation edit, provider call, live dispatch or independent test approval occurred in this session.
+  approvals:
+  - The supervising student approved this exact tests-only plan in the Codex session.
+  verification:
+  - Both requested Python environments collected 85 nodes and reported 42 passes and 43 expected implementation failures.
+  - The schema gate passed in both environments and Ruff passed in the initialization environment.

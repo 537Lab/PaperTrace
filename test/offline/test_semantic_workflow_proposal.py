@@ -12,6 +12,12 @@ from test_semantic_evidence import fixture, git
 ROOT = Path(__file__).resolve().parents[2]
 PREFIX = "/repos/537Lab/PaperTrace"
 RAW_HASH = "a" * 64
+DISPATCH_RUNS = f"{PREFIX}/actions/runs?event=workflow_dispatch&per_page=100"
+REVIEW_LIST = f"{PREFIX}/pulls/20/reviews?per_page=100"
+TARIFF_ENV = (
+    "PAPERTRACE_LLM_INPUT_COST_PER_MILLION",
+    "PAPERTRACE_LLM_OUTPUT_COST_PER_MILLION",
+)
 
 
 def evaluator_module(monkeypatch):
@@ -27,7 +33,9 @@ def evaluator_module(monkeypatch):
     return evaluator
 
 
-def workflow_fixture(tmp_path):
+def workflow_fixture(tmp_path, monkeypatch):
+    for name in TARIFF_ENV:
+        monkeypatch.setenv(name, "0")
     ctx, github = fixture(tmp_path)
     # The legacy synthetic fixture uses evaluate.yml. Build an equivalent
     # synthetic history with the exact dedicated workflow path under test.
@@ -52,7 +60,9 @@ def workflow_fixture(tmp_path):
     run.update(
         status="in_progress", conclusion=None, updated_at="2026-11-13T10:21:00Z",
         head_sha=ctx.head, path=".github/workflows/semantic-evaluation.yml",
+        display_title="auth-301", run_attempt=1,
     )
+    github.responses[DISPATCH_RUNS] = {"total_count": 1, "workflow_runs": [run]}
     github.responses[f"{PREFIX}/actions/artifacts/501"]["workflow_run"]["head_sha"] = ctx.head
     return ctx, github
 
@@ -65,7 +75,7 @@ def preflight(evaluator, ctx, github):
 
 def test_live_preflight_requires_exact_server_context(tmp_path, monkeypatch):
     evaluator = evaluator_module(monkeypatch)
-    ctx, github = workflow_fixture(tmp_path)
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
     approved = preflight(evaluator, ctx, github)
     assert approved["head_sha"] == ctx.head
     assert approved["authorization"] == github.report["authorization"]
@@ -82,7 +92,7 @@ def test_live_preflight_requires_exact_server_context(tmp_path, monkeypatch):
 )
 def test_preflight_rejects_invalid_authorization_before_provider_stage(tmp_path, monkeypatch, fault):
     evaluator = evaluator_module(monkeypatch)
-    ctx, github = workflow_fixture(tmp_path)
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
     run = github.responses[f"{PREFIX}/actions/runs/401"]
     reviews = github.responses[f"{PREFIX}/pulls/20/reviews?per_page=100"]
     if fault == "wrong-head":
@@ -119,8 +129,116 @@ def test_preflight_rejects_invalid_authorization_before_provider_stage(tmp_path,
         preflight(evaluator, ctx, github)
 
 
-def rating_fixture(tmp_path):
-    ctx, github = workflow_fixture(tmp_path)
+def set_authorization(github, review_id, **changes):
+    review = next(item for item in github.responses[REVIEW_LIST] if item["id"] == review_id)
+    authorization = {
+        **github.report["authorization"],
+        "dataset_sha256": github.report["target"]["dataset_sha256"],
+        "review_id": review_id,
+        **changes,
+    }
+    review["body"] = "Evaluation authorization: " + json.dumps(authorization)
+
+
+@pytest.mark.parametrize("name", TARIFF_ENV, ids=("input", "output"))
+@pytest.mark.parametrize("value", (None, "", "   "), ids=("unset", "empty", "whitespace"))
+def test_preflight_rejects_unknown_tariff_even_with_zero_budget(tmp_path, monkeypatch, name, value):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    set_authorization(github, 301, max_cost=0)
+    if value is None:
+        monkeypatch.delenv(name)
+    else:
+        monkeypatch.setenv(name, value)
+    evaluator = evaluator_module(monkeypatch)
+    with pytest.raises(ValueError):
+        preflight(evaluator, ctx, github)
+
+
+@pytest.mark.parametrize(
+    ("tariffs", "max_cost", "accepted"),
+    (
+        pytest.param(("0", "0"), 0, True, id="explicit-zero"),
+        # 18 attempts at the B boundary caps of 12,000 input and 2,000 output tokens.
+        pytest.param(("0.50", "1.50"), 0.162, True, id="positive-at-ceiling"),
+        pytest.param(("0.50", "1.50"), 1.0, True, id="positive-within-budget"),
+        pytest.param(("0.50", "1.50"), 0, False, id="positive-over-budget"),
+        pytest.param(("0.50", "0"), 0, False, id="input-only-over-budget"),
+        pytest.param(("0", "1.50"), 0, False, id="output-only-over-budget"),
+    ),
+)
+def test_preflight_checks_explicit_tariffs_against_budget(
+    tmp_path, monkeypatch, tariffs, max_cost, accepted,
+):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    set_authorization(github, 301, max_cost=max_cost)
+    for name, tariff in zip(TARIFF_ENV, tariffs, strict=True):
+        monkeypatch.setenv(name, tariff)
+    evaluator = evaluator_module(monkeypatch)
+    if accepted:
+        assert preflight(evaluator, ctx, github)["authorization"]["max_cost"] == max_cost
+    else:
+        with pytest.raises(ValueError):
+            preflight(evaluator, ctx, github)
+
+
+def add_fresh_dispatch(github, review_id, *, prior_conclusion):
+    prior = github.responses[f"{PREFIX}/actions/runs/401"]
+    if prior_conclusion is not None:
+        prior.update(
+            status="completed", conclusion=prior_conclusion, updated_at="2026-11-13T10:25:00Z",
+        )
+    fresh = dict(
+        prior, id=402, display_title=f"auth-{review_id}", status="in_progress", conclusion=None,
+        created_at="2026-11-13T10:31:00Z", updated_at="2026-11-13T10:31:01Z",
+    )
+    if prior_conclusion is None:
+        fresh.update(created_at=prior["created_at"], updated_at=prior["updated_at"])
+    github.responses[f"{PREFIX}/actions/runs/402"] = fresh
+    github.responses[DISPATCH_RUNS] = {"total_count": 2, "workflow_runs": [fresh, prior]}
+
+
+@pytest.mark.parametrize("conclusion", ("success", "failure", "cancelled"))
+def test_preflight_rejects_reuse_after_completed_dispatch(tmp_path, monkeypatch, conclusion):
+    evaluator = evaluator_module(monkeypatch)
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    assert preflight(evaluator, ctx, github)["authorization"]["review_id"] == 301
+    add_fresh_dispatch(github, 301, prior_conclusion=conclusion)
+    github.calls.clear()
+    with pytest.raises(ValueError):
+        evaluator.preflight(ctx, github, pr_number=20, run_id=402, authorization_review_id=301)
+    assert DISPATCH_RUNS in github.calls
+
+
+def test_preflight_cannot_authorize_both_concurrent_dispatches(tmp_path, monkeypatch):
+    evaluator = evaluator_module(monkeypatch)
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    add_fresh_dispatch(github, 301, prior_conclusion=None)
+    rejected = []
+    for run_id in (401, 402):
+        github.calls.clear()
+        try:
+            evaluator.preflight(ctx, github, pr_number=20, run_id=run_id, authorization_review_id=301)
+        except ValueError:
+            rejected.append(run_id)
+        assert DISPATCH_RUNS in github.calls
+    assert rejected, "Both visible concurrent dispatches were authorized by review 301"
+
+
+def test_preflight_accepts_new_independent_review_after_prior_dispatch(tmp_path, monkeypatch):
+    evaluator = evaluator_module(monkeypatch)
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    assert preflight(evaluator, ctx, github)["authorization"]["review_id"] == 301
+    set_authorization(github, 302)
+    add_fresh_dispatch(github, 302, prior_conclusion="success")
+    github.calls.clear()
+    approved = evaluator.preflight(ctx, github, pr_number=20, run_id=402, authorization_review_id=302)
+    assert approved["head_sha"] == ctx.head
+    assert approved["authorization"]["review_id"] == 302
+    assert DISPATCH_RUNS in github.calls
+
+
+def rating_fixture(tmp_path, monkeypatch):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
     ratings = github.report["scores"]["independent_ratings"]
     reviews = github.responses[f"{PREFIX}/pulls/20/reviews?per_page=100"]
     reviews[-1].update(
@@ -141,7 +259,7 @@ def intake(evaluator, ctx, github):
 
 def test_rating_intake_uses_actual_independent_review(tmp_path, monkeypatch):
     evaluator = evaluator_module(monkeypatch)
-    ctx, github, ratings = rating_fixture(tmp_path)
+    ctx, github, ratings = rating_fixture(tmp_path, monkeypatch)
     adopted = intake(evaluator, ctx, github)
     assert adopted["review_id"] == 302
     assert adopted["reviewer"] == "independent-student"
@@ -157,7 +275,7 @@ def test_rating_intake_uses_actual_independent_review(tmp_path, monkeypatch):
 )
 def test_intake_rejects_invalid_or_incomplete_human_review(tmp_path, monkeypatch, fault):
     evaluator = evaluator_module(monkeypatch)
-    ctx, github, _ = rating_fixture(tmp_path)
+    ctx, github, _ = rating_fixture(tmp_path, monkeypatch)
     review = github.responses[f"{PREFIX}/pulls/20/reviews?per_page=100"][-1]
     body = json.loads(review["body"].split(": ", 1)[1])
     if fault == "wrong-hash":
@@ -308,6 +426,62 @@ def synthetic_wired_workflow():
 
 def test_structural_contract_accepts_synthetic_exact_wiring():
     assert_workflow_wiring(synthetic_wired_workflow())
+
+
+def assert_budget_guard_wiring(workflow):
+    assert re.search(
+        r"\$\{\{\s*inputs\.authorization_review_id\s*\}\}", workflow.get("run-name", ""),
+    ), "Workflow run-name must bind the authorization review ID"
+    for stage in ("preflight", "collect"):
+        steps = [
+            step for step in workflow["jobs"][stage]["steps"]
+            if step.get("run") == STAGE_COMMANDS[stage]
+        ]
+        assert len(steps) == 1, stage
+        for name in TARIFF_ENV:
+            assert steps[0].get("env", {}).get(name) == expression(f"vars.{name}"), (stage, name)
+
+
+def synthetic_budget_guard_workflow():
+    workflow = synthetic_wired_workflow()
+    workflow["run-name"] = "auth-" + expression("inputs.authorization_review_id")
+    for stage in ("preflight", "collect"):
+        workflow["jobs"][stage]["steps"][-1]["env"].update({
+            name: expression(f"vars.{name}") for name in TARIFF_ENV
+        })
+    return workflow
+
+
+def test_workflow_budget_guard_accepts_synthetic_wiring():
+    workflow = synthetic_budget_guard_workflow()
+    assert_workflow_wiring(workflow)
+    assert_budget_guard_wiring(workflow)
+
+
+@pytest.mark.parametrize("run_name", (None, "auth-301", "auth-" + expression("inputs.target_pr")))
+def test_workflow_budget_guard_rejects_unbound_run_name(run_name):
+    workflow = synthetic_budget_guard_workflow()
+    if run_name is None:
+        del workflow["run-name"]
+    else:
+        workflow["run-name"] = run_name
+    with pytest.raises(AssertionError, match="run-name"):
+        assert_budget_guard_wiring(workflow)
+
+
+@pytest.mark.parametrize("stage", ("preflight", "collect"))
+@pytest.mark.parametrize("name", TARIFF_ENV, ids=("input", "output"))
+def test_workflow_budget_guard_rejects_missing_tariff_binding(stage, name):
+    workflow = synthetic_budget_guard_workflow()
+    del workflow["jobs"][stage]["steps"][-1]["env"][name]
+    with pytest.raises(AssertionError, match=name):
+        assert_budget_guard_wiring(workflow)
+
+
+def test_actual_workflow_wires_budget_guards():
+    path = ROOT / ".github/workflows/semantic-evaluation.yml"
+    assert path.is_file(), "IMPLEMENTATION_MISSING: evaluation workflow"
+    assert_budget_guard_wiring(yaml.safe_load(path.read_text(encoding="utf-8")))
 
 
 @pytest.mark.parametrize(
