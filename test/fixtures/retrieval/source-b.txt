@@ -1,0 +1,10 @@
+SYNTHETIC SOURCE B — not a real paper, no scientific claim.
+
+Gamma statement one: the synthetic device runs in two modes. Gamma statement
+two: the second mode is slower than the first in this invented example.
+
+PENDING-MARKER-B: this line exists only so tests can prove that unreviewed or
+excluded source text never reaches a generation payload.
+
+Delta statement one: an unrelated synthetic clause, present only to give the
+second source more than one citeable region for cross-source checks.
