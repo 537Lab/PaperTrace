@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 from runpy import run_path
-from types import SimpleNamespace
 
 import pytest
+
+from papertrace.answer.generation import (
+    AnswerGenerationOutcome,
+    GenerationAccounting,
+    GenerationCallResult,
+)
+from papertrace.contracts import AnswerDraft
 
 ROOT = Path(__file__).resolve().parents[2]
 DATASET_PATH = ROOT / "test/evaluation/cases.json"
@@ -53,37 +60,132 @@ def request_messages(case, system, sent, *, indent=2):
     return (("system", system), ("user", json.dumps(body, indent=indent, ensure_ascii=False)))
 
 
-class OfflineBoundary:
-    """Expose the checked messages and raw response via the proposed driver seam."""
+SNAPSHOT_ID = 'snap-' + 'c' * 64
+REVIEW_DIGEST = 'd' * 64
+GENERATED_AT = datetime(2026, 11, 25, tzinfo=timezone.utc)
+QUESTION_ID = 'q-eval-1'
+QUESTION_TEXT = 'What does the synthetic resonance cell store?'
 
-    def __init__(self, messages, citations=(), *, attempts=1, rejected=False, repeat=1):
+
+def _accounting(attempts):
+    """Build D's validated accounting model rather than a bare namespace."""
+    return GenerationAccounting(
+        provider='synthetic-provider',
+        model='synthetic-model',
+        answer_model_attempts=attempts,
+    )
+
+
+def _draft(*, citations, status='draft'):
+    """Build the real AnswerDraft; citations live only on this draft."""
+    accepted = status == 'draft'
+    return AnswerDraft(
+        answer_id='ans-eval-1',
+        snapshot_id=SNAPSHOT_ID,
+        question_id=QUESTION_ID,
+        review_revision=1,
+        review_digest=REVIEW_DIGEST,
+        approved_evidence_ids=(RUNTIME_A, RUNTIME_B),
+        sent_evidence_ids=tuple(citations),
+        citation_evidence_ids=tuple(citations) if accepted else (),
+        status=status,
+        body='Synthetic answer (b1).' if accepted else '',
+        refusal_reason=None if accepted else 'STALE_REVIEW_DURING_GENERATION',
+        generated_at=GENERATED_AT,
+    )
+
+
+def _result(*, citations):
+    """Build the real GenerationCallResult, which carries alias mappings only."""
+    return GenerationCallResult(
+        status='SUCCESS',
+        raw_output='Synthetic answer (b1).',
+        sent_evidence_ids=tuple(citations),
+        citation_aliases=(('b1', citations[0]),) if citations else (),
+        unknown_citation_keys=(),
+        ambiguous_citation_keys=(),
+        refusal_reason=None,
+    )
+
+
+def _outcome(*, draft=None, result=None, accounting=None):
+    """Build the real AnswerGenerationOutcome with every required field."""
+    return AnswerGenerationOutcome(
+        draft=draft,
+        reason=None,
+        revision_before=1,
+        revision_after=1,
+        digest_before=REVIEW_DIGEST,
+        digest_after=REVIEW_DIGEST,
+        sent_request=None,
+        result=result,
+        raw_unknown_keys=(),
+        accounting=accounting,
+        question_id=QUESTION_ID,
+        question_text=QUESTION_TEXT,
+    )
+
+
+class OfflineBoundary:
+    """Contract-real stand-in for D's generation boundary.
+
+    It returns the actual AnswerGenerationOutcome, AnswerDraft and
+    GenerationCallResult models, so a collector cannot pass on a synthetic-only
+    shape: citations are read from draft.citation_evidence_ids and result only
+    supplies alias mappings.
+
+    Modes mirror the real boundary outcomes: success (validated draft), stale
+    (post-call review change keeps result while the draft fails) and dropped
+    (D keeps accounting while discarding the result).
+    """
+
+    def __init__(
+        self,
+        messages,
+        citations=(),
+        *,
+        attempts=1,
+        rejected=False,
+        mode='success',
+        repeat=1,
+    ):
         self.messages = messages
         self.events = []
         self.attempts = attempts
-        self.rejected = rejected
-        self.result = SimpleNamespace(citation_evidence_ids=citations)
+        self.mode = 'dropped' if rejected else mode
+        self.citations = tuple(citations)
         self.response = {
-            "request_id": f"offline-{repeat}",
-            "model": "offline-model",
-            "model_version": "synthetic",
-            "content": f"Synthetic answer {repeat}",
-            "finish_reason": "stop",
-            "usage": {"input_tokens": 8, "output_tokens": 2, "total_tokens": 10},
+            'request_id': f'offline-{repeat}',
+            'model': 'offline-model',
+            'model_version': 'synthetic',
+            'content': f'Synthetic answer {repeat}',
+            'finish_reason': 'stop',
+            'usage': {'input_tokens': 8, 'output_tokens': 2, 'total_tokens': 10},
         }
 
     def generate(self, *, request_observer):
-        self.events.append("driver")
+        self.events.append('driver')
         if self.messages is None:
-            return SimpleNamespace(result=None, accounting=None), None
-        self.events.append("capture")
+            # Empty approved set: D never reaches the boundary and has no accounting.
+            return _outcome(), None
+        self.events.append('capture')
         try:
             request_observer(self.messages)
         except ValueError:
-            # B refuses before call_single if the observer rejects the request.
-            return SimpleNamespace(result=None, accounting=None), None
-        self.events.append("model")
-        accounting = SimpleNamespace(answer_model_attempts=self.attempts)
-        outcome = SimpleNamespace(result=None if self.rejected else self.result, accounting=accounting)
+            # B refuses before call_single; D still exposes validated zero attempts.
+            return _outcome(accounting=_accounting(0)), None
+        self.events.append('model')
+        if self.mode == 'dropped':
+            return _outcome(accounting=_accounting(self.attempts)), None
+        draft = _draft(
+            citations=self.citations,
+            status='failed' if self.mode == 'stale' else 'draft',
+        )
+        outcome = _outcome(
+            draft=draft,
+            result=_result(citations=self.citations),
+            accounting=_accounting(self.attempts),
+        )
         return outcome, self.response
 
 
@@ -167,8 +269,24 @@ def test_rejected_capture_prevents_model_call(collect_attempt, fixed_case, fault
     outcome = run(collect_attempt, fixed_case, driver)
     assert driver.events == ["driver", "capture"]
     assert outcome["record"] is None
-    assert outcome["accounting_present"] is False
-    assert outcome["answer_model_attempts"] is None
+    # P1: observer rejection keeps D's validated accounting with zero attempts.
+    assert outcome["accounting_present"] is True
+    assert outcome["answer_model_attempts"] == 0
+
+
+def test_post_call_stale_review_keeps_result_but_never_yields_a_report_row(
+    collect_attempt, fixed_case
+):
+    """P1: a post-call review change keeps result while the draft fails."""
+    _, case, system = fixed_case
+    driver = OfflineBoundary(
+        request_messages(case, system, ("ev-b",)), (RUNTIME_B,), mode="stale"
+    )
+    outcome = run(collect_attempt, fixed_case, driver)
+    assert driver.events == ["driver", "capture", "model"]
+    assert outcome["record"] is None
+    assert outcome["accounting_present"] is True
+    assert outcome["answer_model_attempts"] == 1
 
 
 @pytest.mark.parametrize("fault", ["different-case", "different-dataset", "non-bijective"])
