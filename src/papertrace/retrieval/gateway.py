@@ -12,12 +12,14 @@ from collections.abc import Sequence
 from typing import Any
 
 from papertrace.retrieval.service import (
+    EvaluationCaseBinding,
     GenerationPolicy,
     GenerationRequest,
     GenerationResult,
     GenerationStatus,
     ModelFactory,
     PaperQA2Adapter,
+    RequestObserver,
     RetrievalAdapter,
     RetrievalAttempt,
     RetrievalConfig,
@@ -31,6 +33,7 @@ from papertrace.retrieval.service import (
 )
 
 __all__ = [
+    "EvaluationCaseBinding",
     "Gateway",
     "GenerationPolicy",
     "GenerationRequest",
@@ -70,12 +73,16 @@ class Gateway:
         model_factory: ModelFactory,
         index: object | None = None,
         clock: Any,
+        evaluation_binding: EvaluationCaseBinding | None = None,
+        request_observer: RequestObserver | None = None,
     ) -> None:
         _reject_untrusted_index(index)
         self._adapter = adapter
         self._source_reader = source_reader
         self._model_factory = model_factory
         self._clock = clock
+        self._evaluation_binding = evaluation_binding
+        self._request_observer = request_observer
 
     @staticmethod
     def ingest(request: dict[str, Any]) -> dict[str, Any]:
@@ -133,7 +140,12 @@ class Gateway:
 
     def generate(self, request: GenerationRequest) -> GenerationResult:
         """Execute D's approved generation request with zero pre-call outbound."""
-        return run_generation(request=request, factory=self._model_factory)
+        return run_generation(
+            request=request,
+            factory=self._model_factory,
+            evaluation_binding=self._evaluation_binding,
+            request_observer=self._request_observer,
+        )
 
     @staticmethod
     def sanitized_contexts(

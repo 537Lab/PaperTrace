@@ -622,3 +622,25 @@ entries:
   - 全量离线复跑 436 通过、20 失败，新增失败仅为 14 项预期入口缺失
   limitations:
   - 只新增测试、设计和记录。真实产品模型调用为零。共享 evaluator 尚未合体。
+- entry_id: B-OPENCODE-20261125-EVALUATION-BOUNDARY
+  timestamp: '2026-11-25T10:52:53+0800'
+  tool: OpenCode v2.0.12 and Codex Desktop
+  model: cityu/CS5351/DeepSeek-V4-Flash
+  purpose: 实现获批的固定证据 ID、出站消息观察器和规范引用回映射接口
+  scope:
+  - src/papertrace/retrieval/gateway.py
+  - src/papertrace/retrieval/service.py
+  - docs/ai-use-log.yaml
+  status: implementation-awaiting-independent-source-review
+  approvals:
+  - 537Lab 正式批准测试 PR 61 的精准 head 1d0263b208c28cba7a5c20e719540d78f8cc2c15，审查记录 6045847733
+  - 用户明确授权本次 OpenCode 模型及 #61 的 B 模块源码范围
+  verification:
+  - B 定向 100 项通过，A/B/D 累计联调快照定向 230 项通过
+  - QUAL-02 三组固定 ID 实际消息通过现有请求校验，D 引用回到规范 ID且账目为 1。空集 B 和模型入口均为 0，D 账目对象为空。
+  - 六种无效绑定在模型入口前拒绝，裁剪后的无效引用由 D 拒绝并保留一次调用账目
+  - B Ruff、mypy、schema 和 Git diff 检查通过，全量离线 450 通过、6 失败，六个失败节点与原 B 基线一致
+  limitations:
+  - OpenCode 源码会话 ses_def6b05e4ffeQXo25V068VC687 生成 Gateway 补丁。Codex 按原始输出补齐 diff 上下文并应用，编写 service 的绑定校验、组装与捕获逻辑，运行离线复验。
+  - 前两次 OpenCode 构建因复合 shell 权限中断，原始尝试另有记录
+  - 保留精确获批测试、Gate 4、数据集和提示词。未调用真实产品模型。共享 evaluator 的实际接线仍待累计集成。
