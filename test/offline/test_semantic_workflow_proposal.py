@@ -2,8 +2,11 @@
 
 import json
 import re
+import sys
 from importlib import import_module
+from inspect import signature
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 import yaml
@@ -14,6 +17,12 @@ PREFIX = "/repos/537Lab/PaperTrace"
 RAW_HASH = "a" * 64
 DISPATCH_RUNS = f"{PREFIX}/actions/runs?event=workflow_dispatch&per_page=100"
 REVIEW_LIST = f"{PREFIX}/pulls/20/reviews?per_page=100"
+RUN_ATTEMPT_ENV = "PAPERTRACE_RUN_ATTEMPT"
+RUN_ARTIFACTS = f"{PREFIX}/actions/runs/401/artifacts?per_page=100"
+INPUT_CAP = 12_000
+DEFAULT_SYSTEM_PROMPT = "prompts/answer-system-v1.0.txt"
+TOKENIZER_PROVIDER = "openai"
+TOKENIZER_MODEL = "gpt-4o-2024-08-06"
 TARIFF_ENV = (
     "PAPERTRACE_LLM_INPUT_COST_PER_MILLION",
     "PAPERTRACE_LLM_OUTPUT_COST_PER_MILLION",
@@ -36,6 +45,7 @@ def evaluator_module(monkeypatch):
 def workflow_fixture(tmp_path, monkeypatch):
     for name in TARIFF_ENV:
         monkeypatch.setenv(name, "0")
+    monkeypatch.setenv(RUN_ATTEMPT_ENV, "1")
     ctx, github = fixture(tmp_path)
     # The legacy synthetic fixture uses evaluate.yml. Build an equivalent
     # synthetic history with the exact dedicated workflow path under test.
@@ -63,6 +73,7 @@ def workflow_fixture(tmp_path, monkeypatch):
         display_title="auth-301", run_attempt=1,
     )
     github.responses[DISPATCH_RUNS] = {"total_count": 1, "workflow_runs": [run]}
+    github.responses[RUN_ARTIFACTS] = {"total_count": 0, "artifacts": []}
     github.responses[f"{PREFIX}/actions/artifacts/501"]["workflow_run"]["head_sha"] = ctx.head
     return ctx, github
 
@@ -237,6 +248,374 @@ def test_preflight_accepts_new_independent_review_after_prior_dispatch(tmp_path,
     assert DISPATCH_RUNS in github.calls
 
 
+@pytest.mark.parametrize(
+    "title", ({}, {"display_title": None}, {"display_title": ""}, {"display_title": "   "},
+              {"display_title": "manual dispatch"}),
+    ids=("missing", "null", "empty", "whitespace", "unmarked"),
+)
+def test_preflight_rejects_untagged_prior_dispatch_on_same_head(tmp_path, monkeypatch, title):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    set_authorization(github, 302)
+    add_fresh_dispatch(github, 302, prior_conclusion="success")
+    evaluator = evaluator_module(monkeypatch)
+    assert evaluator.preflight(
+        ctx, github, pr_number=20, run_id=402, authorization_review_id=302,
+    )["authorization"]["review_id"] == 302
+    prior = github.responses[f"{PREFIX}/actions/runs/401"]
+    prior.pop("display_title")
+    prior.update(title)
+    github.calls.clear()
+    with pytest.raises(ValueError):
+        evaluator.preflight(ctx, github, pr_number=20, run_id=402, authorization_review_id=302)
+    assert DISPATCH_RUNS in github.calls
+
+
+INVALID_ATTEMPTS = (
+    pytest.param(2, "2", id="matched-rerun"),
+    pytest.param(2, "1", id="server-rerun"),
+    pytest.param(1, "2", id="env-rerun"),
+    pytest.param(1, None, id="missing-env"),
+    pytest.param(1, "", id="blank-env"),
+    pytest.param(1, "   ", id="whitespace-env"),
+    pytest.param(1, "invalid", id="invalid-env"),
+    pytest.param(1, "0", id="zero-env"),
+    pytest.param(None, "1", id="missing-server"),
+    pytest.param(True, "1", id="boolean-server"),
+    pytest.param("1", "1", id="string-server"),
+)
+
+
+def set_run_attempt(github, monkeypatch, server, env):
+    run = github.responses[f"{PREFIX}/actions/runs/401"]
+    if server is None:
+        run.pop("run_attempt")
+    else:
+        run["run_attempt"] = server
+    if env is None:
+        monkeypatch.delenv(RUN_ATTEMPT_ENV)
+    else:
+        monkeypatch.setenv(RUN_ATTEMPT_ENV, env)
+
+
+@pytest.mark.parametrize(("server", "env"), INVALID_ATTEMPTS)
+def test_preflight_rejects_unverified_first_attempt(tmp_path, monkeypatch, server, env):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    set_run_attempt(github, monkeypatch, server, env)
+    evaluator = evaluator_module(monkeypatch)
+    with pytest.raises(ValueError):
+        preflight(evaluator, ctx, github)
+
+
+class ProviderEntryReached(BaseException):
+    """End the positive probe at the first transport entry."""
+
+
+class ProviderProbe:
+    def __init__(self):
+        self.requests = []
+
+    @property
+    def provider_calls(self):
+        return len(self.requests)
+
+    def __call__(self, messages):
+        self.requests.append(tuple(messages))
+        raise ProviderEntryReached
+
+
+def collect(
+    evaluator, ctx, github, provider, *, run_id=401, review_id=301, system_prompt_path=None,
+):
+    assert callable(getattr(evaluator, "collect", None)), "IMPLEMENTATION_MISSING: collect"
+    if system_prompt_path is None:
+        system_prompt_path = github.report["target"]["system_prompt_path"]
+    return evaluator.collect(
+        ctx, github, pr_number=20, run_id=run_id, authorization_review_id=review_id,
+        system_prompt_path=system_prompt_path, transport=provider,
+    )
+
+
+def approved_tokenizer_loader(evaluator):
+    assert callable(getattr(evaluator, "load_approved_token_counter", None)), (
+        "IMPLEMENTATION_MISSING: approved tokenizer loader"
+    )
+    return evaluator.load_approved_token_counter
+
+
+def stub_tokenizer(evaluator, monkeypatch, github, loader, *, review_id=301):
+    approved_tokenizer_loader(evaluator)
+    review = next(item for item in github.responses[REVIEW_LIST] if item["id"] == review_id)
+    authorization = json.loads(review["body"].split(": ", 1)[1])
+
+    def checked_loader(*, provider, model):
+        assert provider == authorization["provider"]
+        assert model == authorization["model"]
+        return loader()
+
+    monkeypatch.setattr(evaluator, "load_approved_token_counter", checked_loader)
+
+
+@pytest.mark.parametrize(("server", "env"), INVALID_ATTEMPTS)
+def test_collect_rejects_unverified_first_attempt_before_provider(tmp_path, monkeypatch, server, env):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    set_run_attempt(github, monkeypatch, server, env)
+    evaluator = evaluator_module(monkeypatch)
+    stub_tokenizer(evaluator, monkeypatch, github, lambda: lambda messages: INPUT_CAP)
+    provider = ProviderProbe()
+    with pytest.raises(ValueError):
+        collect(evaluator, ctx, github, provider)
+    assert provider.provider_calls == 0
+
+
+@pytest.mark.parametrize("expired", (False, True), ids=("available", "expired"))
+def test_collect_rejects_existing_raw_artifact_before_provider(tmp_path, monkeypatch, expired):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    github.responses[RUN_ARTIFACTS] = {
+        "total_count": 1,
+        "artifacts": [{"id": 502, "name": "papertrace-semantic-raw", "expired": expired}],
+    }
+    evaluator = evaluator_module(monkeypatch)
+    stub_tokenizer(evaluator, monkeypatch, github, lambda: lambda messages: INPUT_CAP)
+    provider = ProviderProbe()
+    with pytest.raises(ValueError):
+        collect(evaluator, ctx, github, provider)
+    assert RUN_ARTIFACTS in github.calls
+    assert provider.provider_calls == 0
+
+
+@pytest.mark.parametrize("name", TARIFF_ENV, ids=("input", "output"))
+def test_collect_rechecks_tariff_after_preflight_before_provider(tmp_path, monkeypatch, name):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    set_authorization(github, 301, max_cost=0)
+    evaluator = evaluator_module(monkeypatch)
+    stub_tokenizer(evaluator, monkeypatch, github, lambda: lambda messages: INPUT_CAP)
+    assert preflight(evaluator, ctx, github)["authorization"]["max_cost"] == 0
+    monkeypatch.setenv(name, "   ")
+    provider = ProviderProbe()
+    with pytest.raises(ValueError):
+        collect(evaluator, ctx, github, provider)
+    assert provider.provider_calls == 0
+
+
+def test_final_request_token_count_uses_approved_counter_with_framing(monkeypatch):
+    messages = (("system", "规"), ("user", "hi"))
+    framing_tokens = 7
+    content_tokens = {"规": 1, "hi": 1}
+
+    def approved_counter(final_messages):
+        assert tuple(final_messages) == messages
+        return framing_tokens + sum(content_tokens[text] for _, text in final_messages)
+
+    evaluator = evaluator_module(monkeypatch)
+    count = getattr(evaluator, "count_final_request_tokens", None)
+    assert callable(count), "IMPLEMENTATION_MISSING: final request token count"
+    assert count(messages, counter=approved_counter) == 9
+    assert 9 != sum(len(text.encode("utf-8")) for _, text in messages)
+
+
+@pytest.mark.parametrize("tokens", (INPUT_CAP - 1, INPUT_CAP), ids=("under-cap", "at-cap"))
+def test_collect_counts_exact_final_messages_before_transport(tmp_path, monkeypatch, tokens):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    evaluator = evaluator_module(monkeypatch)
+    counted = []
+
+    def approved_counter(messages):
+        counted.append(tuple(messages))
+        return tokens
+
+    stub_tokenizer(evaluator, monkeypatch, github, lambda: approved_counter)
+    provider = ProviderProbe()
+
+    def transport(messages):
+        assert tuple(messages) in counted
+        provider(messages)
+
+    system_prompt_path = github.report["target"]["system_prompt_path"]
+    with pytest.raises(ProviderEntryReached):
+        collect(evaluator, ctx, github, transport, system_prompt_path=system_prompt_path)
+    assert provider.provider_calls == 1
+    assert RUN_ARTIFACTS in github.calls
+    final_messages = provider.requests[0]
+    assert tuple(role for role, _ in final_messages) == ("system", "user")
+    assert final_messages[0][1] == ctx.read(system_prompt_path)
+    payload = json.loads(final_messages[1][1])
+    assert payload["question"]
+    assert payload["approved_evidence"]
+
+
+@pytest.mark.parametrize(
+    "tokens", (INPUT_CAP + 1, 0, -1, None, True, "42", 12.0),
+    ids=("over-cap", "zero", "negative", "missing", "boolean", "string", "float"),
+)
+def test_collect_refuses_unsafe_token_count_before_provider(tmp_path, monkeypatch, tokens):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    evaluator = evaluator_module(monkeypatch)
+    counted = []
+
+    def approved_counter(messages):
+        counted.append(tuple(messages))
+        return tokens
+
+    stub_tokenizer(evaluator, monkeypatch, github, lambda: approved_counter)
+    provider = ProviderProbe()
+    with pytest.raises(ValueError):
+        collect(evaluator, ctx, github, provider)
+    assert counted
+    assert tuple(role for role, _ in counted[0]) == ("system", "user")
+    assert provider.provider_calls == 0
+
+
+@pytest.mark.parametrize("error", (ImportError, RuntimeError, OSError))
+@pytest.mark.parametrize("location", ("loader", "counter"))
+def test_collect_never_falls_back_when_tokenizer_is_unavailable(
+    tmp_path, monkeypatch, error, location,
+):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    evaluator = evaluator_module(monkeypatch)
+    failures = []
+
+    def unavailable(*args):
+        failures.append(location)
+        raise error("synthetic approved tokenizer unavailable")
+
+    loader = unavailable if location == "loader" else lambda: unavailable
+    stub_tokenizer(evaluator, monkeypatch, github, loader)
+    provider = ProviderProbe()
+    with pytest.raises((ValueError, error)):
+        collect(evaluator, ctx, github, provider)
+    assert failures
+    assert provider.provider_calls == 0
+
+
+def install_offline_tiktoken(monkeypatch, get_encoding):
+    tiktoken = ModuleType("tiktoken")
+    tiktoken.get_encoding = get_encoding
+
+    def encoding_for_model(model):
+        assert model == TOKENIZER_MODEL
+        return tiktoken.get_encoding("o200k_base")
+
+    tiktoken.encoding_for_model = encoding_for_model
+    monkeypatch.setitem(sys.modules, "tiktoken", tiktoken)
+
+
+@pytest.mark.parametrize("entry", ("loader", "collect"))
+@pytest.mark.parametrize(
+    "error", (ImportError, OSError, RuntimeError), ids=("missing-module", "offline", "load-error"),
+)
+def test_real_tokenizer_loader_and_collect_reject_tokenizer_failure(
+    tmp_path, monkeypatch, entry, error,
+):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    set_authorization(github, 301, provider=TOKENIZER_PROVIDER, model=TOKENIZER_MODEL)
+    encoding_requests = []
+
+    def broken_encoding(name):
+        encoding_requests.append(name)
+        raise error("synthetic tokenizer encoding unavailable")
+
+    if error is ImportError:
+        monkeypatch.setitem(sys.modules, "tiktoken", None)
+    else:
+        install_offline_tiktoken(monkeypatch, broken_encoding)
+
+    evaluator = evaluator_module(monkeypatch)
+    load = approved_tokenizer_loader(evaluator)
+    provider = ProviderProbe()
+    with pytest.raises((ValueError, error)):
+        if entry == "loader":
+            load(provider=TOKENIZER_PROVIDER, model=TOKENIZER_MODEL)
+        else:
+            collect(evaluator, ctx, github, provider)
+    if error is not ImportError:
+        assert encoding_requests
+    assert provider.provider_calls == 0
+
+
+def test_real_tokenizer_loader_counts_through_encoding_and_includes_framing(tmp_path, monkeypatch):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    set_authorization(github, 301, provider=TOKENIZER_PROVIDER, model=TOKENIZER_MODEL)
+    system_text, user_text = "规则" * 64, "请回答" * 64
+    messages = (("system", system_text), ("user", user_text))
+    encoded = []
+    encoding_requests = []
+
+    class OfflineEncoding:
+        def encode(self, text, **kwargs):
+            encoded.append(text)
+            return list(range({system_text: 2, user_text: 3}.get(text, 1)))
+
+    def get_encoding(name):
+        encoding_requests.append(name)
+        return OfflineEncoding()
+
+    install_offline_tiktoken(monkeypatch, get_encoding)
+    evaluator = evaluator_module(monkeypatch)
+    load = approved_tokenizer_loader(evaluator)
+    count = getattr(evaluator, "count_final_request_tokens", None)
+    assert callable(count), "IMPLEMENTATION_MISSING: final request token count"
+    counter = load(provider=TOKENIZER_PROVIDER, model=TOKENIZER_MODEL)
+    tokens = count(messages, counter=counter)
+    # Two roles, two contents, three framing tokens per message and a three-token primer.
+    assert tokens == 1 + 1 + 2 + 3 + 3 * len(messages) + 3
+    assert tokens != sum(len(text.encode("utf-8")) for _, text in messages)
+    assert {system_text, user_text} <= set(encoded)
+    assert encoding_requests
+    encoded.clear()
+    provider = ProviderProbe()
+    with pytest.raises(ProviderEntryReached):
+        collect(evaluator, ctx, github, provider)
+    assert provider.provider_calls == 1
+    assert all(content in encoded for _, content in provider.requests[0])
+
+
+def test_collect_defaults_to_repo_system_prompt(monkeypatch):
+    evaluator = evaluator_module(monkeypatch)
+    collect_stage = getattr(evaluator, "collect", None)
+    assert callable(collect_stage), "IMPLEMENTATION_MISSING: collect"
+    assert signature(collect_stage).parameters["system_prompt_path"].default == DEFAULT_SYSTEM_PROMPT
+    assert (ROOT / DEFAULT_SYSTEM_PROMPT).is_file()
+
+
+@pytest.mark.parametrize("fault", ("wrong-head", "consumed-review", "untagged-prior-dispatch"))
+def test_collect_rechecks_authorization_and_dispatch_history_before_provider(
+    tmp_path, monkeypatch, fault,
+):
+    ctx, github = workflow_fixture(tmp_path, monkeypatch)
+    evaluator = evaluator_module(monkeypatch)
+    run_id, review_id = 401, 301
+    if fault == "untagged-prior-dispatch":
+        run_id, review_id = 402, 302
+        set_authorization(github, review_id)
+        add_fresh_dispatch(github, review_id, prior_conclusion="success")
+    stub_tokenizer(
+        evaluator, monkeypatch, github, lambda: lambda messages: INPUT_CAP, review_id=review_id,
+    )
+    assert evaluator.preflight(
+        ctx, github, pr_number=20, run_id=run_id, authorization_review_id=review_id,
+    )["authorization"]["review_id"] == review_id
+
+    if fault == "wrong-head":
+        github.responses[f"{PREFIX}/actions/runs/401"]["head_sha"] = "f" * 40
+    elif fault == "consumed-review":
+        run_id = 402
+        add_fresh_dispatch(github, review_id, prior_conclusion="success")
+    else:
+        github.responses[f"{PREFIX}/actions/runs/401"]["display_title"] = "manual dispatch"
+    github.responses[f"{PREFIX}/actions/runs/{run_id}/artifacts?per_page=100"] = {
+        "total_count": 0, "artifacts": [],
+    }
+    github.calls.clear()
+
+    provider = ProviderProbe()
+    with pytest.raises(ValueError):
+        collect(evaluator, ctx, github, provider, run_id=run_id, review_id=review_id)
+    assert f"{PREFIX}/actions/runs/{run_id}" in github.calls
+    if fault != "wrong-head":
+        assert DISPATCH_RUNS in github.calls
+    assert provider.provider_calls == 0
+
+
 def rating_fixture(tmp_path, monkeypatch):
     ctx, github = workflow_fixture(tmp_path, monkeypatch)
     ratings = github.report["scores"]["independent_ratings"]
@@ -348,6 +727,7 @@ STAGE_ENV = {
     "PAPERTRACE_AUTHORIZATION_REVIEW_ID": expression("inputs.authorization_review_id"),
     "PAPERTRACE_RUN_ID": expression("github.run_id"),
     "PAPERTRACE_RUN_HEAD": expression("github.sha"),
+    RUN_ATTEMPT_ENV: expression("github.run_attempt"),
     "GH_TOKEN": expression("github.token"),
 }
 STAGE_COMMANDS = {
@@ -426,6 +806,19 @@ def synthetic_wired_workflow():
 
 def test_structural_contract_accepts_synthetic_exact_wiring():
     assert_workflow_wiring(synthetic_wired_workflow())
+
+
+@pytest.mark.parametrize("stage", tuple(STAGE_COMMANDS))
+@pytest.mark.parametrize("binding", (None, "1"), ids=("omitted", "hardcoded"))
+def test_structural_contract_rejects_untrusted_run_attempt(stage, binding):
+    workflow = synthetic_wired_workflow()
+    env = workflow["jobs"][stage]["steps"][-1]["env"]
+    if binding is None:
+        del env[RUN_ATTEMPT_ENV]
+    else:
+        env[RUN_ATTEMPT_ENV] = binding
+    with pytest.raises(AssertionError):
+        assert_workflow_wiring(workflow)
 
 
 def assert_budget_guard_wiring(workflow):

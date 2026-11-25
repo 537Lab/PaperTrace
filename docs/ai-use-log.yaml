@@ -2549,3 +2549,25 @@ entries:
   limitations:
   - 'No OpenCode role holds write access to test/evaluation, so this implementation was written by the supervising runner and must be reviewed as runner-authored work.'
   - 'No product model call was made; the real 18-run evaluation remains a separate authorized run.'
+
+- entry_id: SHARED-EVAL-RERUN-TOKENIZER-TESTS-20261125-01
+  timestamp: '2026-11-25T16:27:52+08:00'
+  tool: Codex
+  model: GPT-6
+  purpose: Add pure-test coverage to PR #55 for Li Yafei's two P1 findings on PR #82 (79d285fb).
+  scope:
+  - test/offline/test_semantic_workflow_proposal.py
+  - docs/team/designs/shared-evaluation/workflow-plan-v1.md
+  - docs/ai-use-log.yaml
+  status: offline test proposal awaiting independent review
+  approvals:
+  - The supervising student approved the scoped test proposal in this session.
+  - The supervising student approved the tests-only response to four findings from the independent adversarial audit.
+  contributions:
+  - Added real-loader tests with a fake or missing tiktoken dependency, explicit system prompt path checks, approved provider and model assertions, and collect authorization rechecks with a zero-call transport probe.
+  verification:
+  - 'Both offline pytest environments collected 149 nodes and reported 48 passes and 101 expected implementation failures with socket access disabled. Failures were limited to 98 missing preflight assertions and three missing workflow assertions. No syntax, fixture or socket errors occurred.'
+  - Scoped Ruff passed in the initialization environment. The schema gate passed in both environments.
+  limitations:
+  - The review findings were supplied in the task. The review commit was unavailable in the local checkout.
+  - Tokenizer and provider boundaries use synthetic probes. No model calls, tokenizer downloads, live dispatches or independent test approvals occurred in this session.
