@@ -1193,3 +1193,254 @@ entries:
   - Complete regression is not confirmed passing. No real model evaluation, final
     publication transaction or full real B/C/D E2E acceptance claimed. Independent
     source review remains required.
+- entry_id: B-TEST-SCOPE-CLEANUP-20261122-01
+  timestamp: '2026-11-22T10:19:14+08:00'
+  tool: Codex desktop
+  model: session model identifier not independently verified
+  purpose: 按PR9独立审查结果清理测试提案文件范围并澄清测试函数与参数化用例计数
+  scope:
+  - artifacts/verification/module-B-b0-blocked-2026-11-19.json
+  - artifacts/verification/module-B-b0-blocked-2026-11-19.md
+  - artifacts/verification/module-B-b1-opencode-blocked-2026-11-19.md
+  - artifacts/verification/module-B-paperqa-smoke-recovered-2026-11-19.json
+  - artifacts/verification/module-B-pr12-review-test-remediation-2026-11-21.md
+  - artifacts/verification/module-B-recovery-and-pr5-review-2026-11-19.md
+  - docs/team/designs/module-B/plan-v2.1.md
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-cleaned-awaiting-independent-review
+  approvals:
+  - 学生转述PR9独立审查结果并明确要求据此修改、验证及推进下一步
+  verification:
+  - 不修改test/offline/test_retrieval.py或四个synthetic fixtures
+  - 删除门禁不允许的六个artifacts/verification文件
+  - 明确41个测试函数、61个collected cases及最新8个函数展开为11个用例
+  limitations:
+  - 本次不构成对新精确提交的独立Approve
+  - 仓库规则禁止代理push或merge，最终提交仍须由学生推送并由非作者队友审核
+- entry_id: B-TEST-20261120-01
+  timestamp: '2026-11-20T22:45:44+08:00'
+  tool: OpenCode agent papertrace-build-B with Codex Desktop orchestration and verification
+  model: cityu/CS5351/DeepSeek-V4-Flash for OpenCode sessions; Codex runtime model
+    not independently attested
+  purpose: 按已批准的模块 B v2.1 计划准备离线 RED 测试、合成 fixtures、测试设计和真实验证记录，不实现业务源码
+  scope:
+  - test/offline/test_retrieval.py
+  - test/fixtures/retrieval
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - artifacts/verification/module-B-b1-opencode-blocked-2026-11-19.md
+  - docs/ai-use-log.yaml
+  status: test-preparation-awaiting-non-author-approval
+  approvals:
+  - 学生于 2026-11-20 明确授权按已批准 Plan v2.1 进行受控 OpenCode B1 测试准备，并逐次授权受限会话；这些授权不是非作者对精确测试提交的
+    GitHub Approve
+  - 学生授权创建本地提交、单次推送并创建 PR
+  verification:
+  - OpenCode 会话 ses_e0b52e19cffeKNNWGvabD35xQ7 创建四个 synthetic fixtures；会话 ses_e075ae192ffeqS0IgLofyGjpFw
+    创建测试并修正 fake 动态加载登记
+  - OpenCode 会话 ses_e0745d58fffei0NNwkEjinDmtc 回写实际 B1 API 提案、RED 结果和未批准边界；Codex 随后仅修正四处事实一致性表述
+  - 精确提交 4e88d04d7c35b92cf665e1f5be025e9d5584a1db 的模块测试收集 48 项，3 passed、45 个预期 RED，失败均明确指向
+    papertrace.retrieval.gateway 尚未实现
+  - schema gate 通过；Ruff 0.17.5 检查两个新增 Python 文件通过；全仓 Ruff 唯一报错为本 PR 未修改的 scripts/paperqa_smoke.py:37
+    I001
+  - test/offline 全量为 353 passed、51 failed，其中 45 个是 B1 预期 RED，另外 6 个既有或环境失败没有通过修改 B
+    测试掩盖
+  - PR
+  limitations:
+  - CityU provider 多次返回 reasoning_text HTTP 400；没有切换 provider、没有使用 --auto，也没有自动循环重试
+  - 恢复设计会话做事实更正时，本机 opencode 在模型调用前拒绝 V2 权限配置且 opencode2 不存在；因此由 Codex 做四处机械文档修正，没有发生新的模型请求
+  - 批准 runtime 缺少 Ruff 和 mypy 模块，未下载依赖或修改锁；补充 Ruff 来自已有只读本地环境
+  - 未创建 src/papertrace/retrieval，未修改共享契约、其他模块、依赖、CI 或冻结上游；B2 仍为 NOT_STARTED
+  - 本条披露会产生新的 PR head；必须由未参与 B1 测试编写的学生重新审核并批准新的精确提交后才能进入 B2
+- entry_id: B-TEST-20261121-02
+  timestamp: '2026-11-21T18:41:15+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按 PR
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/team/designs/module-B/plan-v2.1.md
+  - artifacts/verification/module-B-pr12-review-test-remediation-2026-11-21.md
+  - docs/ai-use-log.yaml
+  status: test-remediation-awaiting-non-author-approval
+  approvals:
+  - PR
+  - 旧 PR
+  verification:
+  - 新增两项定向测试在无 B2 源码的测试分支得到 2 failed、48 deselected，失败明确指向 gateway 尚未实现
+  - Python 语法编译通过；Ruff 检查 test/offline/test_retrieval.py 通过；git diff --check 通过
+  limitations:
+  - 本轮尚未修改任何 src 文件，也未声称真实 PaperQA2 bridge 已完成
+  - 新测试必须由未参与测试编写的同学在 PR
+- entry_id: B-TEST-20261122-03
+  timestamp: '2026-11-22T09:10:55+08:00'
+  tool: Codex Desktop review-regression preparation and local RED verification
+  model: Codex runtime model not independently attested
+  purpose: 将 PR
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/test-design-v2.1.md
+  - docs/ai-use-log.yaml
+  status: test-remediation-awaiting-non-author-approval
+  approvals:
+  - 监督学生于 2026-11-22 要求继续完成前面未完成的 B 模块工作；这授权本轮测试准备，不是对新测试 head 的独立 Approve、实现批准或合并授权
+  - PR
+  verification:
+  - Ruff 0.17.5 检查 test/offline/test_retrieval.py 通过
+  - 新增参数化用例共 11 项，对 PR
+  - 失败分别覆盖 upstream Context.id/summary 改变 identity、serializer 后 sent 不实、model/output/input
+    policy 未绑定，以及 concrete timeout/parse/stage 分类丢失
+  limitations:
+  - 本轮没有修改 src、shared contracts、CI、依赖、锁、冻结上游、其他模块或远端权限
+  - 组合 RED 使用现有本地 pytest 且未加载 pytest-socket；全部 collaborator 为 synthetic recorder，没有真实网络、provider、凭据或论文
+  - PR
+  - 不合并 PR
+- entry_id: B-TEST-20261123-SENT
+  timestamp: '2026-11-23T11:26:39+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为 PR
+  scope:
+  - test/offline/test_retrieval.py
+  - test/fixtures/retrieval/fake_adapter.py
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户要求推进 B 测试、创建 PR
+  - 用户提供的复核反馈称 8a4d5004 的测试设计无新增修改意见，正式批准待披露补齐后复核
+  verification:
+  - Codex 在禁用插件自动加载并启用 pytest-socket 的环境中运行 B 离线测试，62 项通过、3 项预期失败
+  - 三项预期失败覆盖混入未知 ID、混入已批准但未选中的 ID，以及全部越界
+  - 引用回归通过受控适配器与 fake 上游验证 b1 映射，以及 b999 在原文和未知引用诊断中的保留
+  limitations:
+  - 使用合成数据和 fake 上游，真实模型调用为零
+  - 本次披露提交仅追加日志，源码实现待独立审核批准后推进
+- entry_id: B-TEST-20261123-ACCOUNTING
+  timestamp: '2026-11-23T13:30:00+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按用户已确认计划准备 B 生成调用账目四项离线测试
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/generation-accounting-plan.txt
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户明确确认本轮调用账目计划，并要求提交可审核测试
+  verification:
+  - 在 B 越界 sent 修复源码上运行，65 项通过、4 项预期失败；Ruff 通过
+  - fake 回答模型分别验证未调用、未知、调用一次、调用后异常的账目要求
+  limitations:
+  - 本轮仅准备测试与计划，未实现调用账目源码
+  - 真实产品模型调用为零；测试基于尚待实现审查的 PR 25
+- entry_id: B-TEST-20261123-ACCOUNTING-ZERO-CONTROL
+  timestamp: '2026-11-23T13:42:27+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 根据 PR 27 的审查反馈补充真实 B 适配器进入 aquery 后的零次回答模型调用对照
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/generation-accounting-plan.txt
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户提供队友对 10ef7a82 的审查反馈，要求补对照后复核
+  verification:
+  - aquery 执行一次，独立 call_single 探针记录零次；新增用例在缺少 accounting 字段处按预期失败
+  - B 离线测试 65 项通过、5 项预期失败；Ruff 与 git diff --check 通过
+  limitations:
+  - 使用真实 B 适配器和合成上游，真实产品模型调用为零
+  - 仅追加测试、计划与披露，等待本次测试提交的正式独立审批
+- entry_id: B-TEST-20261124-TXT-INGEST
+  timestamp: '2026-11-24T01:34:00+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model identifier not independently attested
+  purpose: 按 A 在 Issue 29 确认的首轮 UTF-8 TXT 契约准备 B 摄取回执测试提案
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/a-b-txt-ingest-receipt-plan.md
+  - docs/ai-use-log.yaml
+  status: local-test-proposal-awaiting-independent-approval
+  approvals:
+  - A 负责人在 Issue 29 评论 7108692559 书面确认请求、回执和 TXT 首轮范围。
+  - 测试提案待非作者对精确提交独立批准。
+  verification:
+  - 使用初始化锁定依赖和 pytest-socket，70 项既有 B 用例通过，新增 7 项均在 Gateway.ingest 缺失处按预期失败。
+  - 测试 Ruff 和工作树差异检查通过。
+  limitations:
+  - Codex 起草测试和计划，本次未发起 OpenCode 或产品模型请求。
+  - 这批结果只证明测试收集和入口缺失，新增行为断言尚未执行。
+- entry_id: B-TEST-20261124-TXT-INGEST-REVIEW
+  timestamp: '2026-11-24T10:30:42+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model identifier not independently attested
+  purpose: 补齐 PR 47 独立复审要求的空 metadata、大写 TXT 和失败诊断脱敏测试
+  scope:
+  - test/offline/test_retrieval.py
+  - docs/team/designs/module-B/a-b-txt-ingest-receipt-plan.md
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 537Lab 在 PR 47 的 review 6032581502 对 0c1e8475 提出修改要求。
+  verification:
+  - 锁定环境 70 项既有 B 用例通过，8 项新增用例均在 Gateway.ingest 缺失处预期失败。
+  - 临时测试替身通过 8 项新用例，向回执、标准输出、标准错误和日志逐一注入合成路径时，均触发脱敏断言。
+  - Ruff、Schema、AI 使用披露和差异检查通过。
+  limitations:
+  - 临时替身不属于提交，生产摄取端口尚未实现。本轮未调用 OpenCode 或产品模型。
+- entry_id: B-TEST-20261124-QUAL02-ANSWER-REQUEST
+  timestamp: '2026-11-24T22:28:08+08:00'
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为 B 侧最终回答请求序列化准备可独立审阅的 QUAL-02 离线测试
+  scope:
+  - test/offline/test_b_answer_request.py
+  - docs/team/designs/module-B/qual02-answer-request-test-plan.md
+  - docs/ai-use-log.yaml
+  status: test-proposal-awaiting-independent-approval
+  approvals:
+  - 用户要求推进 B 侧可完成的工作，独立测试审批仍待队友在 GitHub 完成
+  - D 侧确认版本化 system 提示词路径及正文来源
+  verification:
+  - 以 PR 34 的 a9440e6767e9ba90642dbe5cf2bb46a526125540 为基线，B 定向离线复跑 73 项通过、4 项预期失败
+  - 三项在 Gate 4 的结构化 user 正文校验失败，一项确认版本化 system 文件缺失
+  - 新增测试通过 Ruff，真实产品模型调用为零
+  limitations:
+  - 评估版本的固定集 ID 绑定另由 B、D 和 evaluator 负责人协调
+  - 本次为 Codex 准备的测试提案，未修改源码或提示词
+- entry_id: B-TEST-20261124-QUAL02-SYSTEM-BINDING
+  timestamp: 2026-11-24T23:15:53+0800
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 按 PR 57 的独立复审意见加固版本化 system 提示词绑定
+  scope:
+  - test/offline/test_b_answer_request.py
+  - docs/team/designs/module-B/qual02-answer-request-test-plan.md
+  - docs/ai-use-log.yaml
+  status: revised-test-proposal-awaiting-independent-approval
+  approvals:
+  - 队友对 df6bea5293b04113315b5ebcd91bb6dfa1f38e5a 提出 system 绑定修改意见
+  verification:
+  - 保留原测试节点。定向复跑 73 通过、4 项预期失败。Ruff 通过。
+  - 三组正负对照验证错误的捕获 system 均被拒绝；改写 TXT 或删除末尾换行均被拒绝。
+  limitations:
+  - 本次只修改测试和记录，真实模型调用为零。新 head 需独立复审。
+- entry_id: B-TEST-20261125-FIXED-EVALUATION-BOUNDARY
+  timestamp: 2026-11-25T02:57:43+0800
+  tool: Codex Desktop
+  model: Codex runtime model not independently attested
+  purpose: 为已对齐的固定出站 ID 和原始消息捕获准备 B 测试候选
+  scope:
+  - test/offline/test_b_evaluation_boundary.py
+  - docs/team/designs/module-B/fixed-evaluation-boundary-test-plan.md
+  - docs/ai-use-log.yaml
+  status: local-evaluation-interface-test-proposal
+  approvals:
+  - 用户要求继续完成 B 侧可独立推进工作，团队已确认固定出站 ID 和捕获口径
+  - 测试提交尚待接口负责人和独立复审者确认
+  verification:
+  - B 定向复跑 86 通过、14 项预期入口缺失失败，新增文件 Ruff 通过
+  - 全量离线复跑 436 通过、20 失败，新增失败仅为 14 项预期入口缺失
+  limitations:
+  - 只新增测试、设计和记录。真实产品模型调用为零。共享 evaluator 尚未合体。
