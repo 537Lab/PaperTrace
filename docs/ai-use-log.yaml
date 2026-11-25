@@ -2720,6 +2720,7 @@ entries:
   - Full regression remains failed. Local Windows verification is not the supported macOS/Python 3.14.6
     CI runtime.
 - entry_id: CI-BOUNDED-DIAGNOSTICS-IMPLEMENTATION-20261125-01
+  status: draft-implementation-awaiting-test-followup-and-independent-review
   timestamp: '2026-11-25T09:57:17.319832+00:00'
   tool: Codex Desktop
   model: Codex runtime; identifier not independently attested
