@@ -2618,7 +2618,7 @@ entries:
   timestamp: '2026-11-25T19:27:00+08:00'
   tool: Supervising student direct 1-field provider request fix after live run 45602103348
   model: human-directed
-  purpose: Pass LiteLLM request-level cache bypass ("cache": {"no-cache": true}) in ProviderCapture.complete so repeated identical fixed-set calls (3 repeats per QUAL-01..06) execute as 18 independent provider inferences with distinct request_id values instead of returning gateway-cached duplicate request_id responses
+  purpose: 'Pass LiteLLM request-level cache bypass (cache.no-cache=true) in ProviderCapture.complete so repeated identical fixed-set calls (3 repeats per QUAL-01..06) execute as 18 independent provider inferences with distinct request_id values instead of returning gateway-cached duplicate request_id responses'
   scope:
   - test/evaluation/evaluator.py
   - docs/ai-use-log.yaml
