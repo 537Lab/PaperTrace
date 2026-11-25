@@ -2477,3 +2477,23 @@ entries:
   limitations:
   - 'No regression suite was rerun for a registry-only edit; the change carries no executable behaviour.'
   - 'The status value is implemented, not verified: independent verification of each fit criterion is still recorded separately.'
+
+- entry_id: REQ-STATUS-20261125-01
+  timestamp: '2026-11-25T15:28:13+08:00'
+  tool: OpenAI Codex (registry-only edit requested by the user)
+  model: GPT-6
+  purpose: Record the implementation status of 14 A-, B-, C-, E-owned and shared requirements from merged main evidence
+  scope:
+  - docs/req/requirements.yaml
+  - docs/ai-use-log.yaml
+  status: registry statuses updated from merged evidence
+  student_decisions:
+  - The user requested the 14 status updates and specified which rows must remain planned.
+  approvals:
+  - 'Evidence: The user identified merged main d893cefe as containing the implementations and offline tests for FR-A-01, FR-A-02, INV-02, FR-B-01, FR-B-02, INV-08, FR-C-01, FR-C-02, INV-03, FR-E-01, FR-E-02, INV-05, QA-01 and PERF-01.'
+  verification:
+  - Only the 14 listed rows change from planned to implemented. The five implemented D rows retain their status.
+  - INV-07, INV-06, COST-01, SEC-01, GOV-01, GOV-02, GOV-03 and GOV-04 stay planned while live evaluation, full verification or submission-package closeout evidence remains pending.
+  limitations:
+  - 'Verification for this registry-only edit is limited to the schema, AI-use log and semantic gates and the Git diff.'
+  - 'Independent verification of each fit criterion is recorded separately.'
