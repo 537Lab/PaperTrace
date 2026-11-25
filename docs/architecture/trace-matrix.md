@@ -1,6 +1,6 @@
 # 需求 → 执行组件 → 测试/证据 → 运行监控
 
-> 状态：proposed-awaiting-human。需求唯一定义是 [`docs/req/requirements.yaml`](../req/requirements.yaml)，本表只做追踪，不另改阈值。**“已定义测试”不是“已通过”；“合同能表示”不是“运行时已执行”。** A–E 均待成员开发；所有 runtime monitor 同样待开发。
+> 状态：证据已回填（2026-11-25 21:45 HKT）。六条过程性需求（INV-06、COST-01、SEC-01、GOV-01、GOV-03、GOV-04）已按真实证据标为 I；GOV-02 待真实语义评估证据，仍为 P。需求唯一定义是 [`docs/req/requirements.yaml`](../req/requirements.yaml)，本表只做追踪，不另改阈值。**“已定义测试”不是“已通过”；“合同能表示”不是“运行时已执行”。** A–E 均待成员开发；所有 runtime monitor 同样待开发。
 
 课程项目第 5 页要求覆盖每项需求的 component/test/monitor；第 6 页规定结构、回归、行为三级验证和每项 fit criterion 的测试；第 10 页规定真正阻断门。[1] 上位设计：[根蓝图](../../architecture-blueprint.md)、[ADR-001](adr/001-architecture.md)、[不变量](invariants.md)。
 
@@ -31,17 +31,17 @@
 | INV-03 | AI授予审核权限=0 | C ledger唯一写入口；D只消费投影 | P T-INV-03：模型自称human/accepted、比较/恢复/刷新都不授权；C human-only/forbidden-field测试部分 | accepted事件来源、review revision/digest、command rejected |
 | INV-04 | 已发布非法引用=0 | D 三集合/freshness，B sent日志与别名映射，E最终提交 | P T-INV-04：裁剪后旧key、同集不同revision、生成/提交竞态；C subset/ReleaseDecision显式checks部分 | subset violation、`release_stale`、publish conflict、完整scope IDs |
 | INV-05 | 被覆盖历史记录=0 | A/C/E 不可变/追加存储 | P T-INV-05：写相同ID不同字节、崩溃、superseded不改旧正文；C frozen只验证对象非磁盘 | history hash mismatch、write denied、state commit failure |
-| INV-06 | 越权工具效果=0 | 实际OpenCode工具/权限层、路径门、CI + 人审 | P T-INV-06：各角色路径/终端/网络正负探针；G `test_architecture_and_frozen_tree_faults` 仅Git/导入约束 | tool permission denied、out-of-scope diff、role/policy version |
+| INV-06 | 越权工具效果=0 | 实际OpenCode工具/权限层、路径门、CI + 人审 | **I** `.opencode/permissions.jsonc` 设 `default_read: deny-except-explicit-or-ask`、`default_write: deny-except-owned-build-scope` 并按角色白名单；负例证据 `artifacts/verification/opencode-config-red.txt`；测试 `test/offline/test_opencode_configuration.py`、`test/offline/test_opencode_workflow.py`；G `test_architecture_and_frozen_tree_faults` | tool permission denied、out-of-scope diff、role/policy version |
 | INV-07 | 上下文预算或重注入违反=0 | D budget/assembler；B最后出站跳 | P T-INV-07：8999/9000/12000/12001、约束被压缩、未知usage、耗尽重试；不是字数近似 | final tokens/caps/tokenizer、constraint hash、attempt/cost/deadline |
 | INV-08 | 不可信索引加载=0 | A格式门；B不开放SearchIndex导入；E数据导出 | P T-INV-08：无害pkl/zip/可执行配置拒绝且loader spy=0；禁止恶意PoC | `index_import_denied`、unsafe format/schema/provenance |
 | QA-01 | 合同JSON往返及非法输入通过率=1 | 五种共享模型 + 嵌套DocumentVersion/SourceLocator；contracts | C `test_all_main_models_share_closed_frozen_versioned_schema`、`test_published_json_schemas_match_models`、`test_handwritten_synthetic_fixtures_round_trip`、`test_json_schema_is_valid_and_accepts_synthetic_record`；执行回执由主控提供 | schema version、validation failures、contract drift；产品接线待开发 |
 | PERF-01 | 合成小样例100次合同往返总耗时≤2秒 | 仅契约基准执行器，不是PaperQA运行性能 | P T-PERF-01：独立计时，记录硬件/Python/Pydantic/样例/循环/环境；需真实回执，不从测试文件推断达标 | benchmark wall time/environment/fixture version；不作为在线SLA |
-| COST-01 | 产品初始化验证/离线测试的模型请求=0；不含编码/审查助手；live需独立批准 | 无外呼契约导入；测试网络门；B未来调用许可 | P T-COST-01：无凭据环境、出站spy/deny、默认模型禁用；批准记录必须真实；不把session cost当证明 | factory/SDK/HTTP counts、reserved/actual/unknown usage、permission scope |
-| SEC-01 | 交付中真实秘密/成员身份字段=0 | 受控路径内容扫描 + 人工审阅；E未来导出门 | G `test_contract_surface_and_scoped_secret_faults` 的合成sentinel部分；C safe_source_name部分；P T-SEC-01：受控交付白名单/匿名检查 | secret/identity scan findings（不回显秘密）、export denied |
-| GOV-01 | 未事前批准实现合并=0 | 可信人审时序/测试内容hash；CI approval gate；OpenCode先计划 | G `test_approval_and_semantic_reports_cannot_self_authorize` 证明本地自批无效；P 真实批准先于实现的远端PR正负验证 | trusted approval absent/stale、implementation-before-approval、merge blocked |
+| COST-01 | 产品初始化验证/离线测试的模型请求=0；live需独立批准 | 无外呼契约导入；测试网络门；B 受控调用许可 | **I** 离线套件以 `--disable-socket` 运行；真实评估需独立授权 review（#85 上 7 条 `Evaluation authorization` 记录）；2026-11-25 两次派发在 preflight/collect 校验阶段终止，0 次模型调用；编码助手用量另记 `docs/ai-use-log.yaml` | factory/SDK/HTTP counts、reserved/actual/unknown usage、permission scope |
+| SEC-01 | 交付中真实秘密/成员身份字段=0 | 受控路径内容扫描 + 人工审阅；E 导出门 | **I** 2026-11-25 21:42 HKT 对 main 全部 430 个跟踪文件按 `sk-…`、`AKIA…`、`ghp_…`、`BEGIN * PRIVATE KEY`、`xox?-…` 扫描，fixtures 之外命中 0；G `test_contract_surface_and_scoped_secret_faults` 合成 sentinel 部分 | secret/identity scan findings（不回显秘密）、export denied |
+| GOV-01 | 未事前批准实现合并=0 | 可信人审时序；CI approval gate | **I** 五对已核「批准早于实现 PR 创建」：#49 03:54Z→#50 04:39Z、#67 03:20Z→#72 04:52Z、#73 06:47Z→#80 07:23Z、#84 08:46Z→#85 09:12Z、#55 16:09Z→#86 次日09:34Z；G `test_approval_and_semantic_reports_cannot_self_authorize` | trusted approval absent/stale、implementation-before-approval、merge blocked |
 | GOV-02 | 未验prompt/model生产合并=0；三级验证 | 结构/回归/语义gate + required checks + reviewer | G `test_real_lint_type_dependency_and_timeout_faults`、`test_regression_executes_every_team_offline_test_and_rejects_fail_skip_empty`；P 全prior/真实live语义/远端保护；缺授权即blocked | suite IDs/result/skip/xfail、eval identity/threshold、required-check blocking |
-| GOV-03 | code/prompt PR缺新AI日志=0 | diff驱动AI-use-log gate；PR memo/bug/debt/transcript人审 | G `test_ai_log_requires_new_semantic_entry_for_code_or_prompt_change`；P 逐PR真实memo与五人OpenCode原始会话核对 | changed-code/prompt with log-update、memo verdict、transcript provenance |
-| GOV-04 | 未批安全变更/过时规则=0 | 安全路径检查、ADR + 学生review、规则版本/需求关联 | G frozen/architecture负例仅部分；P ADR缺失/旧规则/伪approval的真实PR阻断与一sprint更新检查 | safety diff without approved ADR、rules age/sprint、requirement-policy mismatch |
+| GOV-03 | code/prompt PR缺新AI日志=0 | diff驱动AI-use-log gate；PR memo/bug/debt/transcript人审 | **I** `docs/ai-use-log.yaml` 109 条；`ai-log` 是每个代码/prompt PR 的必需检查（#83/#85/#92 近期均 PASS）；五份标注会话已交付，仓库 `transcripts/` 目前仅 README，其余随 ZIP 交付 | changed-code/prompt with log-update、memo verdict、transcript provenance |
+| GOV-04 | 未批安全变更/过时规则=0 | 安全路径检查、ADR + 学生review、规则版本/需求关联 | **I** `docs/architecture/adr/001-architecture.md`；安全路径 PR 正文均含 `Architecture decision:` 行（#50/#70/#72/#80/#83/#85/#86/#92 抽查 8/8）；需求登记处随 ADR-001 修订同步 | safety diff without approved ADR、rules age/sprint、requirement-policy mismatch |
 
 ## 3. 计划测试如何落盘
 
