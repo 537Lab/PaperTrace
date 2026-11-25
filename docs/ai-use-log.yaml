@@ -1630,3 +1630,40 @@ entries:
   - No independent human approval is recorded by this entry
   - The experiment is local; upstream full regression and real model evaluation remain separate
   - This proposal contains no runner configuration change and no OpenCode session claim
+- entry_id: SHARED-CI-GATE5-IMPORTLIB-IMPL-20261125-E-01
+  timestamp: '2026-11-25T05:26:29.216089+00:00'
+  tool: Codex Desktop
+  model: Codex runtime; model identifier not independently attested
+  purpose: 'Implement the independently approved team-only pytest import search path fix from PR #71.'
+  scope:
+  - papertrace.pytest.ini
+  - docs/ai-use-log.yaml
+  status: implementation-candidate-awaiting-independent-exact-head-review
+  approvals:
+  - LIN ZIQI explicitly accepted ownership in chat of this exact one-line configuration change, history-preserving
+    main synchronization, offline verification and implementation PR publication.
+  - 'Independent Y15BeTa APPROVED exact PR #71 head 8498888208baf92bef7293ac80a4b5f383ec996e at 2026-11-25T04:33:29Z;
+    review 6051898779. This implementation did not author that test proposal.'
+  verification:
+  - 'Retained #71 as the first history parent and synchronized main b9f79a92b082c8a9cd93eff7b650b5d130ecfbcb
+    through a separate two-parent merge. Preserved all main and #71 AI-use entries and the exact approved
+    test/plan Git blobs.'
+  - Independently reproduced baseline collection regression RED. With the one-line patch, 30 focused tests
+    passed on a snapshot preserving exact Git LF bytes.
+  - 'The entire current team suite collected 666 tests without a collection error. A separate diagnostic
+    adding the unchanged exact #53/#58 test blobs collected 85 cases across three affected evaluator files;
+    this is collection, not 85 executed passes.'
+  - Complete configured Ruff and Linux-target mypy passed. Requirements schema passed in the Git worktree
+    (27 requirements).
+  limitations:
+  - This shared runner-configuration repair was implemented using Codex under the explicit narrow student
+    instruction, not a successful OpenCode source session; no new OpenCode contribution or product model
+    call is claimed.
+  - Initial broader diagnostics from the native Windows CRLF checkout failed existing byte-sensitive synthetic
+    gate checks; focused verification was repeated with exact Git LF blobs. This does not change repository
+    tests or Git configuration.
+  - Full supported Python 3.14 Linux/PaperQA2 upstream runtime regression and live semantic evaluation
+    are separate requirements and not claimed green. Missing-runtime cases are not removed or skipped
+    by this patch.
+  - The new implementation SHA requires another non-implementer review. No merge, protection bypass, workflow
+    change, gate-rule change or model invocation is authorized by this record.
