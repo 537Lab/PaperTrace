@@ -1,0 +1,7 @@
+{
+  "synthetic": true,
+  "provenance": "Codex-assisted test preparation after student plan approval on 2026-11-20; no real review or model run",
+  "question": "SYNTHETIC What does the fixture support?",
+  "sentinel": "SYNTHETIC_API_KEY_DO_NOT_EXPORT_20261120",
+  "statuses": ["released", "blocked", "abstained", "failed"]
+}
