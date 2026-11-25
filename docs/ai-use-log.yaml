@@ -2477,3 +2477,30 @@ entries:
   limitations:
   - 'No regression suite was rerun for a registry-only edit; the change carries no executable behaviour.'
   - 'The status value is implemented, not verified: independent verification of each fit criterion is still recorded separately.'
+
+- entry_id: SHARED-EVAL-WORKFLOW-IMPL-20261125-01
+  timestamp: '2026-11-25T06:30:44Z'
+  tool: Student-supervised Codex
+  model: openai/gpt-6.2-sol
+  purpose: Implement the staged semantic evaluation workflow for PR 58 under the approved PR 55 test contract.
+  scope:
+  - test/evaluation/evaluator.py
+  - .github/workflows/semantic-evaluation.yml
+  - test/offline/test_semantic_workflow_proposal.py
+  - docs/team/designs/shared-evaluation/workflow-plan-v1.md
+  - docs/ai-use-log.yaml
+  status: Candidate implemented and verified offline with the limitations below.
+  approvals:
+  - The student identified PR #55 head 2ca31fc9bb6c7e80366b0939d8669b5137b1c86a and its independent approving review PRR_kwDOVtJ17M8AAAABaDAkEQ by ziqilin669, and supervised the PR #58 implementation and audit fixes.
+  verification:
+  - Both approved files were restored byte-for-byte from PR 55.
+  - The full-runtime interpreter passed all 107 targeted tests, including all 59 approved workflow tests.
+  - An offline replay ran real collection, B and D generation, and finalization. CityU HTTP used an in-memory transport returning OpenAI-compatible replies without a model_version field, and GitHub metadata and E ratings came from fixtures. Four DET results matched their oracles and 18 QUAL runs made exactly 18 simulated HTTP requests.
+  - Raw artifact download passed with single-page and paginated metadata. The finalized report passed the v3 schema and the semantic verifier's runtime, run and score checks. The environment lookup replay verified HTTP 200, 403 and 404 handling.
+  - Scoped PaperTrace Ruff, evaluator mypy and the requirements schema gate passed.
+  - The full offline suite reported 962 passes, six failures and 22 setup errors. The same failures and setup errors were present in the baseline comparison before implementation.
+  limitations:
+  - The protected evaluator and workflow are outside OpenCode write roles. The student supervised Codex on the scoped implementation.
+  - The default Ruff invocation flags the immutable approved test file. The full suite remains blocked by missing runtime dependencies and local subprocess restrictions.
+  - No real provider credential was read, no real model calls or GitHub Actions dispatch took place, and no commits or pushes were made. The offline report and simulated ratings do not provide live quality or human approval evidence.
+  - GitHub Actions environment enforcement and deployment approvals, CityU response identity, tariff and quota, and independent source review remain unverified in live execution. Zero-cost defaults apply only to an independently confirmed unmetered entitlement.
