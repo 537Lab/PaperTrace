@@ -2477,85 +2477,148 @@ entries:
   limitations:
   - 'No regression suite was rerun for a registry-only edit; the change carries no executable behaviour.'
   - 'The status value is implemented, not verified: independent verification of each fit criterion is still recorded separately.'
+
+- entry_id: REQ-STATUS-20261125-01
+  timestamp: '2026-11-25T15:28:13+08:00'
+  tool: OpenAI Codex (registry-only edit requested by the user)
+  model: GPT-6
+  purpose: Record the implementation status of 14 A-, B-, C-, E-owned and shared requirements from merged main evidence
+  scope:
+  - docs/req/requirements.yaml
+  - docs/ai-use-log.yaml
+  status: registry statuses updated from merged evidence
+  student_decisions:
+  - The user requested the 14 status updates and specified which rows must remain planned.
+  approvals:
+  - 'Evidence: The user identified merged main d893cefe as containing the implementations and offline tests for FR-A-01, FR-A-02, INV-02, FR-B-01, FR-B-02, INV-08, FR-C-01, FR-C-02, INV-03, FR-E-01, FR-E-02, INV-05, QA-01 and PERF-01.'
+  verification:
+  - Only the 14 listed rows change from planned to implemented. The five implemented D rows retain their status.
+  - INV-07, INV-06, COST-01, SEC-01, GOV-01, GOV-02, GOV-03 and GOV-04 stay planned while live evaluation, full verification or submission-package closeout evidence remains pending.
+  limitations:
+  - 'Verification for this registry-only edit is limited to the schema, AI-use log and semantic gates and the Git diff.'
+  - 'Independent verification of each fit criterion is recorded separately.'
+- entry_id: "SHARED-EVAL-CAPTURE-TEST-DRAFT-20261125-01"
+  timestamp: "2026-11-25T05:18:01+00:00"
+  tool: "Codex desktop"
+  model: "not retrievable"
+  purpose: "Prepare offline tests for using the checked B request capture as evaluator evidence."
+  scope: ["test/offline/test_semantic_capture_proposal.py", "docs/team/designs/shared-evaluation/request-capture-plan-v1.md", "docs/ai-use-log.yaml"]
+  status: "preparation-assistance-not-human-approval"
+  student_decisions: ["The supervising student instructed Codex to proceed with the previously presented offline test plan."]
+  approvals: []
+  verification: ["On main, all 19 cases ran, with 3 verifier controls passing and 16 expected failures at the missing evaluator file.", "In separate snapshots with the evaluator files from PR #53 and PR #58, each run had 3 passing controls and 16 expected failures at the missing collect_attempt entry point.", "Scoped Ruff passed. The tests use synthetic fixtures and issue zero product model calls."]
+  limitations: ["Codex prepared this draft. A supervised OpenCode session and independent test approval are pending."]
+- entry_id: SHARED-EVAL-CAPTURE-TEST-REVISION-20261125-01
+  timestamp: '2026-11-25T14:12:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session); no OpenCode role may edit this path
+  model: deepseek/deepseek-flash
+  purpose: Revise the checked-request capture test proposal for the two P1 contract mismatches raised in review
+  scope:
+  - test/offline/test_semantic_capture_proposal.py
+  - docs/ai-use-log.yaml
+  status: revised test proposal awaiting re-review
+  student_decisions:
+  - The student asked the supervising runner to apply the two P1 corrections after confirming no OpenCode role holds write access to this shared-evaluation test path.
+  approvals:
+  - 'The two P1 items come from reviews by ziqilin669 and ldk13856478627-cell on head afa6a2b3.'
+  verification:
+  - 'The branch now merges main 2b4b5822, so the reviewer-requested real D contracts exist in the tree.'
+  - 'Targeted run: 3 control cases pass and 17 cases fail at the pending evaluator capture entry point, which is the expected RED state.'
+  - Scoped Ruff passed.
+  limitations:
+  - 'The test double now uses the real AnswerGenerationOutcome, AnswerDraft and GenerationCallResult models instead of simple namespaces.'
+  - 'No OpenCode role may edit test/offline/test_semantic_capture_proposal.py, so this revision was not produced by a supervised OpenCode session and must be reviewed as a runner-authored edit.'
+  - No product model calls were made.
+- entry_id: SHARED-EVAL-CAPTURE-IMPL-20261125-01
+  timestamp: '2026-11-25T15:15:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session); no OpenCode role may edit test/evaluation
+  model: deepseek/deepseek-flash
+  purpose: Implement the approved request-capture intake so the fixed-set evaluator can assemble real attempt rows
+  scope:
+  - test/evaluation/evaluator.py
+  - docs/ai-use-log.yaml
+  status: implementation of the approved tests; awaiting independent source review
+  student_decisions:
+  - The student asked the supervising runner to implement the approved capture tests after the exact test head ce9b716 was independently approved.
+  approvals:
+  - 'Test approval PR: #73, approved test head ce9b716. The approved tests and plan are carried forward unchanged.'
+  verification:
+  - 'test/offline/test_semantic_capture_proposal.py: 25 passed, covering all 17 previously RED cases plus the eight controls.'
+  - The request row is assembled only from the observer callback, so an expected envelope cannot produce a row.
+  - Invalid bindings raise before the driver runs; rejected capture raises inside the observer before any model call.
+  limitations:
+  - 'No OpenCode role holds write access to test/evaluation, so this implementation was written by the supervising runner and must be reviewed as runner-authored work.'
+  - 'No product model call was made; the real 18-run evaluation remains a separate authorized run.'
 - entry_id: SHARED-REGRESSION-TEST-20261123-01
   timestamp: '2026-11-23T01:32:48.182945+00:00'
-  tool: OpenCode papertrace-build-D; locally restricted shared-diagnostics test-preparation
-    session
-  model: Self-reported deepseek/deepseek-flash, runtime label DeepSeek V4.1 Flash
-    1017; not independently verified
-  purpose: Prepare and revise bounded advisory full-regression diagnostics tests and
-    an English design; no runner or workflow implementation.
+  tool: OpenCode papertrace-build-D; locally restricted shared-diagnostics test-preparation session
+  model: Self-reported deepseek/deepseek-flash, runtime label DeepSeek V4.1 Flash 1017; not independently
+    verified
+  purpose: Prepare and revise bounded advisory full-regression diagnostics tests and an English design;
+    no runner or workflow implementation.
   scope:
   - test/offline/test_full_regression_diagnostics.py
   - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
   status: test-proposal-awaiting-independent-exact-commit-approval
   approvals:
-  - The student authorized this exact two-file local test-preparation scope on 2026-11-23
-    HKT. This is not an independent GitHub test approval.
+  - The student authorized this exact two-file local test-preparation scope on 2026-11-23 HKT. This is
+    not an independent GitHub test approval.
   verification:
-  - 'Author post-correction: 71 new tests, 39 passed and 32 feature-availability failures,
-    no skips; existing runner/events50 passed.'
-  - 'Author full offline: 389 passed, 36 failed, 2 skipped; paired excluding new file:350
-    passed,4 failed,2 skipped. Four failures are local narrowed-setup contract expectations.'
-  - Target/new Ruff, mypy5, schema and static preflight passed. Full Ruff retains
-    only unchanged scripts/paperqa_smoke.py:37 I001.
+  - 'Author post-correction: 71 new tests, 39 passed and 32 feature-availability failures, no skips; existing
+    runner/events50 passed.'
+  - 'Author full offline: 389 passed, 36 failed, 2 skipped; paired excluding new file:350 passed,4 failed,2
+    skipped. Four failures are local narrowed-setup contract expectations.'
+  - Target/new Ruff, mypy5, schema and static preflight passed. Full Ruff retains only unchanged scripts/paperqa_smoke.py:37
+    I001.
   limitations:
-  - No src, runner, workflow, old tests, ADR, dependencies or permission files authored
-    in this scope. No actual diagnostic collector/qualification/CLI/Actions behavior
-    is claimed behind absent markers.
-  - No exact human GitHub approval yet; PR21 review does not cover these tests. Protected-path
-    implementation, ADR/owner safety review and trusted-base adoption remain separate.
-  - Assistant model/provider identity is self-reported; no session ID, token count,
-    cost or human review is invented. Product offline checks do not measure assistant-provider
-    inference.
-  - No PaperTrace product-model, live/network test, real semantic evaluation or full
-    upstream regression was invoked.
+  - No src, runner, workflow, old tests, ADR, dependencies or permission files authored in this scope.
+    No actual diagnostic collector/qualification/CLI/Actions behavior is claimed behind absent markers.
+  - No exact human GitHub approval yet; PR21 review does not cover these tests. Protected-path implementation,
+    ADR/owner safety review and trusted-base adoption remain separate.
+  - Assistant model/provider identity is self-reported; no session ID, token count, cost or human review
+    is invented. Product offline checks do not measure assistant-provider inference.
+  - No PaperTrace product-model, live/network test, real semantic evaluation or full upstream regression
+    was invoked.
 - entry_id: SHARED-REGRESSION-SUPERVISION-20261123-01
   timestamp: '2026-11-23T01:32:48.182945+00:00'
-  tool: 'Codex desktop supervisor: independent verification and clean test-publication
-    preparation'
-  model: OpenAI Codex assistant; exact runtime model identity not independently verified
-    in project evidence
-  purpose: Review student-authored tests, independently verify deltas and prepare
-    a clean three-file test proposal. No production source authored.
+  tool: 'Codex desktop supervisor: independent verification and clean test-publication preparation'
+  model: OpenAI Codex assistant; exact runtime model identity not independently verified in project evidence
+  purpose: Review student-authored tests, independently verify deltas and prepare a clean three-file test
+    proposal. No production source authored.
   scope:
   - test/offline/test_full_regression_diagnostics.py
   - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
   - docs/ai-use-log.yaml
   status: local-verified-test-publication-candidate-not-human-github-approval
   approvals:
-  - The student authorized local supervision and the existing test-preparation scope.
-    No independent test-commit or protected-source approval is claimed.
+  - The student authorized local supervision and the existing test-preparation scope. No independent test-commit
+    or protected-source approval is claimed.
   verification:
-  - 'Restricted authoring snapshot: new71=39passed/32availability failures/0skip;
-    existing50=49passed/1sandbox ps PermissionError; full427=388passed/37failed/2skipped;
-    paired356=349passed/5failed/2skipped.'
-  - All356 old full/paired node states match. The71-node difference is exactly the
-    new file. Five paired failures comprise4 local restricted-setup contract assertions
-    plus1 ps sandbox failure. Author ps-pass is retained as a different environment
-    observation.
-  - Independent probes reject previous comment-only/wrong-root/pre-gate-upload/skipped-gate
-    mutants, old outcome-only guards and hidden-file opt-out; corrected explicit guard
-    and hidden opt-in are accepted. These are static checks, not Actions E2E.
-  - Target/new Ruff, mypy5, schema, static preflight and whitespace pass. Full Ruff
-    only unchanged shared I001. Student drafts,331 protected tracked files and both
-    setup byte identities remain unchanged; original index empty.
-  - Clean candidate excludes local setup; exact author bytes preserved. Candidate-specific
-    results are reported separately in the PR validation section.
+  - 'Restricted authoring snapshot: new71=39passed/32availability failures/0skip; existing50=49passed/1sandbox
+    ps PermissionError; full427=388passed/37failed/2skipped; paired356=349passed/5failed/2skipped.'
+  - All356 old full/paired node states match. The71-node difference is exactly the new file. Five paired
+    failures comprise4 local restricted-setup contract assertions plus1 ps sandbox failure. Author ps-pass
+    is retained as a different environment observation.
+  - Independent probes reject previous comment-only/wrong-root/pre-gate-upload/skipped-gate mutants, old
+    outcome-only guards and hidden-file opt-out; corrected explicit guard and hidden opt-in are accepted.
+    These are static checks, not Actions E2E.
+  - Target/new Ruff, mypy5, schema, static preflight and whitespace pass. Full Ruff only unchanged shared
+    I001. Student drafts,331 protected tracked files and both setup byte identities remain unchanged;
+    original index empty.
+  - Clean candidate excludes local setup; exact author bytes preserved. Candidate-specific results are
+    reported separately in the PR validation section.
   limitations:
-  - AI supervision is not independent student approval, course acceptance or a remote
-    check. Local schema does not prove remote enforcement.
-  - No source/workflow/permissions implementation, model/live/upstream-full run, GitHub
-    Review or merge. No new commit or PR exists at this preparation checkpoint.
-  - Existing AI-use entries are retained with identical parsed values; only these
-    two truthful records are appended. No private host paths or synthetic approvals
-    added.
+  - AI supervision is not independent student approval, course acceptance or a remote check. Local schema
+    does not prove remote enforcement.
+  - No source/workflow/permissions implementation, model/live/upstream-full run, GitHub Review or merge.
+    No new commit or PR exists at this preparation checkpoint.
+  - Existing AI-use entries are retained with identical parsed values; only these two truthful records
+    are appended. No private host paths or synthetic approvals added.
 - entry_id: SHARED-REGRESSION-PRIVACY-TEST-20261123-01
   timestamp: '2026-11-23T12:26:15+08:00'
   tool: OpenCode, papertrace-build-D
   model: deepseek/deepseek-flash (API-reported), max
-  purpose: Extend the shared diagnostic artifact privacy negatives with portable packaging
-    faults
+  purpose: Extend the shared diagnostic artifact privacy negatives with portable packaging faults
   scope:
   - test/offline/test_full_regression_diagnostics.py
   - docs/team/designs/shared/20261123-regression-diagnostics-plan.md
@@ -2563,11 +2626,11 @@ entries:
   approvals:
   - The supervising student authorized local test and design preparation.
   verification:
-  - The final authoring prompt and session were retained privately. The supervisor
-    scoped the synthetic fault and independently replayed the candidate.
+  - The final authoring prompt and session were retained privately. The supervisor scoped the synthetic
+    fault and independently replayed the candidate.
   limitations:
-  - Verification used a local offline interpreter. Collector behavior and native Windows
-    execution remain pending.
+  - Verification used a local offline interpreter. Collector behavior and native Windows execution remain
+    pending.
 - entry_id: SHARED-REGRESSION-PRIVACY-CANDIDATE-20261123-01
   timestamp: '2026-11-23T13:34:06+08:00'
   tool: OpenAI Codex desktop
@@ -2580,12 +2643,11 @@ entries:
   status: local test revision candidate
   approvals: []
   verification:
-  - The diagnostics file has 39 passing cases and 37 missing-collector availability
-    failures. All 427 prior node outcomes match the paired replay. Configured Ruff
-    passed for the test file.
+  - The diagnostics file has 39 passing cases and 37 missing-collector availability failures. All 427
+    prior node outcomes match the paired replay. Configured Ruff passed for the test file.
   limitations:
-  - All five newly added cases stop at the missing collector prerequisite. The runner
-    and workflow implementation remain a separate stage.
+  - All five newly added cases stop at the missing collector prerequisite. The runner and workflow implementation
+    remain a separate stage.
 - entry_id: SHARED-CI-DIAGNOSTICS-INHERIT-20261125-E-01
   timestamp: '2026-11-25T06:57:42.448147+00:00'
   tool: Codex Desktop
