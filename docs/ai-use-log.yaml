@@ -1610,3 +1610,14 @@ entries:
     上下文并应用，编写 service 的绑定校验、组装与捕获逻辑，运行离线复验。
   - 前两次 OpenCode 构建因复合 shell 权限中断，原始尝试另有记录
   - 保留精确获批测试、Gate 4、数据集和提示词。未调用真实产品模型。共享 evaluator 的实际接线仍待累计集成。
+- entry_id: "SHARED-EVAL-CAPTURE-TEST-DRAFT-20261125-01"
+  timestamp: "2026-11-25T05:18:01+00:00"
+  tool: "Codex desktop"
+  model: "not retrievable"
+  purpose: "Prepare offline tests for using the checked B request capture as evaluator evidence."
+  scope: ["test/offline/test_semantic_capture_proposal.py", "docs/team/designs/shared-evaluation/request-capture-plan-v1.md", "docs/ai-use-log.yaml"]
+  status: "preparation-assistance-not-human-approval"
+  student_decisions: ["The supervising student instructed Codex to proceed with the previously presented offline test plan."]
+  approvals: []
+  verification: ["On main, all 19 cases ran, with 3 verifier controls passing and 16 expected failures at the missing evaluator file.", "In separate snapshots with the evaluator files from PR #53 and PR #58, each run had 3 passing controls and 16 expected failures at the missing collect_attempt entry point.", "Scoped Ruff passed. The tests use synthetic fixtures and issue zero product model calls."]
+  limitations: ["Codex prepared this draft. A supervised OpenCode session and independent test approval are pending."]
