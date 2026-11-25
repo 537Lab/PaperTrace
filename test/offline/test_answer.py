@@ -672,3 +672,473 @@ def test_answer_package_has_no_direct_upstream_provider_or_network_imports() -> 
         for name in forbidden_imports(path.read_text(encoding="utf-8"))
     ]
     assert offenders == []
+
+
+# --- Standalone answer panel: test-preparation proposal ----------------------
+#
+# Traceability: FR-D-01, FR-D-02, FR-D-03, INV-01, INV-03, INV-04. The proposed
+# panel contract is fixed in
+# ``docs/team/designs/module-D/20261125-d-answer-panel-test-plan.md``.
+# These tests drive the future renderer through a recording UI and the real D
+# generation/release services. They import no Streamlit runtime and make no
+# product model or network call.
+
+
+def generation_symbol(name: str) -> Any:
+    """Resolve an already implemented D generation symbol from its submodule."""
+    module = import_module("papertrace.answer.generation")
+    symbol = getattr(module, name, None)
+    assert symbol is not None, f"proposed Module D generation symbol {name!r} is missing"
+    return symbol
+
+
+def release_symbol(name: str) -> Any:
+    """Resolve an already implemented D release symbol from its submodule."""
+    module = import_module("papertrace.answer.release")
+    symbol = getattr(module, name, None)
+    assert symbol is not None, f"proposed Module D release symbol {name!r} is missing"
+    return symbol
+
+
+def panel_module(name: str) -> Any:
+    """Lazily import a future panel entrypoint so pytest collection stays clean."""
+    qualified = f"papertrace.answer.{name}"
+    try:
+        spec = find_spec(qualified)
+    except ModuleNotFoundError:
+        spec = None
+    assert spec is not None, (
+        f"FR-D-03/INV-04: proposed panel module {qualified} is not implemented "
+        "(expected RED during the approved test-preparation stage)"
+    )
+    return import_module(qualified)
+
+
+def panel_symbol(module_name: str, name: str) -> Any:
+    """Resolve one proposed panel symbol, failing as a test assertion when absent."""
+    module = panel_module(module_name)
+    symbol = getattr(module, name, None)
+    assert symbol is not None, (
+        f"proposed Module D panel symbol {module_name}.{name} is missing"
+    )
+    return symbol
+
+
+class RecordingProjectionReader:
+    """Read-only projection port with a write spy the panel must never use."""
+
+    def __init__(self, projection: object) -> None:
+        self.projection = projection
+        self.reads: list[str] = []
+        self.writes: list[object] = []
+
+    def read_projection(self, question_id: str) -> object:
+        self.reads.append(question_id)
+        return self.projection
+
+    def write_projection(self, event: object) -> None:
+        self.writes.append(event)
+
+
+class RecordingCurrentPort:
+    """Read-only release-input port with a write spy the panel must never use."""
+
+    def __init__(self, bundle: object) -> None:
+        self.bundle = bundle
+        self.reads: list[str] = []
+        self.writes: list[object] = []
+
+    def read_current(self, question_id: str) -> object:
+        self.reads.append(question_id)
+        return self.bundle
+
+    def write_current(self, event: object) -> None:
+        self.writes.append(event)
+
+
+class RecordingGenerationPort:
+    """Counting double at D's B-generation boundary; it records exact calls."""
+
+    def __init__(self, outcome: object) -> None:
+        self.outcome = outcome
+        self.calls: list[object] = []
+
+    def call(self, request: object) -> object:
+        self.calls.append(request)
+        if isinstance(self.outcome, Exception):
+            raise self.outcome
+        return self.outcome
+
+
+class RecordingPanelUI:
+    """Minimal display double; it deliberately exposes no publication command."""
+
+    def __init__(self, generate_requests: tuple[bool, ...] = ()) -> None:
+        self._requests = list(generate_requests)
+        self.views: list[object | None] = []
+        self.publication_requests = 0
+
+    def render(self, view: object | None) -> None:
+        self.views.append(view)
+
+    def take_generate_request(self) -> bool:
+        if not self._requests:
+            return False
+        return self._requests.pop(0)
+
+    def request_publication(self) -> None:
+        self.publication_requests += 1
+        raise AssertionError("the answer panel must not expose a publication control")
+
+
+def generation_policy() -> Any:
+    return generation_symbol("GenerationPolicySpec")(
+        provider="synthetic-provider", model="synthetic-model"
+    )
+
+
+def generation_request(
+    snapshot: CorpusSnapshot,
+    evidence: tuple[EvidenceRecord, ...],
+    *,
+    selected: tuple[str, ...] | None = None,
+    question_text: str = "What does the synthetic resonance cell store?",
+) -> Any:
+    selected_ids = (evidence[0].evidence_id,) if selected is None else selected
+    return generation_symbol("AnswerGenerationRequest")(
+        base=build_request(snapshot, evidence),
+        question_text=question_text,
+        selected_evidence_ids=selected_ids,
+        policy=generation_policy(),
+    )
+
+
+def successful_generation_result(
+    evidence_id: str, *, accounting: object | None = None
+) -> Any:
+    return generation_symbol("GenerationCallResult")(
+        status="SUCCESS",
+        raw_output="The synthetic resonance cell stores 12 units of daylight energy (b1).",
+        sent_evidence_ids=(evidence_id,),
+        citation_aliases=(("b1", evidence_id),),
+        unknown_citation_keys=(),
+        ambiguous_citation_keys=(),
+        refusal_reason=None,
+        accounting=accounting,
+    )
+
+
+def repeated_sent_generation_result(
+    evidence_id: str, *, accounting: object | None = None
+) -> Any:
+    return generation_symbol("GenerationCallResult")(
+        status="SUCCESS",
+        raw_output="Repeated synthetic sent metadata must be rejected (b1).",
+        sent_evidence_ids=(evidence_id, evidence_id),
+        citation_aliases=(("b1", evidence_id),),
+        unknown_citation_keys=(),
+        ambiguous_citation_keys=(),
+        refusal_reason=None,
+        accounting=accounting,
+    )
+
+
+def generation_accounting(attempts: int | None) -> Any:
+    return generation_symbol("GenerationAccounting")(
+        provider="synthetic-provider",
+        model="synthetic-model",
+        answer_model_attempts=attempts,
+    )
+
+
+def panel_scope(
+    snapshot: CorpusSnapshot,
+    projection: Any,
+    *,
+    question_id: str = QUESTION_ID,
+    revision: int | None = None,
+    digest: str | None = None,
+    snapshot_id: str | None = None,
+) -> Any:
+    return panel_symbol("view", "PanelScope")(
+        question_id=question_id,
+        snapshot_id=snapshot.snapshot_id if snapshot_id is None else snapshot_id,
+        review_revision=projection.revision if revision is None else revision,
+        review_digest=projection.digest if digest is None else digest,
+    )
+
+
+def build_panel(
+    *,
+    projection: Any,
+    generation_outcome: object,
+    snapshot: CorpusSnapshot,
+    evidence: tuple[EvidenceRecord, ...],
+    ui: RecordingPanelUI,
+    current_projection: Any | None = None,
+) -> tuple[Any, RecordingProjectionReader, RecordingCurrentPort, RecordingGenerationPort]:
+    projection_reader = RecordingProjectionReader(projection)
+    current_reader = RecordingCurrentPort(
+        (
+            snapshot,
+            projection if current_projection is None else current_projection,
+            evidence,
+        )
+    )
+    generation_port = RecordingGenerationPort(generation_outcome)
+    panel = panel_symbol("view", "AnswerPanel")(
+        generation=generation_symbol("AnswerGenerationService")(
+            projections=projection_reader, generation=generation_port
+        ),
+        release_gate=release_symbol("ReleaseGate")(
+            current=current_reader, clock=lambda: REQUESTED_AT
+        ),
+        ui=ui,
+    )
+    return panel, projection_reader, current_reader, generation_port
+
+
+def top_level_import_names(source: str) -> list[str]:
+    """Return module-scope import targets, used to keep Streamlit out of import time."""
+    names: list[str] = []
+    for node in ast.parse(source).body:
+        if isinstance(node, ast.Import):
+            names.extend(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module is not None:
+            names.append(node.module)
+    return names
+
+
+def test_panel_open_and_rerun_do_not_generate_or_write() -> None:
+    """FR-D-01/INV-01: opening and rerunning only render; no boundary call or write."""
+    snapshot, doc_a, _ = build_corpus()
+    record = build_evidence(snapshot, doc_a, CORPUS_A)
+    projection = build_projection(snapshot)
+    request = generation_request(snapshot, (record,))
+    ui = RecordingPanelUI()
+    panel, projections, current, generation = build_panel(
+        projection=projection,
+        generation_outcome=successful_generation_result(record.evidence_id),
+        snapshot=snapshot,
+        evidence=(record,),
+        ui=ui,
+    )
+    scope = panel_scope(snapshot, projection)
+
+    assert panel.render(request=request, scope=scope) is None
+    assert panel.render(request=request, scope=scope) is None
+
+    assert ui.views == [None, None]
+    assert generation.calls == []
+    assert projections.reads == []
+    assert current.reads == []
+    assert projections.writes == []
+    assert current.writes == []
+    assert ui.publication_requests == 0
+
+
+def test_explicit_generate_calls_boundary_once_and_rerun_reuses_display() -> None:
+    """FR-D-03/INV-04: one click, one port call, one displayed validated draft."""
+    snapshot, doc_a, _ = build_corpus()
+    record = build_evidence(snapshot, doc_a, CORPUS_A)
+    projection = build_projection(snapshot, revision=1, accepted=(record.evidence_id,))
+    result = successful_generation_result(record.evidence_id)
+    request = generation_request(snapshot, (record,))
+    ui = RecordingPanelUI((True, False))
+    panel, projections, current, generation = build_panel(
+        projection=projection,
+        generation_outcome=result,
+        snapshot=snapshot,
+        evidence=(record,),
+        ui=ui,
+    )
+    scope = panel_scope(snapshot, projection)
+
+    first = panel.render(request=request, scope=scope)
+    second = panel.render(request=request, scope=scope)
+
+    assert len(generation.calls) == 1
+    assert first is not None
+    assert first.draft_status == "draft"
+    assert first.body == result.raw_output
+    assert first.citation_evidence_ids == (record.evidence_id,)
+    assert first.refusal_reason is None
+    assert second == first
+    assert ui.views == [first, first]
+    assert projections.reads == [QUESTION_ID, QUESTION_ID]
+    assert current.reads == [QUESTION_ID]
+
+
+def test_generate_without_approved_evidence_shows_refusal_and_skips_boundary() -> None:
+    """FR-D-01/INV-01: an empty accepted projection is refused before generation."""
+    snapshot, doc_a, _ = build_corpus()
+    record = build_evidence(snapshot, doc_a, CORPUS_A)
+    projection = build_projection(snapshot)
+    request = generation_request(snapshot, (record,))
+    ui = RecordingPanelUI((True,))
+    panel, projections, current, generation = build_panel(
+        projection=projection,
+        generation_outcome=successful_generation_result(record.evidence_id),
+        snapshot=snapshot,
+        evidence=(record,),
+        ui=ui,
+    )
+
+    view = panel.render(request=request, scope=panel_scope(snapshot, projection))
+
+    assert view is not None
+    assert view.draft_status == "abstained"
+    assert view.refusal_reason == answer("REFUSAL_NO_APPROVED_EVIDENCE")
+    assert view.body == ""
+    assert view.citation_evidence_ids == ()
+    assert view.release_decision is None
+    assert generation.calls == []
+    assert projections.reads == [QUESTION_ID]
+    assert current.reads == []
+    assert projections.writes == []
+    assert current.writes == []
+
+
+def test_blocked_release_keeps_draft_visible_and_offers_no_publication_control() -> None:
+    """FR-D-02/INV-04: a real blocked gate does not hide the draft or citations."""
+    snapshot, doc_a, _ = build_corpus()
+    record = build_evidence(snapshot, doc_a, CORPUS_A)
+    projection = build_projection(snapshot, revision=1, accepted=(record.evidence_id,))
+    result = successful_generation_result(
+        record.evidence_id, accounting=generation_accounting(1)
+    )
+    request = generation_request(snapshot, (record,))
+    ui = RecordingPanelUI((True,))
+    panel, projections, current, generation = build_panel(
+        projection=projection,
+        generation_outcome=result,
+        snapshot=snapshot,
+        evidence=(record,),
+        ui=ui,
+    )
+
+    view = panel.render(request=request, scope=panel_scope(snapshot, projection))
+
+    assert view is not None
+    assert view.draft_status == "draft"
+    assert view.body == result.raw_output
+    assert view.citation_evidence_ids == (record.evidence_id,)
+    assert view.release_decision is not None
+    assert view.release_decision.status == "blocked"
+    assert view.release_decision.reason_codes == (
+        release_symbol("PUBLICATION_COMMIT_UNAVAILABLE"),
+    )
+    assert ui.publication_requests == 0
+    assert "request_publication" not in dir(panel_symbol("view", "PanelUI"))
+    assert len(generation.calls) == 1
+    assert current.reads == [QUESTION_ID]
+    assert projections.writes == []
+    assert current.writes == []
+
+
+@pytest.mark.parametrize(
+    ("case_id", "attempts", "accounting_present"),
+    [
+        ("observed-one", 1, True),
+        ("observed-zero", 0, True),
+        ("unknown-count", None, True),
+        ("absent-accounting", None, False),
+    ],
+    ids=["observed-one", "observed-zero", "unknown-count", "absent-accounting"],
+)
+def test_repeated_sent_ids_suppress_output_and_show_validated_accounting(
+    case_id: str, attempts: int | None, accounting_present: bool
+) -> None:
+    """FR-D-02/INV-04: a rejected duplicate-sent result keeps only validated accounting."""
+    snapshot, doc_a, _ = build_corpus()
+    record = build_evidence(snapshot, doc_a, CORPUS_A)
+    projection = build_projection(snapshot, revision=1, accepted=(record.evidence_id,))
+    accounting = generation_accounting(attempts) if accounting_present else None
+    result = repeated_sent_generation_result(
+        record.evidence_id, accounting=accounting
+    )
+    request = generation_request(snapshot, (record,))
+    ui = RecordingPanelUI((True,))
+    panel, _, _, generation = build_panel(
+        projection=projection,
+        generation_outcome=result,
+        snapshot=snapshot,
+        evidence=(record,),
+        ui=ui,
+    )
+
+    view = panel.render(request=request, scope=panel_scope(snapshot, projection))
+
+    assert view is not None
+    assert view.draft_status == "failed"
+    assert view.refusal_reason == generation_symbol("REASON_RESULT_SHAPE_INVALID")
+    assert view.body == ""
+    assert result.raw_output not in view.body
+    assert view.citation_evidence_ids == ()
+    assert view.accounting_observed is accounting_present
+    assert view.observed_answer_model_attempts == (
+        attempts if accounting_present else None
+    )
+    assert len(generation.calls) == 1
+
+
+SCOPE_CHANGES = [
+    ("question", {"question_id": "q-synthetic-2"}),
+    ("snapshot", {"snapshot_id": "snap-" + "a" * 64}),
+    ("revision", {"revision": 2}),
+    ("digest", {"digest": "b" * 64}),
+]
+SCOPE_CHANGE_IDS = [case_id for case_id, _ in SCOPE_CHANGES]
+
+
+@pytest.mark.parametrize(
+    ("case_id", "changes"), SCOPE_CHANGES, ids=SCOPE_CHANGE_IDS
+)
+def test_scope_change_clears_previous_result_without_generation(
+    case_id: str, changes: dict[str, object]
+) -> None:
+    """FR-D-02/INV-04: a display-scope change discards the old view and never generates."""
+    snapshot, doc_a, _ = build_corpus()
+    record = build_evidence(snapshot, doc_a, CORPUS_A)
+    projection = build_projection(snapshot, revision=1, accepted=(record.evidence_id,))
+    result = successful_generation_result(record.evidence_id)
+    request = generation_request(snapshot, (record,))
+    ui = RecordingPanelUI((True, True))
+    panel, projections, _, generation = build_panel(
+        projection=projection,
+        generation_outcome=result,
+        snapshot=snapshot,
+        evidence=(record,),
+        ui=ui,
+    )
+    scope = panel_scope(snapshot, projection)
+
+    first = panel.render(request=request, scope=scope)
+    assert first is not None
+    assert first.draft_status == "draft"
+    calls_after_first = len(generation.calls)
+    reads_after_first = list(projections.reads)
+
+    cleared = panel.render(
+        request=request, scope=panel_scope(snapshot, projection, **changes)
+    )
+
+    assert cleared is None
+    assert ui.views[-1] is None
+    assert calls_after_first == 1
+    assert len(generation.calls) == calls_after_first
+    assert projections.reads == reads_after_first
+
+
+def test_preview_entrypoint_keeps_streamlit_out_of_module_scope() -> None:
+    """FR-D-03: the preview module imports without an installed Streamlit runtime."""
+    from inspect import getsource
+
+    module = panel_module("preview")
+
+    assert callable(getattr(module, "render_preview", None))
+    assert callable(getattr(module, "main", None))
+    names = top_level_import_names(getsource(module))
+    assert not any(
+        name == "streamlit" or name.startswith("streamlit.") for name in names
+    )

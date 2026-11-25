@@ -2340,6 +2340,122 @@ entries:
   - Full remote regression is not claimed green. Old baseline collection can independently block the current
     verifier; no verifier, baseline archive, assertions, dependency or gate policy was edited. No provider/model
     calls or merge into main.
+- entry_id: SHARED-EVAL-TEST-20261124-01
+  timestamp: '2026-11-24T11:00:04Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Propose tests and plan for real semantic evaluation execution and immutable
+    artifact binding
+  scope:
+  - test/offline/test_semantic_execution_proposal.py
+  - docs/team/designs/shared-evaluation/execution-plan-v1.md
+  status: test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Read exact trusted main verifier, schema, workflow, dataset and existing synthetic
+    test fixture.
+  - Identified artifact ID allocated only after immutable upload; proposed server-bound
+    provenance without self-reference.
+  - New tests not locally executed by this assistant; CI and independent review are
+    required.
+  limitations:
+  - No implementation, workflow change, budget approval, product calls, real ratings
+    or semantic PASS.
+  - Not a student-supervised OpenCode implementation transcript.
+- entry_id: SHARED-EVAL-TEST-20261124-02
+  timestamp: '2026-11-24T11:10:00Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Address independent review of the evaluation test proposal
+  scope:
+  - test/offline/test_semantic_execution_proposal.py
+  - docs/team/designs/shared-evaluation/execution-plan-v1.md
+  status: revised-test-proposal-awaiting-independent-review
+  approvals: []
+  verification:
+  - Independent reviewer reported 43 passed and 2 expected RED for previous head df42a5c8.
+  - Added eleven omitted-ID negative controls and corrected new test import grouping.
+  - Current revision execution not yet verified; CI and independent review required.
+  limitations:
+  - No existing approved tests, protected verifier, schema, workflow, prompt or product
+    code changed.
+  - No actual model calls or authorization; no student OpenCode transcript claimed.
+- entry_id: SHARED-EVAL-CANDIDATE-20261124-03
+  timestamp: '2026-11-24T13:10:00Z'
+  tool: ChatGPT with GitHub connector
+  model: GPT-6.2
+  purpose: Draft approved immutable artifact transport correction and offline fixed-request
+    planning
+  scope:
+  - scripts/semantic_evidence.py
+  - test/evaluation/report-schema.json
+  - test/evaluation/evaluator.py
+  status: candidate-awaiting-student-supervised-opencode-and-independent-verification
+  approvals:
+  - PR 51 exact c3e40aaa12dbc2ab7b5398ca3a989758a4fb641a test proposal approved by
+    reviews 6038165664 and 6038425485.
+  verification:
+  - Retained all approved tests and plan blobs; schema changes only required artifact_id
+    membership and verifier checks optional legacy ID against server ID.
+  - Request preparation is pure and produces expected envelopes, not observed requests
+    or provider calls.
+  - Candidate not locally executed in locked runtime.
+  limitations:
+  - Direct ChatGPT candidate due to unavailable local OpenCode bridge; not a genuine
+    supervised OpenCode transcript.
+  - Existing gate 1 classifies all test paths as approved tests, including runtime
+    evaluator/schema paths; candidate may be blocked and requires separately reviewed
+    exact-path classification correction, never bypass.
+  - No workflow, actual product serialization, real authorization, call, response,
+    rating, artifact or semantic PASS.
+  - Separate preflight, budget and human intake tests and protected implementation
+    review required before live workflow adoption.
+- entry_id: SHARED-EVAL-TRANSPORT-OPENCODE-ADOPTION-20261125-01
+  timestamp: '2026-11-25T05:50:04Z'
+  tool: OpenCode v2.0.12 (papertrace-verify)
+  model: openai/gpt-6.2-sol
+  purpose: Student-supervised OpenCode read-only verification and bounded adoption of PR #53 artifact transport and offline evaluation planning on main 2b4b5822
+  scope:
+  - scripts/semantic_evidence.py
+  - test/evaluation/evaluator.py
+  - test/evaluation/report-schema.json
+  - docs/ai-use-log.yaml
+  status: supervised-opencode-verified-awaiting-independent-review
+  approvals:
+  - PR #51 exact test anchor c3e40aaa12dbc2ab7b5398ca3a989758a4fb641a approved by Y15BeTa and ziqilin669.
+  - Student (537Lab) authorized this supervised read-only OpenCode verification without relaxing opencode.jsonc write protection on protected verifier and evaluation control paths.
+  verification:
+  - 'OpenCode session ses_deebf886effeUKxtaPghUPqda4 (agent: papertrace-verify, read-only) verified merged HEAD 5eb9df7a12cae94bf6eeb395c079653d1982c564 on main 2b4b5822.'
+  - 'PR #51 approved test/plan files remain byte-identical to c3e40aaa.'
+  - 'pytest test/offline/test_semantic_evidence.py test/offline/test_semantic_changes.py test/offline/test_semantic_execution_proposal.py -> exit 0 (86 passed).'
+  - 'Full-scope ruff, mypy, schema, and ai-log gates all exit 0.'
+  limitations:
+  - opencode.jsonc intentionally denies editing protected scripts/semantic_evidence.py and test/evaluation/*; OpenCode executed in read-only papertrace-verify mode rather than rewriting protected files directly.
+  - Requires independent non-author GitHub approval on final head SHA before squash merge.
+
+- entry_id: D-PANEL-IMPL-20261125-01
+  timestamp: '2026-11-25T12:51:57+08:00'
+  tool: OpenCode CLI v2.3.0 with papertrace-build-D, supervised by the student through the DeepSeek Harness runner
+  model: deepseek/deepseek-flash
+  purpose: Implement the standalone Module D answer panel and its synthetic Streamlit preview
+  scope:
+  - src/papertrace/answer/view.py
+  - src/papertrace/answer/preview.py
+  status: implemented and verified offline; awaiting independent review
+  student_decisions:
+  - Approved one supervised implementation session on deepseek/deepseek-flash with the write scope limited to the two panel files.
+  - Approved shell use limited to the listed offline verification commands; commits, pushes and pull requests stayed with the supervisor.
+  approvals:
+  - 'PR #67 independent test approval, review 6051367953 (PRR_kwDOVtJ17M8AAAABaLCMEQ), reviewer ziqilin669, test head 563dcd3bd7cb6c0d34801b03c10689cb585668a4, 2026-11-25T03:20:32Z.'
+  verification:
+  - 'Targeted file: 46 collected, 46 passed.'
+  - 'Full team offline suite: 598 passed, 2 skipped, 4 failed. Three failures need the missing lmi module; one subprocess ps test is blocked by the supervisor sandbox. Neither group imports these two files.'
+  - 'Scoped Ruff on src/papertrace/answer passed; mypy reported no issues in 20 files; the schema gate reported PASS; git diff --check was clean.'
+  - 'Streamlit AppTest replay: first load made zero generation-boundary calls, one Generate click made exactly one call and rendered a draft with canonical citation ids plus a blocked PUBLICATION_COMMIT_UNAVAILABLE decision, and a plain rerun kept the draft with no additional call.'
+  limitations:
+  - The session first stopped for authorization because no shell command could be approved; the supervisor supplied the reviewed PR #67 approval, the bounded shell list and re-authorized the same session.
+  - Repo-wide Ruff still reports the pre-existing I001 in scripts/paperqa_smoke.py, which this slice does not touch.
+  - Real semantic evaluation, independent source review and the final publication transaction remain pending.
 
 - entry_id: "SHARED-EVAL-CAPTURE-TEST-DRAFT-20261125-01"
   timestamp: "2026-11-25T05:18:01+00:00"
@@ -2352,7 +2468,6 @@ entries:
   approvals: []
   verification: ["On main, all 19 cases ran, with 3 verifier controls passing and 16 expected failures at the missing evaluator file.", "In separate snapshots with the evaluator files from PR #53 and PR #58, each run had 3 passing controls and 16 expected failures at the missing collect_attempt entry point.", "Scoped Ruff passed. The tests use synthetic fixtures and issue zero product model calls."]
   limitations: ["Codex prepared this draft. A supervised OpenCode session and independent test approval are pending."]
-
 
 - entry_id: SHARED-EVAL-CAPTURE-TEST-REVISION-20261125-01
   timestamp: '2026-11-25T14:12:00+08:00'
