@@ -2457,6 +2457,27 @@ entries:
   - Repo-wide Ruff still reports the pre-existing I001 in scripts/paperqa_smoke.py, which this slice does not touch.
   - Real semantic evaluation, independent source review and the final publication transaction remain pending.
 
+- entry_id: D-REQ-STATUS-20261125-01
+  timestamp: '2026-11-25T14:12:00+08:00'
+  tool: DeepSeek Harness runner (supervising student session); no OpenCode role needed for a registry-only change
+  model: deepseek/deepseek-flash
+  purpose: Record the real implementation status of the D-owned requirements instead of leaving every entry at planned
+  scope:
+  - docs/req/requirements.yaml
+  - docs/ai-use-log.yaml
+  status: registry statuses updated from merged evidence
+  student_decisions:
+  - The student asked for the D-owned rows to reflect their merged implementation before the report traceability table is frozen.
+  approvals:
+  - 'Evidence: FR-D-01/02/03, INV-01 and INV-04 are implemented in src/papertrace/answer and merged into main through PR #50 (7c6592a9); their offline tests are in test/offline/test_answer.py and related files.'
+  verification:
+  - The schema gate reports PASS with 27 requirements after the edit.
+  - Only the five implemented D rows changed; INV-07 stays planned because trimming, compression and constraint re-injection are not implemented yet.
+  - All other module and shared rows are left untouched for their owners.
+  limitations:
+  - 'No regression suite was rerun for a registry-only edit; the change carries no executable behaviour.'
+  - 'The status value is implemented, not verified: independent verification of each fit criterion is still recorded separately.'
+
 - entry_id: "SHARED-EVAL-CAPTURE-TEST-DRAFT-20261125-01"
   timestamp: "2026-11-25T05:18:01+00:00"
   tool: "Codex desktop"
