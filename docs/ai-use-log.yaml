@@ -2497,3 +2497,24 @@ entries:
   limitations:
   - 'Verification for this registry-only edit is limited to the schema, AI-use log and semantic gates and the Git diff.'
   - 'Independent verification of each fit criterion is recorded separately.'
+
+- entry_id: SEMANTIC-WORKFLOW-PR55-P1-20261125-01
+  timestamp: '2026-11-25T15:49:22+08:00'
+  tool: OpenAI Codex
+  model: openai/gpt-6.2-sol
+  purpose: Require explicit evaluation tariffs and reject reuse of an authorization review across dispatches.
+  scope:
+  - test/evaluation/evaluator.py
+  - .github/workflows/semantic-evaluation.yml
+  - docs/ai-use-log.yaml
+  status: implemented and verified offline
+  approvals:
+  - 'The supervising student confirmed plan approval and identified PR #55 approved test head 9444c91833fe76c4e61da2c439e4260ed0f6c5e4.'
+  verification:
+  - 'The approved proposal test and plan matched PR #55 byte for byte.'
+  - 'test_semantic_workflow_proposal.py passed 85 of 85 tests. test_semantic_evidence.py and test_evaluation_control_paths.py passed 48 of 48 tests combined. Both pytest commands exited 0.'
+  - 'The offline HTTP replay exited 0 with 4 DET oracle matches, 18 QUAL mock requests through B/D, both _download_raw listing shapes, and _finalize v3 schema, runtime, run, and score validation. Mocked Environment API cases verified 200 validation, 403 delegation, and 404 rejection.'
+  - 'A mocked read-only dispatch history probe verified pagination, queued reuse rejection, and rejection of incomplete history.'
+  - 'Scoped Ruff and mypy exited 0. The schema gate passed with 27 requirements, the AI-use log gate passed with one new entry, and the semantic gate reported NOT_REQUIRED against main 9de296c9649430030e11c5b11ba51e47c39c1cd2. All three gates exited 0.'
+  limitations:
+  - 'Live GitHub Actions dispatch, concurrent run visibility, environment approvals and protection, provider entitlement and actual charges, and real model quality were not exercised. Independent review of the implementation remains pending.'
