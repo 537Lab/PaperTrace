@@ -2591,3 +2591,42 @@ entries:
   limitations:
   - Codex prepared the tests and plan. An OpenCode session was not used for this test proposal.
   - The supplemental tests require a new independent GitHub approval before the implementation is revised.
+- entry_id: BD-INV07-COMPACTION-IMPL-20261125-01
+  timestamp: '2026-11-25T15:04:22+08:00'
+  tool: OpenCode CLI v2.3.0 (papertrace-build-B), with Codex desktop verification and publication
+  model: deepseek/deepseek-flash
+  purpose: Implement deterministic answer context compaction at the B model boundary
+  scope:
+  - src/papertrace/retrieval/service.py
+  status: implemented-offline-awaiting-independent-source-review
+  student_decisions:
+  - The student authorized the OpenCode implementation and in-scope PR workflow. The implementation scope follows the approved test and design for B request assembly.
+  approvals:
+  - 'GitHub PR #76 stayed open. 537Lab approved 0b68c392442cf069f3dbfaf0c0ba3685221364d7 in review 6053010862 at 2026-11-25T06:42:59Z.'
+  - 'ldk13856478627-cell also approved that exact test head in review 6053017811 at 2026-11-25T06:43:47Z.'
+  verification:
+  - 'OpenCode session ses_dee879502ffeA6FnP7EgQQObdj ran from 2026-11-25T06:50:34Z to 2026-11-25T06:57:16Z. The original export was retained privately. SHA-256: 24154dda45113bc3447c3e8691c4d9d811e364ed24f0659584d8f042b919fb42.'
+  - 'The approved #76 test and plan are byte-identical. The five-file B/D offline suite passed 128 tests, including all 18 INV-07 cases. Ruff, mypy (33 files), schema, and diff checks passed.'
+  - 'The full team offline run with isolated tooling reported 944 passed, 3 failed, and 2 skipped. The same three failure nodes reproduced on main d893cefe162eb687fbd2854ee63b29569e087b2e. The workflow tests skipped because this runtime did not locate an OpenCode executable.'
+  limitations:
+  - The offline tests use controlled counts and the configured effective request cap. Live tokenizer and provider window behavior were not verified. Real product-model calls were zero.
+  - Independent implementation review, remote review gates, and full upstream regression remain outstanding.
+- entry_id: BD-INV07-THRESHOLD-IMPL-20261125-01
+  timestamp: '2026-11-25T16:59:20+08:00'
+  tool: OpenCode CLI v2.3.0 (papertrace-build-B), with Codex desktop verification and publication
+  model: deepseek/deepseek-flash (requested by the OpenCode CLI)
+  purpose: Enforce the approved INV-07 compaction threshold ceiling at the B boundary
+  scope:
+  - src/papertrace/retrieval/service.py
+  status: implemented-offline-awaiting-independent-source-review
+  student_decisions:
+  - The student authorized the scoped INV-07 implementation and implementation PR workflow.
+  approvals:
+  - 'Independent GitHub reviews 6054358309 and 6054380589 approved test PR #84 at 6fcf3b8ceb6dd490b1a7ca36ed994615f6e2ea21.'
+  verification:
+  - 'OpenCode session ses_dee11adddffeqYRlktXr1Zxjjo ran from 16:59:20 to 16:59:39 HKT on November 25, 2026. The raw export is held privately. SHA-256: cd4e278889a88e39c0dcc01a8179f7cf9338b41c7c982001f393b52b5b19008d.'
+  - '244 B/D offline tests passed across six files. Ruff, mypy and diff checks passed.'
+  - 'Full team offline verification reported 980 passed, 3 failed and 2 skipped. The same three failed test nodes reproduced on main 38db05423956ac4b03b9f9c6ede8208b33e71e5e.'
+  limitations:
+  - 'OpenCode denied one shell request and one read before the source edit succeeded. The isolated offline test runtime could not locate OpenCode for two workflow tests.'
+  - 'Product model calls were zero. Live tokenizer and provider window behavior and independent implementation approval remain unverified.'
