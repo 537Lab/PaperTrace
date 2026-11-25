@@ -102,7 +102,7 @@ requirements:
   sources:
   - course-project:p3,5
   - audit:GAP-05
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-D-02
   type: functional
   owner: D
@@ -116,7 +116,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-D-03
   type: functional
   owner: D
@@ -130,7 +130,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - paperqa:src/paperqa/docs.py:588-721
-  implementation_status: planned
+  implementation_status: implemented
 - id: FR-E-01
   type: functional
   owner: E
@@ -172,7 +172,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: INV-02
   type: invariant
   owner: A
@@ -214,7 +214,7 @@ requirements:
   tradeoff: 保留安全及验收，先裁剪非必要自动化/多用户/多模态，不以跳过验证换工期。
   sources:
   - course-project:p5-6
-  implementation_status: planned
+  implementation_status: implemented
 - id: INV-05
   type: invariant
   owner: E
