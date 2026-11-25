@@ -1140,3 +1140,24 @@ entries:
   - The local upstream smoke wrapper stopped at incomplete runtime metadata. A direct
     overlay run reached an unavailable optional PDF parser. Product-model and semantic
     evaluation runs remain pending.
+- entry_id: D-PANEL-TESTPREP-20261125-01
+  timestamp: '2026-11-25T10:12:38+08:00'
+  tool: OpenCode CLI v2.3.0 with papertrace-build-D, supervised by the student via Codex
+  model: deepseek/deepseek-flash
+  purpose: Prepare offline acceptance tests and the design for the standalone Module D answer panel
+  scope:
+  - test/offline/test_answer.py
+  - docs/team/designs/module-D/20261125-d-answer-panel-test-plan.md
+  status: test proposal verified locally and awaiting independent review
+  student_decisions:
+  - Approved the specific plan and one OpenCode test-preparation submission on the configured model.
+  - Kept this slice on synthetic inputs and the existing Module D ports.
+  approvals:
+  - The student authorized test preparation. Independent GitHub approval of the test commit is pending.
+  verification:
+  - 'Supervising runner: 46 collected, 33 existing cases passed, 13 expected failures due to absent panel modules.'
+  - Synthetic fixtures exercised the real D generation and release services. Scoped Ruff, mypy, schema and diff check passed.
+  - The initialization environment reproduced three unchanged PaperQA2 bridge failures caused by missing lmi on the base.
+  limitations:
+  - The OpenCode session prepared two files. The supervising runner recorded the checks and appended this disclosure.
+  - Streamlit click replay, independent review and product model evaluation remain pending.
