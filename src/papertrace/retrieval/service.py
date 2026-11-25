@@ -16,6 +16,7 @@ import asyncio
 import copy
 import hashlib
 import importlib
+import json
 import re
 import tempfile
 from collections.abc import Callable, Coroutine, Sequence
@@ -65,6 +66,10 @@ REFUSAL_EVIDENCE_OUTSIDE_SNAPSHOT = "EVIDENCE_OUTSIDE_SNAPSHOT"
 REFUSAL_EVIDENCE_VERSION_MISMATCH = "EVIDENCE_VERSION_MISMATCH"
 REFUSAL_MODEL_POLICY_MISMATCH = "MODEL_POLICY_MISMATCH"
 REFUSAL_INPUT_BUDGET_EXCEEDED = "INPUT_BUDGET_EXCEEDED"
+REFUSAL_ANSWER_PROMPT_UNAVAILABLE = "ANSWER_PROMPT_UNAVAILABLE"
+REFUSAL_ANSWER_REQUEST_MISMATCH = "ANSWER_REQUEST_MISMATCH"
+REFUSAL_INVALID_EVALUATION_BINDING = "INVALID_EVALUATION_EVIDENCE_BINDING"
+REFUSAL_REQUEST_CAPTURE_FAILED = "REQUEST_CAPTURE_FAILED"
 
 MAX_INPUT_TOKENS = 12000
 COMPRESS_AT_TOKENS = 9000
@@ -179,6 +184,67 @@ class GenerationRequest:
     policy: GenerationPolicy
     review_revision: int = 0
     review_digest: str = ""
+
+
+RequestObserver = Callable[[tuple[tuple[str, str], ...]], None]
+
+
+@dataclass(frozen=True)
+class EvaluationCaseBinding:
+    """One evaluator-authorized case and its exact runtime evidence bindings."""
+
+    dataset_sha256: str
+    case_id: str
+    snapshot_id: str
+    question: str
+    fixed_evidence: tuple[tuple[str, str], ...]
+    fixed_to_runtime: tuple[tuple[str, str], ...]
+
+
+def _evaluation_pairs(pairs: tuple[tuple[str, str], ...]) -> dict[str, str] | None:
+    if not isinstance(pairs, tuple) or not pairs:
+        return None
+    entries: dict[str, str] = {}
+    for pair in pairs:
+        if not isinstance(pair, tuple) or len(pair) != 2:
+            return None
+        key, value = pair
+        if not isinstance(key, str) or not key.strip() or key in entries:
+            return None
+        if not isinstance(value, str) or not value.strip():
+            return None
+        entries[key] = value
+    return entries
+
+
+def _validate_evaluation_binding(
+    request: GenerationRequest, binding: EvaluationCaseBinding
+) -> dict[str, str] | None:
+    if (
+        not isinstance(binding, EvaluationCaseBinding)
+        or not isinstance(binding.dataset_sha256, str)
+        or re.fullmatch(r"[0-9a-f]{64}", binding.dataset_sha256) is None
+        or not isinstance(binding.case_id, str)
+        or not binding.case_id.strip()
+        or binding.snapshot_id != request.snapshot.snapshot_id
+        or binding.question != request.question
+    ):
+        return None
+
+    fixed_text = _evaluation_pairs(binding.fixed_evidence)
+    fixed_to_runtime = _evaluation_pairs(binding.fixed_to_runtime)
+    if fixed_text is None or fixed_to_runtime is None or fixed_text.keys() != fixed_to_runtime.keys():
+        return None
+
+    runtime_to_fixed = {runtime_id: fixed_id for fixed_id, runtime_id in fixed_to_runtime.items()}
+    approved = {record.evidence_id: record.excerpt for record in request.approved_evidence}
+    if (
+        len(runtime_to_fixed) != len(fixed_to_runtime)
+        or runtime_to_fixed.keys() != approved.keys()
+        or any(fixed_text[label] != approved[runtime] for runtime, label in runtime_to_fixed.items())
+    ):
+        return None
+    return runtime_to_fixed
 
 
 @dataclass(frozen=True)
@@ -781,6 +847,11 @@ class _SessionContext:
 
     evidence_id: str
     text: str
+    fixed_id: str | None = None
+
+    @property
+    def outbound_id(self) -> str:
+        return self.fixed_id if self.fixed_id is not None else self.evidence_id
 
 
 @dataclass(frozen=True)
@@ -797,6 +868,7 @@ class _SessionPolicy:
     pre_prompt: str | None = None
     post_prompt: str | None = None
     autonomous_agent: bool = False
+    request_observer: RequestObserver | None = None
 
 
 def _copy_answer_model(
@@ -824,7 +896,11 @@ def _copy_answer_model(
 
 
 def _instrument_answer_model(
-    model: Any, on_entry: Callable[[], None]
+    model: Any,
+    on_entry: Callable[[], None],
+    *,
+    expected_messages: tuple[tuple[str, str], ...] | None = None,
+    request_observer: RequestObserver | None = None,
 ) -> Callable[[], None] | None:
     """Wrap ``call_single`` so B counts actual answer-model entries.
 
@@ -838,6 +914,21 @@ def _instrument_answer_model(
     had_instance_attr = isinstance(model_dict, dict) and "call_single" in model_dict
 
     async def counted_call_single(*args: Any, **kwargs: Any) -> Any:
+        if expected_messages is not None:
+            messages = kwargs.get("messages", args[0] if args else None)
+            if not isinstance(messages, (list, tuple)):
+                raise _GenerationRefusal(REFUSAL_ANSWER_REQUEST_MISMATCH)
+            actual = tuple(
+                (getattr(message, "role", None), getattr(message, "content", None))
+                for message in messages
+            )
+            if actual != expected_messages:
+                raise _GenerationRefusal(REFUSAL_ANSWER_REQUEST_MISMATCH)
+            if request_observer is not None:
+                try:
+                    request_observer(cast(tuple[tuple[str, str], ...], actual))
+                except Exception as error:
+                    raise _GenerationRefusal(REFUSAL_REQUEST_CAPTURE_FAILED) from error
         on_entry()
         return await original(*args, **kwargs)
 
@@ -933,6 +1024,37 @@ def _final_prompt_text(*, settings: Any, serialized: str, question: str) -> str:
     return f"{system}\n{user_prompt}"
 
 
+def _bind_structured_prompt(
+    *, settings: Any, question: str, evidence: Sequence[_SessionContext]
+) -> str:
+    """Bind the approved prompt and one JSON payload on this session's settings."""
+    prompt_path = Path(__file__).resolve().parents[3] / "prompts" / "answer-system-v1.0.txt"
+    try:
+        system = prompt_path.read_bytes().decode("utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise _GenerationRefusal(REFUSAL_ANSWER_PROMPT_UNAVAILABLE) from exc
+    if not system.strip():
+        raise _GenerationRefusal(REFUSAL_ANSWER_PROMPT_UNAVAILABLE)
+
+    body = json.dumps(
+        {
+            "question": question,
+            "approved_evidence": [
+                {"id": item.outbound_id, "text": item.text} for item in evidence
+            ],
+        },
+        ensure_ascii=False,
+    )
+
+    async def serialize(**_kwargs: Any) -> str:
+        return body
+
+    settings.prompts.system = system
+    settings.prompts.qa = "{context}"
+    settings.custom_context_serializer = serialize
+    return body
+
+
 @dataclass
 class _PaperQAGenerationSession:
     """One-use synchronous wrapper over a fresh ``Docs.aquery`` session."""
@@ -972,10 +1094,11 @@ class _PaperQAGenerationSession:
         if hasattr(settings.prompts, "answer_iteration_prompt"):
             settings.prompts.answer_iteration_prompt = None
 
+        structured = self.bridge._docs_factory is None
         alias_to_evidence: dict[str, str] = {}
         paperqa_contexts: list[Any] = []
         for index, selected in enumerate(self.contexts, start=1):
-            alias = f"b{index}"
+            alias = selected.outbound_id if structured else f"b{index}"
             alias_to_evidence[alias] = selected.evidence_id
             document = paperqa_types.Doc(
                 docname=alias,
@@ -1002,16 +1125,37 @@ class _PaperQAGenerationSession:
             question=question,
             contexts=paperqa_contexts,
         )
-        serialized, serialized_aliases = await _serialize_final_contexts(
-            settings=settings,
-            contexts=paperqa_contexts,
-            question=question,
-        )
-        valid_aliases = tuple(
-            dict.fromkeys(
-                alias for alias in serialized_aliases if alias in alias_to_evidence
+        serialized_aliases: tuple[str, ...] = ()
+        if structured and settings.custom_context_serializer is None:
+            serialized = ""
+            selected_ids = set(_default_serialized_aliases(settings, paperqa_contexts))
+        else:
+            serialized, serialized_aliases = await _serialize_final_contexts(
+                settings=settings,
+                contexts=paperqa_contexts,
+                question=question,
             )
-        )
+            selected_ids = set(serialized_aliases) if serialized.strip() else set()
+            if structured and not isinstance(
+                getattr(settings, "serialized_context_ids", None), (tuple, list)
+            ):
+                selected_ids.clear()
+
+        if structured:
+            final_evidence = tuple(
+                item for item in self.contexts if item.outbound_id in selected_ids
+            )
+            valid_aliases = tuple(item.outbound_id for item in final_evidence)
+            if final_evidence:
+                serialized = _bind_structured_prompt(
+                    settings=settings, question=question, evidence=final_evidence
+                )
+        else:
+            valid_aliases = tuple(
+                dict.fromkeys(
+                    alias for alias in serialized_aliases if alias in alias_to_evidence
+                )
+            )
         if not serialized.strip() or not valid_aliases:
             return _PaperQAGenerationOutput(
                 raw_output="",
@@ -1066,8 +1210,20 @@ class _PaperQAGenerationSession:
                 self._answer_model_attempts = 0
             self._answer_model_attempts += 1
 
-        restore_call_single = _instrument_answer_model(outbound_model, count_entry)
+        expected_messages = (
+            (("system", settings.prompts.system), ("user", serialized))
+            if structured
+            else None
+        )
+        restore_call_single = _instrument_answer_model(
+            outbound_model,
+            count_entry,
+            expected_messages=expected_messages,
+            request_observer=self.policy.request_observer,
+        )
         if restore_call_single is None:
+            if structured:
+                raise _GenerationRefusal(REFUSAL_ANSWER_REQUEST_MISMATCH)
             # The port may still call the model, but B cannot observe entries.
             self._answer_model_attempts = None
         try:
@@ -1082,7 +1238,7 @@ class _PaperQAGenerationSession:
             if restore_call_single is not None:
                 restore_call_single()
         post_serialized_aliases = getattr(settings, "serialized_context_ids", None)
-        if isinstance(post_serialized_aliases, (tuple, list)):
+        if not structured and isinstance(post_serialized_aliases, (tuple, list)):
             actual_aliases = tuple(
                 dict.fromkeys(
                     str(alias)
@@ -1231,6 +1387,8 @@ def run_generation(
     *,
     request: GenerationRequest,
     factory: ModelFactory,
+    evaluation_binding: EvaluationCaseBinding | None = None,
+    request_observer: RequestObserver | None = None,
 ) -> GenerationResult:
     """Mechanically execute D's approved generation request (FR-D-03)."""
     policy = request.policy
@@ -1253,6 +1411,20 @@ def run_generation(
     if not selected:
         return _refusal(REFUSAL_EMPTY_SENT, zero_accounting)
 
+    fixed_by_runtime: dict[str, str] = {}
+    if evaluation_binding is not None or request_observer is not None:
+        if (
+            evaluation_binding is None
+            or not callable(request_observer)
+            or not isinstance(factory, PaperQA2Adapter)
+            or factory._docs_factory is not None
+        ):
+            return _refusal(REFUSAL_INVALID_EVALUATION_BINDING, zero_accounting)
+        bound = _validate_evaluation_binding(request, evaluation_binding)
+        if bound is None:
+            return _refusal(REFUSAL_INVALID_EVALUATION_BINDING, zero_accounting)
+        fixed_by_runtime = bound
+
     sanitized = _SessionPolicy(
         provider=policy.provider,
         model=policy.model,
@@ -1264,9 +1436,14 @@ def run_generation(
         pre_prompt=None,
         post_prompt=None,
         autonomous_agent=False,
+        request_observer=request_observer,
     )
     contexts = tuple(
-        _SessionContext(evidence_id=record.evidence_id, text=record.excerpt)
+        _SessionContext(
+            evidence_id=record.evidence_id,
+            text=record.excerpt,
+            fixed_id=fixed_by_runtime.get(record.evidence_id),
+        )
         for record in selected
     )
 

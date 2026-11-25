@@ -1,0 +1,3 @@
+PaperTrace synthetic beta.
+This handwritten sample counts three imaginary green circles.
+It is test data only, not a publication or personal record.

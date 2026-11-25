@@ -1,0 +1,3 @@
+PaperTrace synthetic alpha.
+This handwritten sample compares red and blue imaginary tiles.
+No real paper, person, institution, or scientific claim is represented.

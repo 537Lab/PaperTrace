@@ -16,7 +16,11 @@ from pathlib import Path
 
 REPOSITORY = "537Lab/PaperTrace"
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
-PROTECTED_GATE_PATHS = {
+EVALUATION_IMPLEMENTATION_PATHS = {
+    "test/evaluation/evaluator.py",
+    "test/evaluation/report-schema.json",
+}
+PROTECTED_GATE_PATHS = EVALUATION_IMPLEMENTATION_PATHS | {
     "scripts/gates.py", "scripts/gate_evidence.py", ".github/workflows/ci.yml",
     "scripts/ci_events.py", "scripts/full_regression.py", "scripts/semantic_evidence.py", "scripts/semantic_changes.py", "scripts/opencode_support.py", "opencode.jsonc",
     "test/offline/test_gate_evidence.py", "test/evaluation/cases.json",
@@ -469,7 +473,10 @@ def _verify_test_approval(ctx, client, pr_number, changed, allowlist):
     test_tree = _git_text(ctx, "rev-parse", f"{test_head}:test")
     if not FULL_SHA.fullmatch(test_tree):
         raise _EvidenceInvalid("approved-test-tree-is-invalid")
-    changed_tests = {path for path in changed if path.startswith(("test/", "tests/"))}
+    changed_tests = {
+        path for path in changed
+        if path.startswith(("test/", "tests/")) and path not in EVALUATION_IMPLEMENTATION_PATHS
+    }
     if changed_tests - test_files:
         raise _EvidenceInvalid("implementation-changes-unapproved-test-files")
     test_blobs = {}
