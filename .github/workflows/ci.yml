@@ -338,13 +338,14 @@ jobs:
       id: control
       shell: bash
       run: "set -euo pipefail\nBASE=\"$PAPERTRACE_BASE\"\nCONTROL=\"$BASE\"\nif [[ \"$PAPERTRACE_EVENT\" == \"push\" || \"$PAPERTRACE_EVENT\"\
-        \ == \"workflow_dispatch\" ]]; then\n  [[ \"$PAPERTRACE_REF\" == \"refs/heads/main\" ]] || { printf '%s\\n' 'Post-merge checks\
-        \ must target main' >&2; exit 1; }\n  if [[ \"$PAPERTRACE_EVENT\" == \"workflow_dispatch\" ]]; then\n    BASE=\"$(git -C target\
-        \ rev-parse \"$PAPERTRACE_HEAD^1\")\"\n  fi\n  # Already merged main is the adopted verifier, never an unmerged PR candidate.\n\
-        \  # Metadata gates still resolve/revalidate the real merged PR; direct push fails.\n  CONTROL=\"$PAPERTRACE_HEAD\"\nfi\n[[\
-        \ \"$BASE\" =~ ^[0-9a-f]{40}$ && \"$BASE\" != \"0000000000000000000000000000000000000000\" ]] || { printf '%s\\n' 'Invalid literal\
-        \ comparison base SHA' >&2; exit 1; }\n[[ \"$CONTROL\" =~ ^[0-9a-f]{40}$ ]] || { printf '%s\\n' 'Invalid literal verifier SHA'\
-        \ >&2; exit 1; }\nprintf 'sha=%s\\nbase=%s\\n' \"$CONTROL\" \"$BASE\" >> \"$GITHUB_OUTPUT\"\n"
+        \ == \"workflow_dispatch\" ]]; then\n  [[ \"$PAPERTRACE_REF\" == \"refs/heads/main\" ]] || { printf '%s\\n' 'Post-merge\
+        \ checks must target main' >&2; exit 1; }\n  if [[ \"$PAPERTRACE_EVENT\" == \"workflow_dispatch\" ]]; then\n    BASE=\"\
+        $(git -C target rev-parse \"$PAPERTRACE_HEAD^1\")\"\n  fi\n  # Already merged main is the adopted verifier, never an\
+        \ unmerged PR candidate.\n  # Metadata gates still resolve/revalidate the real merged PR; direct push fails.\n  CONTROL=\"\
+        $PAPERTRACE_HEAD\"\nfi\n[[ \"$BASE\" =~ ^[0-9a-f]{40}$ && \"$BASE\" != \"0000000000000000000000000000000000000000\"\
+        \ ]] || { printf '%s\\n' 'Invalid literal comparison base SHA' >&2; exit 1; }\n[[ \"$CONTROL\" =~ ^[0-9a-f]{40}$ ]]\
+        \ || { printf '%s\\n' 'Invalid literal verifier SHA' >&2; exit 1; }\nprintf 'sha=%s\\nbase=%s\\n' \"$CONTROL\" \"$BASE\"\
+        \ >> \"$GITHUB_OUTPUT\"\n"
     - name: Checkout exact prior verifier and dependency lock
       uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       with:
@@ -354,9 +355,10 @@ jobs:
         path: .control
     - name: Require adopted executable base verifier (never candidate self-certification)
       shell: bash
-      run: "set -euo pipefail\nif [[ ! -f .control/scripts/gate_evidence.py || ! -f .control/scripts/semantic_evidence.py || ! -f .control/scripts/full_regression.py\
-        \ || ! -f .control/scripts/ci_events.py ]]; then\n  printf '%s\\n' '{\"status\":\"BLOCKED\",\"reason\":\"BASE_VERIFIER_UPGRADE_REQUIRED\"\
-        ,\"instruction\":\"Independent human adoption is required; candidate changes cannot approve themselves\"}'\n  exit 2\nfi\n"
+      run: "set -euo pipefail\nif [[ ! -f .control/scripts/gate_evidence.py || ! -f .control/scripts/semantic_evidence.py ||\
+        \ ! -f .control/scripts/full_regression.py || ! -f .control/scripts/ci_events.py ]]; then\n  printf '%s\\n' '{\"status\"\
+        :\"BLOCKED\",\"reason\":\"BASE_VERIFIER_UPGRADE_REQUIRED\",\"instruction\":\"Independent human adoption is required;\
+        \ candidate changes cannot approve themselves\"}'\n  exit 2\nfi\n"
     - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
       with:
         python-version: 3.14.6
@@ -404,13 +406,71 @@ jobs:
 
         BASE="${{ steps.control.outputs.base }}"
 
-        .venv/bin/python .control/scripts/gates.py --root "$GITHUB_WORKSPACE/target" --gate regression --base "$BASE" --head "$PAPERTRACE_HEAD"
-        --scope full --timeout 1200 --runtime-python "$GITHUB_WORKSPACE/target/.venv-runtime/bin/python" --upstream-python "$GITHUB_WORKSPACE/target/.venv-upstream/bin/python"
-        --event-name "$GITHUB_EVENT_NAME" --event-path "$GITHUB_EVENT_PATH"
+        .venv/bin/python .control/scripts/gates.py --root "$GITHUB_WORKSPACE/target" --gate regression --base "$BASE" --head
+        "$PAPERTRACE_HEAD" --scope full --timeout 1200 --runtime-python "$GITHUB_WORKSPACE/target/.venv-runtime/bin/python"
+        --upstream-python "$GITHUB_WORKSPACE/target/.venv-upstream/bin/python" --event-name "$GITHUB_EVENT_NAME" --event-path
+        "$GITHUB_EVENT_PATH"
 
         '
       env:
         PAPERTRACE_PR_NUMBER: ${{ github.event.pull_request.number }}
+        PAPERTRACE_CONTROL_SHA: ${{ steps.control.outputs.sha }}
+      id: regression-gate
+    - name: Qualify bounded current-run diagnostic artifacts
+      id: qualify-diagnostics
+      if: failure()
+      shell: bash
+      run: 'set -euo pipefail
+
+        .venv/bin/python .control/scripts/full_regression.py --qualify-diagnostics --root "$GITHUB_WORKSPACE/target" --output
+        "$GITHUB_WORKSPACE/target/.local/full-regression" --expected-target-sha "$PAPERTRACE_HEAD" --expected-control-sha "${{
+        steps.control.outputs.sha }}" --expected-base-sha "${{ steps.control.outputs.base }}"
+
+        '
+    - name: Upload only qualified failure diagnostics
+      id: diagnostics-upload
+      if: failure() && !cancelled() && steps.regression-gate.outcome == 'failure' && steps.qualify-diagnostics.outcome == 'success'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: bounded-regression-diagnostics
+        path: 'target/.local/full-regression/team-offline/diagnostics/events.jsonl
+
+          target/.local/full-regression/team-offline/diagnostics/manifest.json
+
+          target/.local/full-regression/team-runtime/diagnostics/events.jsonl
+
+          target/.local/full-regression/team-runtime/diagnostics/manifest.json
+
+          target/.local/full-regression/upstream/diagnostics/events.jsonl
+
+          target/.local/full-regression/upstream/diagnostics/manifest.json'
+        include-hidden-files: true
+        if-no-files-found: warn
+        retention-days: 3
+    - name: Summarize actual regression and diagnostics outcomes
+      if: always()
+      shell: bash
+      env:
+        GATE_OUTCOME: ${{ steps.regression-gate.outcome }}
+        QUALIFICATION_OUTCOME: ${{ steps.qualify-diagnostics.outcome }}
+        UPLOAD_OUTCOME: ${{ steps.diagnostics-upload.outcome }}
+        JOB_STATUS: ${{ job.status }}
+      run: 'printf ''Regression gate: %s
+
+        Qualification: %s
+
+        Diagnostic upload: %s
+
+        Job status (including cancelled): %s
+
+        Diagnostics are advisory and cannot change the gate verdict.
+
+        '' "$GATE_OUTCOME" "$QUALIFICATION_OUTCOME" "$UPLOAD_OUTCOME" "$JOB_STATUS" >> "$GITHUB_STEP_SUMMARY"
+
+        # Outcomes: ${{ steps.regression-gate.outcome }} ${{ steps.qualify-diagnostics.outcome }} ${{ steps.diagnostics-upload.outcome
+        }}
+
+        '
   ai-use-log:
     name: ai-use-log
     runs-on: ubuntu-latest
